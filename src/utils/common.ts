@@ -7,7 +7,10 @@ import {
 } from "@tauri-apps/api/fs";
 import { save } from "@tauri-apps/api/dialog";
 import { ToolConfig } from "../utils/model";
-import { log } from "console";
+
+import { toolListConfig } from "../utils/tools-config";
+
+
 
 export async function saveFileDialog() {
   const filePath = await save({
@@ -31,11 +34,16 @@ export async function getCurrentDir() {
   return data;
 }
 
+// export async function getToolListConfig() {
+//   let jsonData = JSON.parse(
+//     await readTextFile((await getCurrentDir()) + "\\tools.config.json")
+//   );
+//   return jsonData.filter((x: ToolConfig) => x.isDrop);
+// }
+
 export async function getToolListConfig() {
-  let jsonData = JSON.parse(
-    await readTextFile((await getCurrentDir()) + "\\tools.config.json")
-  );
-  return jsonData.filter((x: ToolConfig) => x.isDrop);
+ 
+  return toolListConfig;
 }
 
 export async function getSimpleToolList() {

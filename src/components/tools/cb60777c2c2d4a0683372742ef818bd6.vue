@@ -6,7 +6,7 @@
       >
       <span
         style="display: block; font-size: 14px; color: gray; align-self: center"
-        >bdsfsdf 
+        >vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
       </span>
     </div>
   </div>
