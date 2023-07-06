@@ -1,0 +1,75 @@
+{
+  "build": {
+    "beforeDevCommand": "yarn dev",
+    "beforeBuildCommand": "yarn build",
+    "devPath": "http://localhost:1420",
+    "distDir": "../dist",
+    "withGlobalTauri": false
+  },
+  "package": {
+    "productName": "wheat-esp-tools",
+    "version": "0.0.0"
+  },
+  "tauri": {
+    "allowlist": {
+      "all": false,
+      "fs": { "all": true, "scope": ["**"] },
+      "path": { "all": true },
+      "os": {
+        "all": true
+      },
+      "dialog": {
+        "all": true,
+        "open": true
+      },
+      "window": {
+        "create": true,
+        "maximize": true,
+        "setTitle": true
+      },
+      "shell": {
+        "all": true,
+        "execute": true,
+        "sidecar": true,
+        "open": true,
+        "scope": [
+          {
+            "name": "esptool",
+            "cmd": "./esptool/esptool",
+            "args": true
+          }
+        ]
+      }
+    },
+    "bundle": {
+      "active": true,
+      "icon": [
+        "icons/32x32.png",
+        "icons/128x128.png",
+        "icons/128x128@2x.png",
+        "icons/icon.icns",
+        "icons/icon.ico"
+      ],
+      "identifier": "com.tauri.test",
+      "targets": "all"
+    },
+    "security": {
+      "csp": null
+    },
+    "updater": {
+      "active": false
+    },
+    "windows": [
+      {
+        "center": true,
+        "fileDropEnabled": true,
+        "theme": "Dark",
+        "height": 750,
+        "minHeight": 750,
+        "title": "WHEAT ESP TOOLS",
+        "width": 900,
+        "minWidth": 900
+      }
+    ]
+  }
+}
