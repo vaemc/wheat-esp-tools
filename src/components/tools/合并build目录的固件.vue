@@ -18,9 +18,11 @@ const pluginName = "合并build目录的固件"
 
 const drop = await listen("tauri://file-drop", (event: any) => {
 
+
 });
 
 const dropHover = await listen("tauri://file-drop-hover", (event: any) => {
+
 
 });
 

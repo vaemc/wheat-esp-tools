@@ -1,19 +1,28 @@
 <template>
-  <a-card size="small" title="工具列表">
-    <a-modal v-model:visible="modal.visible" :destroyOnClose="true" :footer="null" :maskClosable="true" :mask="false"
-      :title="modal.title">
-      <component :is="components.get(compName)"></component>
-    </a-modal>
+  <div style="display: flex;">
+    <div style="flex: 1;margin-right: 5px;">
+      <a-card size="small" title="工具列表">
+        <a-modal v-model:visible="modal.visible" :destroyOnClose="true" :footer="null" :maskClosable="true" :mask="false"
+          :title="modal.title">
 
-    <div style="overflow: auto">
-      <div>
-        <a-tag v-for="item in toolListConfig" style="cursor: pointer" :color="getRandomColor()"
-          @click="openModal(item)">{{
-            item.name }}</a-tag>
-      </div>
+        </a-modal>
 
+        <div style="overflow: auto">
+          <div>
+            <a-tag v-for="item in toolListConfig" style="cursor: pointer;margin: 5px;" :color="getRandomColor()"
+              @click="openModal(item)">{{
+                item.name }}</a-tag>
+          </div>
+
+        </div>
+      </a-card>
     </div>
-  </a-card>
+    <div style="flex: 1;margin-left: 5px;">
+      <a-card size="small" :title="toolName">
+        <component :is="components.get(compName)"></component>
+      </a-card>
+    </div>
+  </div>
 </template>
 <script setup lang="ts">
 import { ref, defineAsyncComponent, markRaw } from "vue";
@@ -26,6 +35,9 @@ const modal = ref({
   visible: false,
   title: ""
 })
+const toolName = ref("工具面板");
+
+
 
 const components = ref(new Map<string, any>());
 const compName = ref();
@@ -54,8 +66,8 @@ function getRandomColor() {
 
 
 const openModal = (item: any) => {
-  modal.value.visible = true;
-  modal.value.title = item.name;
+  // modal.value.visible = true;
+  toolName.value = item.name;
   compName.value = item.id;
 };
 
