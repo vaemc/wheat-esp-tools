@@ -1,10 +1,43 @@
 <template>
-  <div>
-    <a-tabs>
-      <a-tab-pane v-for="item in pluginList" :tab="item" :key="item">
-      </a-tab-pane>
-      <component :is="components.get(compName)"></component>
-    </a-tabs>
+  <div style="display: flex">
+    <div style="flex: 1; margin-right: 5px">
+      <a-card size="small" title="工具列表">
+        <a-modal
+          v-model:visible="modal.visible"
+          :destroyOnClose="true"
+          :footer="null"
+          :maskClosable="true"
+          :mask="false"
+          :title="modal.title"
+        >
+        </a-modal>
+
+        <div style="overflow: auto">
+          <div>
+            <!-- <a-tag
+              v-for="item in pluginList"
+              style="cursor: pointer; margin: 5px"
+              :color="getRandomColor()"
+              @click="openTool(item)"
+              >{{ item }}</a-tag
+            > -->
+
+            <a-button
+           
+              style="margin: 5px"
+              v-for="item in pluginList"
+              @click="openTool(item)"
+              >{{ item }}</a-button
+            >
+          </div>
+        </div>
+      </a-card>
+    </div>
+    <div style="flex: 1; margin-left: 5px">
+      <a-card size="small" :title="toolName">
+        <component :is="components.get(compName)"></component>
+      </a-card>
+    </div>
   </div>
 </template>
 <script setup lang="ts">
