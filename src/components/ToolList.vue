@@ -1,9 +1,10 @@
 <template>
   <div>
-    <a-tabs>
+    <a-tabs @change="tabChange" :destroyInactiveTabPane="true">
       <a-tab-pane v-for="item in pluginList" :tab="item" :key="item">
+        <component :is="components.get(item)"></component>
       </a-tab-pane>
-      <component :is="components.get(compName)"></component>
+
     </a-tabs>
   </div>
 </template>
@@ -27,7 +28,6 @@ const modal = ref({
   visible: false,
   title: "",
 });
-const toolName = ref("工具面板");
 
 const components = ref(new Map<string, any>());
 const compName = ref();
@@ -54,8 +54,14 @@ function getRandomColor() {
   return colorList[randomIndex];
 }
 
-const openTool = (item: any) => {
-  toolName.value = item;
+
+
+const tabChange = (item: any) => {
+  console.log(item);
+
   compName.value = item;
 };
+
+
+
 </script>

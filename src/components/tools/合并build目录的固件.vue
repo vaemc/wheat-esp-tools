@@ -1,10 +1,6 @@
 <template>
   <div style="height: 100%">
-    <Upload
-      title="选择或者拖拽文件到此"
-      subtitle="合并build目录的固件"
-      @openFileDialog="openFileDialog"
-    />
+    <Upload title="选择或者拖拽文件到此" subtitle="合并build目录的固件" @openFileDialog="openFileDialog" />
   </div>
 </template>
 <script setup lang="ts">
@@ -25,13 +21,15 @@ const openFileDialog = async () => {
   }
 };
 
-const drop = await listen("tauri://file-drop", (event: any) => {});
+const drop = await listen("tauri://file-drop", (event: any) => { });
 
-const dropHover = await listen("tauri://file-drop-hover", (event: any) => {});
+const dropHover = await listen("tauri://file-drop-hover", (event: any) => { });
 
-const dropCancelled = await listen("tauri://file-drop-cancelled", () => {});
+const dropCancelled = await listen("tauri://file-drop-cancelled", () => { });
 
 onBeforeUnmount(() => {
+  console.log("销毁");
+
   drop();
   dropHover();
   dropCancelled();
