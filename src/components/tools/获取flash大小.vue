@@ -1,19 +1,10 @@
 <template>
   <div style="height: 100%">
-    <div  :class="dropBoxClass" @click="openFileDialog">
-      <span style="display: block; font-size: 16px; align-self: center"
-        >sadasd</span
-      >
-      <span
-        style="display: block; font-size: 14px; color: gray; align-self: center"
-        >vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
-      </span>
-    </div>
+    <h1>获取flash大小</h1>
   </div>
 </template>
 <script setup lang="ts">
 import { ref } from "vue";
-const dropBoxClass = ref("dropBox");
+const cmd = ["-p", "${port}", "flash_id"];
 
-const openFileDialog = async () => {};
 </script>

@@ -39,6 +39,10 @@
             "args": true
           }
         ]
+      },
+      "protocol": {
+        "asset": true,
+        "assetScope": ["**"]
       }
     },
     "bundle": {

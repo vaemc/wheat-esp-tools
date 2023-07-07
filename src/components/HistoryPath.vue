@@ -50,13 +50,13 @@ function open(item: HistoryPath) {
 }
 
 async function flash(item: HistoryPath) {
-  let cmd = [] as string[];
-  if (item.name === "build") {
-    cmd = (await generateCmd(toolListConfig[1].cmd, item.full)) as string[];
-    runCmd(cmd);
-    return;
-  }
-  cmd = (await generateCmd(toolListConfig[2].cmd, item.full)) as string[];
-  runCmd(cmd);
+  // let cmd = [] as string[];
+  // if (item.name === "build") {
+  //   cmd = (await generateCmd(toolListConfig[1].cmd, item.full)) as string[];
+  //   runCmd(cmd);
+  //   return;
+  // }
+  // cmd = (await generateCmd(toolListConfig[2].cmd, item.full)) as string[];
+  // runCmd(cmd);
 }
 </script>

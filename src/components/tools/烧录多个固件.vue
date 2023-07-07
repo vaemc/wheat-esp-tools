@@ -1,17 +1,23 @@
 <template>
   <div style="height: 100%">
+    <a-input
+      addon-before="烧录地址"
+      placeholder=""
+      style="margin-bottom: 5px"
+    />
+
     <Upload
       title="选择或者拖拽文件到此"
-      subtitle="合并build目录的固件"
+      subtitle="烧录build目录的固件"
       @openFileDialog="openFileDialog"
     />
   </div>
 </template>
 <script setup lang="ts">
-import { onBeforeUnmount } from "vue";
+import { ref, onBeforeUnmount } from "vue";
 import { listen } from "@tauri-apps/api/event";
+
 import { open } from "@tauri-apps/api/dialog";
-import { getFlasherArgs } from "../../utils/esptool";
 
 const openFileDialog = async () => {
   const selected = await open({

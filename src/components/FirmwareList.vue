@@ -39,9 +39,9 @@ emitter.on("refreshFirmwareList", async (data) => {
 });
 
 async function flash(item: string) {
-  let path = currentDir + "\\firmware\\" + item;
-  let cmd = (await generateCmd(toolListConfig[2].cmd, path)) as string[];
-  runCmd(cmd);
+  // let path = currentDir + "\\firmware\\" + item;
+  // let cmd = (await generateCmd(toolListConfig[2].cmd, path)) as string[];
+  // runCmd(cmd);
 }
 
 function open() {

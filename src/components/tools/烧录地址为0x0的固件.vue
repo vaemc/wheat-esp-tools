@@ -1,19 +1,35 @@
 <template>
   <div style="height: 100%">
-    <div  :class="dropBoxClass" @click="openFileDialog">
-      <span style="display: block; font-size: 16px; align-self: center"
-        >11111</span
-      >
-      <span
-        style="display: block; font-size: 14px; color: gray; align-self: center"
-        >vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
-      </span>
-    </div>
+    <Upload title="选择或者拖拽文件到此" subtitle="烧录地址为0x0的固件" @openFileDialog="openFileDialog" />
   </div>
 </template>
 <script setup lang="ts">
-import { ref } from "vue";
-const dropBoxClass = ref("dropBox");
+import { ref, onBeforeUnmount } from "vue";
+import { listen } from "@tauri-apps/api/event";
 
-const openFileDialog = async () => {};
+import { open } from "@tauri-apps/api/dialog";
+
+const openFileDialog = async () => {
+  const selected = await open({
+    directory: true,
+    multiple: true,
+  });
+
+  if (selected !== null) {
+    if (!Array.isArray(selected)) {
+    }
+  }
+};
+
+const drop = await listen("tauri://file-drop", (event: any) => {});
+
+const dropHover = await listen("tauri://file-drop-hover", (event: any) => {});
+
+const dropCancelled = await listen("tauri://file-drop-cancelled", () => {});
+
+onBeforeUnmount(() => {
+  drop();
+  dropHover();
+  dropCancelled();
+});
 </script>

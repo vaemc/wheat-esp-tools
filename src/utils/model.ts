@@ -17,3 +17,8 @@ export interface ToolConfig {
     regex: string;
   };
 }
+
+export interface Plugin {
+  name: string;
+  path: string;
+}
