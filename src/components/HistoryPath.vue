@@ -23,8 +23,6 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import { HistoryPath } from "../utils/model";
-import { runCmd, generateCmd } from "../utils/esptool";
-import { toolListConfig } from "../utils/tools-config";
 import { historyPathStore } from "../utils/store";
 import { openFileInExplorer } from "../utils/common";
 

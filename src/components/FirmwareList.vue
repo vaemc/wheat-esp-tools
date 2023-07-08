@@ -19,7 +19,6 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import { runCmd, generateCmd } from "../utils/esptool";
-import { toolListConfig } from "../utils/tools-config";
 import {
   getFirmwareList,
   openFileInExplorer,
@@ -27,7 +26,6 @@ import {
   removeFile,
 } from "../utils/common";
 import emitter from "../utils/bus";
-console.info(toolListConfig);
 // openFileInExplorer(currentDir + "\\firmware");
 const firmwareList = ref(await getFirmwareList());
 const currentDir = await getCurrentDir();

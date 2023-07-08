@@ -8,8 +8,6 @@ import {
 import { save } from "@tauri-apps/api/dialog";
 import { ToolConfig } from "../utils/model";
 
-import { toolListConfig } from "../utils/tools-config";
-
 
 
 export async function saveFileDialog() {
@@ -38,17 +36,15 @@ export async function getPluginList() {
   let data = await invoke("get_plugin_list");
   return data;
 }
-export async function getToolListConfig() {
- 
-  return toolListConfig;
+
+export async function getChipTypeList() {
+  let jsonData = JSON.parse(
+    await readTextFile((await getCurrentDir()) + "\\chip.list.json")
+  );
+  return jsonData;
 }
 
-export async function getSimpleToolList() {
-  let jsonData = JSON.parse(
-    await readTextFile((await getCurrentDir()) + "\\tools.config.json")
-  );
-  return jsonData.filter((x: ToolConfig) => x.isDrop == false);
-}
+
 
 export async function getFirmwareList() {
   let fileList = (await readDir(

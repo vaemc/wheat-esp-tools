@@ -13,9 +13,9 @@ import { ref, defineAsyncComponent, markRaw } from "vue";
 const pluginList = [
   "合并build目录的固件",
   "烧录地址为0x0的固件",
-  "合并多个固件",
-  "烧录多个固件",
+  "合并或烧录固件",
   "烧录build目录的固件",
+  "读取固件",
   "其他功能",
 ];
 

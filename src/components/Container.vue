@@ -8,7 +8,7 @@
         <ToolList style="margin-top: 5px; flex: 1" />
         <a-card size="small" style="margin-top: 5px; flex: 1" >
           <a-tabs v-model:activeKey="activeKey">
-            <a-tab-pane key="1" tab="历史build目录"><HistoryPath /></a-tab-pane>
+            <a-tab-pane key="1" tab="历史操作"><HistoryPath /></a-tab-pane>
             <a-tab-pane key="2" tab="快捷烧录" force-render
               ><FirmwareList
             /></a-tab-pane>
