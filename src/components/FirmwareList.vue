@@ -1,22 +1,20 @@
 <template>
-  <a-card size="small" title="固件列表">
-    <div style="overflow: auto">
-      <a-popover v-for="item in firmwareList" :title="item" trigger="click">
-        <template #content>
-          <a-button style="margin: 3px" @click="flash(item as string)"
-            >烧录</a-button
-          >
-          <a-button style="margin: 3px" @click="open()" primary>打开</a-button>
-          <a-button style="margin: 3px" @click="remove(item as string)" danger
-            >删除</a-button
-          >
-        </template>
-        <a-button type="dashed" size="small" style="margin: 3px">{{
-          item
-        }}</a-button>
-      </a-popover>
-    </div>
-  </a-card>
+  <div style="overflow: auto">
+    <a-popover v-for="item in firmwareList" :title="item" trigger="click">
+      <template #content>
+        <a-button style="margin: 3px" @click="flash(item as string)"
+          >烧录</a-button
+        >
+        <a-button style="margin: 3px" @click="open()" primary>打开</a-button>
+        <a-button style="margin: 3px" @click="remove(item as string)" danger
+          >删除</a-button
+        >
+      </template>
+      <a-button type="dashed" size="small" style="margin: 3px">{{
+        item
+      }}</a-button>
+    </a-popover>
+  </div>
 </template>
 <script setup lang="ts">
 import { ref } from "vue";

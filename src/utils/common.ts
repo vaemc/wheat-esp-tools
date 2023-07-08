@@ -38,15 +38,6 @@ export async function getPluginList() {
   let data = await invoke("get_plugin_list");
   return data;
 }
-
-
-// export async function getToolListConfig() {
-//   let jsonData = JSON.parse(
-//     await readTextFile((await getCurrentDir()) + "\\tools.config.json")
-//   );
-//   return jsonData.filter((x: ToolConfig) => x.isDrop);
-// }
-
 export async function getToolListConfig() {
  
   return toolListConfig;

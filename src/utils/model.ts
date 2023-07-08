@@ -18,7 +18,8 @@ export interface ToolConfig {
   };
 }
 
-export interface Plugin {
-  name: string;
+
+export interface Firmware {
   path: string;
+  address: string;
 }

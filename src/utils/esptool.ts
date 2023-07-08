@@ -13,6 +13,8 @@ import kleur from "kleur";
 
 const currentDir = await getCurrentDir();
 
+
+
 export async function generateCmd(data: string[], path = "") {
   const port = portStore().port;
 

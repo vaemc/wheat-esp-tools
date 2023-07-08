@@ -1,28 +1,24 @@
 <template>
-  <a-card size="small" title="历史路径">
-    <div style="overflow: auto" class="scroll">
-      <a-popover
-        v-for="item in historyPathList"
-        :title="item.full"
-        trigger="click"
-      >
-        <template #content>
-          <a-button style="margin: 3px" @click="flash(item)"
-            >烧录</a-button
-          >
-          <a-button style="margin: 3px" @click="open(item)" primary
-            >打开</a-button
-          >
-          <a-button style="margin: 3px" @click="remove(item)" danger
-            >删除</a-button
-          >
-        </template>
-        <a-button type="dashed" size="small" style="margin: 3px">{{
-          item.ellipsis
-        }}</a-button>
-      </a-popover>
-    </div>
-  </a-card>
+  <div style="overflow: auto" class="scroll">
+    <a-popover
+      v-for="item in historyPathList"
+      :title="item.full"
+      trigger="click"
+    >
+      <template #content>
+        <a-button style="margin: 3px" @click="flash(item)">烧录</a-button>
+        <a-button style="margin: 3px" @click="open(item)" primary
+          >打开</a-button
+        >
+        <a-button style="margin: 3px" @click="remove(item)" danger
+          >删除</a-button
+        >
+      </template>
+      <a-button type="dashed" size="small" style="margin: 3px">{{
+        item.ellipsis
+      }}</a-button>
+    </a-popover>
+  </div>
 </template>
 <script setup lang="ts">
 import { ref } from "vue";
