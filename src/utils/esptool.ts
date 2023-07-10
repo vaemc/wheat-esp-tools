@@ -5,7 +5,7 @@ import { message } from "ant-design-vue";
 import { portStore } from "./store";
 import moment from "moment";
 import { balanced } from "./balanced-match";
-import { getCurrentDir, isEspToolExists, openFileInExplorer } from "./common";
+import { getCurrentDir, esptoolExists, openFileInExplorer } from "./common";
 import { notification, Button } from "ant-design-vue";
 import { h } from "vue";
 
@@ -71,57 +71,6 @@ export async function getFlasherArgs(path: string) {
   };
 }
 
-export async function runCmd(cmd: string[]) {
-  let result = await isEspToolExists();
-  if (!result) {
-    notification.open({
-      message: "未检测到esptool工具",
-      description: "请将esptool工具放在软件根目录esptool文件夹！",
-      btn: () =>
-        h(
-          Button,
-          {
-            type: "primary",
-            size: "small",
-            onClick: () => {
-              openFileInExplorer(currentDir + "\\esptool");
-            },
-          },
-          {
-            default: () => "打开文件夹",
-          }
-        ),
-    });
-
-    return;
-  }
-
-  if (cmd.find((x: string) => x === "merge_bin") != null) {
-    openFileInExplorer(currentDir + "\\firmware");
-  }
-
-  cmd = cmd.filter((x: string) => x != "");
-  const command = new Command("esptool", cmd);
-  command.on("close", (data) => {});
-  command.on("error", (error) => terminalWrite(error));
-  command.stdout.on("data", (line) => {
-    console.log(line);
-    terminalWrite(
-      kleur.bold().blue(`[${moment().format("YYYY-MM-DD HH:mm:ss")}] `)
-    );
-    terminalWriteLine(line);
-  });
-  command.stderr.on("data", (line) => {
-    console.log(line);
-    terminalWrite(moment().format("YYYY-MM-DD HH:mm:ss"));
-    terminalWriteLine(line);
-  });
-  const child = await command.spawn();
-
-  await new Promise((r) => setTimeout(r, 2500));
-  await refreshFirmwareList();
-  //console.log("pid:", child.pid);
-}
 
 // function decimalToHexString(number: number) {
 //   if (number < 0) {

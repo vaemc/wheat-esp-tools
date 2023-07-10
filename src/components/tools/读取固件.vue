@@ -7,8 +7,6 @@
       :isMultiple="false"
       @openFileDialog="openFileDialog"
       @drop="drop"
-      @dropHover="dropHover"
-      @dropCancelled="dropCancelled"
     />
   </div>
 </template>
@@ -16,8 +14,6 @@
 const drop = (path: String | String[]) => {
   console.log(path);
 };
-const dropHover = () => {};
-const dropCancelled = () => {};
 
 const openFileDialog = (path: String | String[]) => {
   console.log(path);

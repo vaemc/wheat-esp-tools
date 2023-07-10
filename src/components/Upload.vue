@@ -58,13 +58,11 @@ const drop = await listen("tauri://file-drop", (event: any) => {
 
 const dropHover = await listen("tauri://file-drop-hover", (event: any) => {
   dropBoxClass.value = "dropBoxHover";
-
   emit("dropHoverDrop", "ok");
 });
 
 const dropCancelled = await listen("tauri://file-drop-cancelled", () => {
   dropBoxClass.value = "dropBox";
-
   emit("dropCancelled", "ok");
 });
 
@@ -74,6 +72,7 @@ onBeforeUnmount(() => {
   dropCancelled();
 });
 </script>
+
 <style>
 .dropBox {
   width: 100%;
