@@ -1,9 +1,9 @@
 <template>
   <a-select
     v-model:value="selectSerialPort"
-    @dropdownVisibleChange="serialPortListSelectFocus"
-    @focus="serialPortListSelectFocus"
-    @change="serialPortListSelectChange"
+    @dropdownVisibleChange="focus"
+    @focus="focus"
+    @change="change"
     style="width: 100%"
     :options="serialPortList"
   ></a-select>
@@ -15,7 +15,8 @@ import { getSerialPortList } from "../utils/common";
 
 const selectSerialPort = ref();
 const serialPortList = ref([] as any);
-const refreshSerialPortList = async (showDefaultPort = false) => {
+
+const refreshList = async (showDefaultPort = false) => {
   let list = (await getSerialPortList()).map((item: string) => {
     return {
       value: item,
@@ -29,11 +30,13 @@ const refreshSerialPortList = async (showDefaultPort = false) => {
     portStore().port = list[0].value;
   }
 };
-const serialPortListSelectFocus = () => {
-  refreshSerialPortList();
+const focus = () => {
+  refreshList();
 };
-const serialPortListSelectChange = (data: string) => {
+
+const change = (data: string) => {
   portStore().port = data;
 };
-refreshSerialPortList(true);
+
+refreshList(true);
 </script>

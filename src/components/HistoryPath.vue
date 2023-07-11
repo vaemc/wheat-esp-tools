@@ -24,7 +24,12 @@
 import { ref } from "vue";
 import { HistoryPath } from "../utils/model";
 import { historyPathStore } from "../utils/store";
-import { openFileInExplorer } from "../utils/common";
+import {
+  executedCommand,
+  selectedPort,
+  openFileInExplorer,
+  getFlasherArgs,
+} from "../utils/common";
 
 const historyPathList = ref(historyPathStore().pathList as HistoryPath[]);
 
@@ -44,13 +49,24 @@ function open(item: HistoryPath) {
 }
 
 async function flash(item: HistoryPath) {
-  // let cmd = [] as string[];
-  // if (item.name === "build") {
-  //   cmd = (await generateCmd(toolListConfig[1].cmd, item.full)) as string[];
-  //   runCmd(cmd);
-  //   return;
-  // }
-  // cmd = (await generateCmd(toolListConfig[2].cmd, item.full)) as string[];
-  // runCmd(cmd);
+  if (item.name === "build") {
+    let appInfo = await getFlasherArgs(item.full);
+    let cmd = [
+      "--chip",
+      appInfo.chip,
+      "-p",
+      selectedPort(),
+      "-b",
+      "1152000",
+      "--before=default_reset",
+      "--after=hard_reset",
+      "write_flash",
+      ...appInfo.flashArgs,
+    ];
+    executedCommand(cmd);
+    return;
+  }
+  let cmd = ["-p", selectedPort(), "-b", "1152000", "write_flash", "0x0", item.full];
+  executedCommand(cmd);
 }
 </script>

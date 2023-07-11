@@ -10,7 +10,6 @@ export function terminalWriteLine(data:string) {
   emitter.emit("terminalWriteLine", data);
 }
 
-
 export function refreshFirmwareList() {
   emitter.emit("refreshFirmwareList");
 }

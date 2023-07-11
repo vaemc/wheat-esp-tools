@@ -9,9 +9,9 @@ import { save } from "@tauri-apps/api/dialog";
 import { portStore } from "./store";
 import { Command } from "@tauri-apps/api/shell";
 import { terminalWrite, terminalWriteLine, refreshFirmwareList } from "./bus";
-import { message } from "ant-design-vue";
+import { HistoryPath } from "../utils/model";
 import moment from "moment";
-import { balanced } from "./balanced-match";
+import { historyPathStore } from "../utils/store";
 import { notification, Button } from "ant-design-vue";
 import { h } from "vue";
 
@@ -30,6 +30,23 @@ export async function saveFileDialog() {
   });
 
   return filePath;
+}
+
+export function addHistoryPath(data: string) {
+  let path = data.split("\\");
+  let result = {} as HistoryPath;
+  if (path.length >= 5) {
+    let temp = `${path[0]}\\${path[1]}\\${path[2]}\\...\\${
+      path[path.length - 2]
+    }\\${path[path.length - 1]}`;
+    result = { full: data, ellipsis: temp, name: path[path.length - 1] };
+  } else {
+    result = { full: data, ellipsis: data, name: path[path.length - 1] };
+  }
+  let historyPathList = historyPathStore().pathList;
+  if (historyPathList.filter((x) => x.full === result.full).length == 0) {
+    historyPathStore().pathList.push(result);
+  }
 }
 
 export async function getSerialPortList() {
@@ -80,7 +97,27 @@ export async function esptoolExists() {
   return false;
 }
 
-export async function executedCommand(cmd: string[]) {
+export async function getFlasherArgs(path: string) {
+  let flasherArgs = JSON.parse(
+    await readTextFile(`${path}\\flasher_args.json`)
+  );
+  const flattenedList = [
+    ...(Object.keys(flasherArgs.flash_files) as string[]).map((item) => {
+      return [item, `${path}\\${flasherArgs.flash_files[item]}`];
+    }),
+  ].reduce((accumulator: any, currentValue: any) => {
+    return accumulator.concat(currentValue);
+  }, []);
+  return {
+    appName: flasherArgs.app.file.split(".")[0],
+    chip: flasherArgs.extra_esptool_args.chip,
+    flashArgs: flattenedList,
+  };
+}
+
+let retryCount = 0;
+
+export async function executedCommand(cmd: String[]) {
   let result = await esptoolExists();
   if (!result) {
     notification.open({
@@ -105,16 +142,33 @@ export async function executedCommand(cmd: string[]) {
     return;
   }
 
-  cmd = cmd.filter((x: string) => x != "");
-  const command = new Command("esptool", cmd);
+  cmd = cmd.filter((x: String) => x != "");
+  let command = new Command("esptool", cmd as string[]);
   command.on("close", (data) => {});
   command.on("error", (error) => terminalWrite(error));
-  command.stdout.on("data", (line) => {
+  command.stdout.on("data", async (line) => {
     console.log(line);
     terminalWrite(
       kleur.bold().blue(`[${moment().format("YYYY-MM-DD HH:mm:ss")}] `)
     );
     terminalWriteLine(line);
+    if (
+      line.includes(
+        `A fatal error occurred: Could not open ${selectedPort()}, the port doesn't exist`
+      )
+    ) {
+      if (retryCount != 3) {
+        notification["warning"]({
+          message: "端口可能被占用，正在重试...",
+        });
+
+        retryCount++;
+        await new Promise((r) => setTimeout(r, 2000));
+        executedCommand(cmd);
+      } else {
+        retryCount = 0;
+      }
+    }
   });
   command.stderr.on("data", (line) => {
     console.log(line);
@@ -135,4 +189,3 @@ export async function openFileInExplorer(path: string) {
 export async function removeFile(path: string) {
   await rf(path);
 }
-

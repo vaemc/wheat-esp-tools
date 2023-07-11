@@ -5,7 +5,9 @@
         <a-button style="margin: 3px" @click="flash(item as string)"
           >烧录</a-button
         >
-        <a-button style="margin: 3px" @click="open()" primary>打开</a-button>
+        <a-button style="margin: 3px" @click="open(item as string)" primary
+          >打开</a-button
+        >
         <a-button style="margin: 3px" @click="remove(item as string)" danger
           >删除</a-button
         >
@@ -18,15 +20,15 @@
 </template>
 <script setup lang="ts">
 import { ref } from "vue";
-import { runCmd, generateCmd } from "../utils/esptool";
 import {
+  executedCommand,
   getFirmwareList,
   openFileInExplorer,
   getCurrentDir,
   removeFile,
+  selectedPort,
 } from "../utils/common";
 import emitter from "../utils/bus";
-// openFileInExplorer(currentDir + "\\firmware");
 const firmwareList = ref(await getFirmwareList());
 const currentDir = await getCurrentDir();
 
@@ -34,18 +36,25 @@ emitter.on("refreshFirmwareList", async (data) => {
   firmwareList.value = await getFirmwareList();
 });
 
-async function flash(item: string) {
-  // let path = currentDir + "\\firmware\\" + item;
-  // let cmd = (await generateCmd(toolListConfig[2].cmd, path)) as string[];
-  // runCmd(cmd);
+async function flash(item: String) {
+  let cmd = [
+    "-p",
+    selectedPort(),
+    "-b",
+    "1152000",
+    "write_flash",
+    "0x0",
+    `${currentDir}\\firmware\\${item}`,
+  ];
+  executedCommand(cmd);
 }
 
-function open() {
-  openFileInExplorer(currentDir + "\\firmware");
+function open(item: String) {
+  openFileInExplorer(`${currentDir}\\firmware\\${item}`);
 }
 
 async function remove(item: string) {
-  removeFile(currentDir + "\\firmware\\" + item);
+  removeFile(`${currentDir}\\firmware\\${item}`);
   firmwareList.value = await getFirmwareList();
 }
 </script>

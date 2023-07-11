@@ -28,7 +28,6 @@ toolList.map((item) => {
 });
 
 const tabChange = (item: any) => {
-  console.log(item);
   compName.value = item;
 };
 </script>

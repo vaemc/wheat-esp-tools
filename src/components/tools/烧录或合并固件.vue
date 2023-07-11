@@ -1,24 +1,35 @@
 <template>
-  <div style="height: 100%">
+  <Upload
+    title="选择或者拖拽多个bin文件到此"
+    subtitle="固件结尾使用下划线加烧录地址工具可以自动解析,如 'ESP32_0x222.bin'"
+    @openFileDialog="openFileDialog"
+    @drop="drop"
+  />
 
-    <Upload title="选择或者拖拽多个bin文件到此" subtitle="固件结尾使用下划线加烧录地址工具可以自动解析,如 'ESP32_0x222.bin'"
-      @openFileDialog="openFileDialog" />
+  <a-select
+    style="width: 100%; margin: 5px 0"
+    placeholder="选择芯片"
+    :options="chipTypeList"
+  ></a-select>
 
-    <a-select style="width: 100%; margin:5px 0" placeholder="选择芯片" :options="chipTypeList"></a-select>
-
-    <a-table :pagination="false" :dataSource="firmwareList" :columns="columns" size="small" class="scroll">
-      <template #bodyCell="{ column, record }">
-        <template v-if="column.key === 'action'">
-          <a @click="editFirmwareBtn(record)">编辑</a> |
-          <a @click="removeFirmwareBtn(record)">删除</a>
-        </template>
+  <a-table
+    :pagination="false"
+    :dataSource="firmwareList"
+    :columns="columns"
+    size="small"
+    class="scroll"
+  >
+    <template #bodyCell="{ column, record }">
+      <template v-if="column.key === 'action'">
+        <a @click="editFirmwareBtn(record)">编辑</a> |
+        <a @click="removeFirmwareBtn(record)">删除</a>
       </template>
-    </a-table>
+    </template>
+  </a-table>
 
-    <div style="display: flex;">
-      <a-button type="primary" style="flex: 1;margin:5px;" block>合并</a-button>
-      <a-button type="primary" style="flex: 1;margin:5px;" block>烧录</a-button>
-    </div>
+  <div style="display: flex">
+    <a-button type="primary" style="flex: 1; margin: 5px" block>合并</a-button>
+    <a-button type="primary" style="flex: 1; margin: 5px" block>烧录</a-button>
   </div>
 </template>
 <script setup lang="ts">
@@ -30,7 +41,6 @@ import { getChipTypeList } from "../../utils/common";
 const firmware = ref({} as Firmware);
 const firmwareList = ref([] as Firmware[]);
 const firmwareModal = ref({ visible: false, title: "添加固件", isEdit: false });
-
 
 const columns = ref([
   {
@@ -65,7 +75,6 @@ const editFirmwareBtn = (item: Firmware) => {
   firmware.value = item;
 };
 
-
 const chipTypeList = ref(
   (await getChipTypeList()).map((item: String) => {
     return {
@@ -74,5 +83,12 @@ const chipTypeList = ref(
     };
   })
 );
-const openFileDialog = async () => { };
+
+const openFileDialog = (path: String | String[]) => {
+  console.log(path);
+};
+
+const drop = (path: String | String[]) => {
+  console.log(path);
+};
 </script>

@@ -33,18 +33,12 @@ fn get_current_dir() -> String {
 
 #[tauri::command]
 fn open_file_in_explorer(path: &str) {
-    let platform = env::consts::OS.to_string();
-    let mut program = "explorer";
-    if platform == "windows".to_string() {
-        program = "explorer";
-    }
-    if platform == "macos".to_string() {
-        program = "open";
-    }
-    if platform == "linux".to_string() {
-        program = "xdg-open";
-    }
-    Command::new(program).arg(path).spawn().unwrap();
+    let file_path = format!(r#"{}"#, path); 
+    Command::new("explorer")
+        .arg("/select,")
+        .arg(file_path)
+        .status()
+        .expect("failed to execute command");
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
@@ -60,7 +54,6 @@ fn get_plugin_list() -> Vec<Plugin> {
 
     let path = get_current_dir() + "\\..\\src\\components\\plugins";
 
-
     if let Ok(entries) = fs::read_dir(path.clone()) {
         for entry in entries {
             if let Ok(entry) = entry {
@@ -73,7 +66,7 @@ fn get_plugin_list() -> Vec<Plugin> {
                         if let Some(captures) = re.captures(cleaned_contents.as_str()) {
                             let result = captures.get(1).unwrap().as_str();
                             let file_data = Plugin {
-                                path:file_path.to_string_lossy().into_owned(),
+                                path: file_path.to_string_lossy().into_owned(),
                                 name: result.to_string(),
                             };
                             file_data_vec.push(file_data);
@@ -87,7 +80,6 @@ fn get_plugin_list() -> Vec<Plugin> {
 }
 
 fn main() {
-
     if !Path::new("firmware").exists() {
         fs::create_dir("firmware").unwrap();
     }
@@ -100,8 +92,6 @@ fn main() {
         let data ="[\"ESP32\",\"ESP32C2\",\"ESP32C3\",\"ESP32C6\",\"ESP32S2\",\"ESP32S3\",\"ESP32H2\",\"ESP8266\",\"ESP8285\"]";
         fs::write("chip.list.json", data).unwrap();
     }
-
-    
 
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![

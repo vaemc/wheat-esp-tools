@@ -25,7 +25,6 @@
 import { ref } from "vue";
 import SerialPortSelect from "./SerialPortSelect.vue";
 import ToolList from "./ToolList.vue";
-import SimpleToolList from "./SimpleToolList.vue";
 import Terminal from "./Terminal.vue";
 import FirmwareList from "./FirmwareList.vue";
 import HistoryPath from "./HistoryPath.vue";

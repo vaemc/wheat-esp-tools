@@ -4,21 +4,6 @@ export interface HistoryPath {
   name: string;
 }
 
-export interface ToolConfig {
-  name: string;
-  toast: string;
-  cmd: string[];
-  isDrop: boolean;
-  drop?: {
-    value: string;
-    isDirectory: boolean;
-    desc: string;
-    help: string;
-    regex: string;
-  };
-}
-
-
 export interface Firmware {
   path: string;
   address: string;

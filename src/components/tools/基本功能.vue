@@ -1,21 +1,31 @@
 <template>
-  <div style="height: 100%">
-    <a-tag
-      v-for="item in list"
-      style="cursor: pointer; margin: 5px"
-      :color="getRandomColor()"
-      >{{ item }}</a-tag
-    >
-  </div>
+  <a-tag
+    v-for="item in list"
+    @click="click(item.cmd)"
+    style="cursor: pointer; margin: 5px"
+    :color="getRandomColor()"
+    >{{ item.name }}</a-tag
+  >
 </template>
 <script setup lang="ts">
 import { ref } from "vue";
-import { runCmd, generateCmd } from "../../utils/esptool";
+import { selectedPort, executedCommand } from "../../utils/common";
 
-// const cmd = ["-p", "${port}", "erase_flash"];
-// runCmd((await generateCmd(cmd)) as string[]);
+const click = (item: String[]) => {
+  executedCommand(
+    item.map((x) => {
+      if (x == "${port}") {
+        return selectedPort();
+      }
+      return x;
+    }) as String[]
+  );
+};
 
-const list = ref(["擦除固件", "获取flash大小"]);
+const list = ref([
+  { name: "擦除固件", cmd: ["-p", "${port}", "erase_flash"] },
+  { name: "获取flash大小", cmd: ["-p", "${port}", "flash_id"] },
+]);
 
 function getRandomColor() {
   const colorList = [
