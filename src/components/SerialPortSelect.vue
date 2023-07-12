@@ -12,7 +12,6 @@
 import { ref } from "vue";
 import { portStore } from "../utils/store";
 import { getSerialPortList } from "../utils/common";
-
 const selectSerialPort = ref();
 const serialPortList = ref([] as any);
 
@@ -23,13 +22,13 @@ const refreshList = async (showDefaultPort = false) => {
       label: item,
     };
   });
-
   serialPortList.value = list;
   if (list.length > 0 && showDefaultPort) {
     selectSerialPort.value = list[0].value;
     portStore().port = list[0].value;
   }
 };
+
 const focus = () => {
   refreshList();
 };

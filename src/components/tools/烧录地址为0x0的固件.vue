@@ -1,5 +1,11 @@
 <template>
-  <a-radio-group v-model:value="spiMode" button-style="solid" style="margin-bottom: 5px;">
+  <a-tag color="#108ee9">SPI MODE</a-tag>
+  <a-radio-group
+    v-model:value="spiMode"
+    button-style="solid"
+    style="margin-bottom: 5px"
+    size="small"
+  >
     <a-radio-button value="keep">keep</a-radio-button>
     <a-radio-button value="qio">qio</a-radio-button>
     <a-radio-button value="qout">qout</a-radio-button>
@@ -42,11 +48,11 @@ function generatedCommand(data: any) {
   addHistoryPath(path);
 }
 
-const drop = (path: String | String[]) => {
+const drop = (path: string | string[]) => {
   generatedCommand({ path: path });
 };
 
-const openFileDialog = (path: String | String[]) => {
+const openFileDialog = (path: string | string[]) => {
   generatedCommand({ path: path });
 };
 </script>

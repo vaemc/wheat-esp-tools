@@ -1,5 +1,4 @@
-export interface HistoryPath {
-  ellipsis: string;
+export interface Path {
   full: string;
   name: string;
 }

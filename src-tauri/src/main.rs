@@ -10,6 +10,13 @@ use std::path::Path;
 use std::process::Command;
 
 // Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
+
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
+struct Plugin {
+    path: String,
+    name: String,
+}
+
 #[tauri::command]
 fn greet(name: &str) -> String {
     format!("Hello, {}! You've been greeted from Rust!", name)
@@ -33,18 +40,12 @@ fn get_current_dir() -> String {
 
 #[tauri::command]
 fn open_file_in_explorer(path: &str) {
-    let file_path = format!(r#"{}"#, path); 
+    let file_path = format!(r#"{}"#, path);
     Command::new("explorer")
         .arg("/select,")
         .arg(file_path)
         .status()
         .expect("failed to execute command");
-}
-
-#[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
-struct Plugin {
-    path: String,
-    name: String,
 }
 
 #[tauri::command]
@@ -79,6 +80,12 @@ fn get_plugin_list() -> Vec<Plugin> {
     return file_data_vec;
 }
 
+#[tauri::command]
+fn is_file(path: &str) -> bool {
+    let metadata = fs::metadata(path).unwrap();
+    metadata.is_file()
+}
+
 fn main() {
     if !Path::new("firmware").exists() {
         fs::create_dir("firmware").unwrap();
@@ -99,7 +106,8 @@ fn main() {
             get_serial_port_list,
             get_current_dir,
             open_file_in_explorer,
-            get_plugin_list
+            get_plugin_list,
+            is_file
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

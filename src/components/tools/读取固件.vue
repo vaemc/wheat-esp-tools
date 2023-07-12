@@ -4,10 +4,10 @@
   </div>
 </template>
 <script setup lang="ts">
-const drop = (path: String | String[]) => {
+const drop = (path: string | string[]) => {
   console.log(path);
 };
-const openFileDialog = (path: String | String[]) => {
+const openFileDialog = (path: string | string[]) => {
   console.log(path);
 };
 </script>

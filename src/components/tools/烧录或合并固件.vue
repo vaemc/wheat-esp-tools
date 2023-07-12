@@ -76,7 +76,7 @@ const editFirmwareBtn = (item: Firmware) => {
 };
 
 const chipTypeList = ref(
-  (await getChipTypeList()).map((item: String) => {
+  (await getChipTypeList()).map((item: string) => {
     return {
       value: item,
       label: item,
@@ -84,11 +84,11 @@ const chipTypeList = ref(
   })
 );
 
-const openFileDialog = (path: String | String[]) => {
+const openFileDialog = (path: string | string[]) => {
   console.log(path);
 };
 
-const drop = (path: String | String[]) => {
+const drop = (path: string | string[]) => {
   console.log(path);
 };
 </script>

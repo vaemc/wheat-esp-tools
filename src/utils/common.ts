@@ -9,7 +9,7 @@ import { save } from "@tauri-apps/api/dialog";
 import { portStore } from "./store";
 import { Command } from "@tauri-apps/api/shell";
 import { terminalWrite, terminalWriteLine, refreshFirmwareList } from "./bus";
-import { HistoryPath } from "../utils/model";
+import { Path } from "../utils/model";
 import moment from "moment";
 import { historyPathStore } from "../utils/store";
 import { notification, Button } from "ant-design-vue";
@@ -34,14 +34,14 @@ export async function saveFileDialog() {
 
 export function addHistoryPath(data: string) {
   let path = data.split("\\");
-  let result = {} as HistoryPath;
+  let result = {} as Path;
   if (path.length >= 5) {
-    let temp = `${path[0]}\\${path[1]}\\${path[2]}\\...\\${
+    let ellipsis = `${path[0]}\\${path[1]}\\${path[2]}\\...\\${
       path[path.length - 2]
     }\\${path[path.length - 1]}`;
-    result = { full: data, ellipsis: temp, name: path[path.length - 1] };
+    result = { full: data, name: ellipsis };
   } else {
-    result = { full: data, ellipsis: data, name: path[path.length - 1] };
+    result = { full: data, name: data };
   }
   let historyPathList = historyPathStore().pathList;
   if (historyPathList.filter((x) => x.full === result.full).length == 0) {
@@ -50,23 +50,19 @@ export function addHistoryPath(data: string) {
 }
 
 export async function getSerialPortList() {
-  let data = (await invoke("get_serial_port_list")) as string[];
-  return data;
+  return (await invoke("get_serial_port_list")) as string[];
 }
 
 export function selectedPort() {
-  const port = portStore().port;
-  return port;
+  return portStore().port;
 }
 
 export async function getCurrentDir() {
-  let data = await invoke("get_current_dir");
-  return data;
+  return await invoke("get_current_dir");
 }
 
 export async function getPluginList() {
-  let data = await invoke("get_plugin_list");
-  return data;
+  return await invoke("get_plugin_list");
 }
 
 export async function getChipTypeList() {
@@ -159,7 +155,7 @@ export async function executedCommand(cmd: String[]) {
     ) {
       if (retryCount != 3) {
         notification["warning"]({
-          message: "端口可能被占用，正在重试...",
+          message: "端口不存在或被占用，正在重试...",
         });
 
         retryCount++;
@@ -184,6 +180,10 @@ export async function executedCommand(cmd: String[]) {
 
 export async function openFileInExplorer(path: string) {
   invoke("open_file_in_explorer", { path: path });
+}
+
+export async function isFile(path: string) {
+  return await invoke("is_file", { path: path });
 }
 
 export async function removeFile(path: string) {

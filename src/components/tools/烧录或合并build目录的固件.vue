@@ -63,11 +63,11 @@ async function generatedCommand(data: any) {
   addHistoryPath(path);
 }
 
-const drop = (path: String | String[]) => {
+const drop = (path: string | string[]) => {
   generatedCommand({ path: path });
 };
 
-const openFileDialog = (path: String | String[]) => {
+const openFileDialog = (path: string | string[]) => {
   generatedCommand({ path: path });
 };
 </script>

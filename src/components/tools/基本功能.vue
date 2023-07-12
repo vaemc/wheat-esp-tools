@@ -11,14 +11,14 @@
 import { ref } from "vue";
 import { selectedPort, executedCommand } from "../../utils/common";
 
-const click = (item: String[]) => {
+const click = (item: string[]) => {
   executedCommand(
     item.map((x) => {
       if (x == "${port}") {
         return selectedPort();
       }
       return x;
-    }) as String[]
+    }) as string[]
   );
 };
 

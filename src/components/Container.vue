@@ -28,7 +28,6 @@ import ToolList from "./ToolList.vue";
 import Terminal from "./Terminal.vue";
 import FirmwareList from "./FirmwareList.vue";
 import HistoryPath from "./HistoryPath.vue";
-
 const activeKey = ref("1");
 </script>
 <style>
@@ -37,7 +36,6 @@ const activeKey = ref("1");
   flex-flow: column;
   height: 100%;
 }
-
 .box .row.header {
   flex: 0 1 auto;
   padding: 10px 10px 0 10px;

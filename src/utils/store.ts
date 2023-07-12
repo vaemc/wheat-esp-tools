@@ -1,5 +1,5 @@
 import { defineStore } from "pinia";
-import { HistoryPath } from "../utils/model";
+import { Path } from "../utils/model";
 export const portStore = defineStore("portStore", {
   state: () => ({
     port: "",
@@ -8,7 +8,7 @@ export const portStore = defineStore("portStore", {
 
 export const historyPathStore = defineStore("historyPath", {
   state: () => ({
-    pathList: [] as HistoryPath[],
+    pathList: [] as Path[],
   }),
   persist: true,
 });

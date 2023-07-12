@@ -30,8 +30,8 @@ const props = defineProps({
 });
 
 const emit = defineEmits<{
-  (e: "openFileDialog", path: String | String[]): void;
-  (e: "drop", path: String | String[]): void;
+  (e: "openFileDialog", path: string | string[]): void;
+  (e: "drop", path: string | string[]): void;
   (e: "dropHoverDrop", {}): void;
   (e: "dropCancelled", {}): void;
 }>();
