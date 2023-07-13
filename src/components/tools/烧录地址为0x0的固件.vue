@@ -17,8 +17,8 @@
     subtitle="烧录地址为0x0的固件"
     :isDirectory="false"
     :isMultiple="false"
-    @openFileDialog="openFileDialog"
-    @drop="drop"
+    @open="handle"
+    @drop="handle"
   />
 </template>
 <script setup lang="ts">
@@ -48,11 +48,8 @@ function generatedCommand(data: any) {
   addHistoryPath(path);
 }
 
-const drop = (path: string | string[]) => {
+const handle = (path: string | string[]) => {
   generatedCommand({ path: path });
 };
 
-const openFileDialog = (path: string | string[]) => {
-  generatedCommand({ path: path });
-};
 </script>

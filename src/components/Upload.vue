@@ -5,11 +5,11 @@
         :style="{ fontSize: '40px', color: '#08c' }"
       ></inbox-outlined>
       <span style="display: block; font-size: 16px; align-self: center">{{
-        props.title
+        title
       }}</span>
       <span
         style="display: block; font-size: 14px; color: gray; align-self: center"
-        >{{ props.subtitle }}
+        >{{ subtitle }}
       </span>
     </div>
   </div>
@@ -22,7 +22,7 @@ import { open } from "@tauri-apps/api/dialog";
 
 const dropBoxClass = ref("dropBox");
 
-const props = defineProps({
+const { title, subtitle, isDirectory, isMultiple } = defineProps({
   title: { type: String, required: true },
   subtitle: { type: String, required: true },
   isDirectory: { type: Boolean, default: false },
@@ -30,7 +30,7 @@ const props = defineProps({
 });
 
 const emit = defineEmits<{
-  (e: "openFileDialog", path: string | string[]): void;
+  (e: "open", path: string | string[]): void;
   (e: "drop", path: string | string[]): void;
   (e: "dropHoverDrop", {}): void;
   (e: "dropCancelled", {}): void;
@@ -38,18 +38,18 @@ const emit = defineEmits<{
 
 const openFileDialog = async () => {
   const selected = await open({
-    directory: props.isDirectory,
-    multiple: props.isMultiple,
+    directory: isDirectory,
+    multiple: isMultiple,
   });
 
   if (selected !== null) {
-    emit("openFileDialog", selected);
+    emit("open", selected);
   }
 };
 
 const drop = await listen("tauri://file-drop", (event: any) => {
   dropBoxClass.value = "dropBox";
-  if (event.payload.length == 1) {
+  if (event.payload.length == 1 && !isMultiple) {
     emit("drop", event.payload[0]);
   } else {
     emit("drop", event.payload);

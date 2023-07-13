@@ -13,8 +13,8 @@
     subtitle="合并build目录的固件"
     :isDirectory="true"
     :isMultiple="false"
-    @openFileDialog="openFileDialog"
-    @drop="drop"
+    @open="handle"
+    @drop="handle"
   />
 </template>
 <script setup lang="ts">
@@ -63,11 +63,7 @@ async function generatedCommand(data: any) {
   addHistoryPath(path);
 }
 
-const drop = (path: string | string[]) => {
-  generatedCommand({ path: path });
-};
-
-const openFileDialog = (path: string | string[]) => {
+const handle = (path: String | String[]) => {
   generatedCommand({ path: path });
 };
 </script>
