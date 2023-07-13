@@ -1,6 +1,6 @@
 <template>
   <div>
-    <div :class="dropBoxClass" @click="openFileDialog">
+    <div :class="dropBoxClass" @click="handle">
       <inbox-outlined
         :style="{ fontSize: '40px', color: '#08c' }"
       ></inbox-outlined>
@@ -36,7 +36,7 @@ const emit = defineEmits<{
   (e: "dropCancelled", {}): void;
 }>();
 
-const openFileDialog = async () => {
+const handle = async () => {
   const selected = await open({
     directory: isDirectory,
     multiple: isMultiple,
