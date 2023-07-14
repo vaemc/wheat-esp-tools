@@ -1,7 +1,7 @@
 <template>
   <div style="overflow: auto">
     <a-popover
-      v-for="item in props.pathList"
+      v-for="item in pathList"
       :title="item.full"
       trigger="click"
     >
@@ -39,6 +39,7 @@
 </template>
 <script setup lang="ts">
 import { ref } from "vue";
+import { message } from "ant-design-vue";
 import {
   executedCommand,
   openFileInExplorer,
@@ -47,7 +48,7 @@ import {
   isFile,
 } from "../utils/common";
 import { Path } from "../utils/model";
-const props = defineProps<{
+const {pathList} = defineProps<{
   pathList: Path[];
 }>();
 const spiMode = ref("keep");
@@ -90,10 +91,13 @@ async function flash(item: Path) {
   ];
   executedCommand(cmd);
 }
+
 function open(item: Path) {
   openFileInExplorer(item.full);
 }
+
 async function remove(item: Path) {
   emit("remove", item.full);
+  message.success("删除成功！");
 }
 </script>

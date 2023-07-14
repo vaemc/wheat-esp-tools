@@ -40,12 +40,6 @@
     :isMultiple="true"
   />
 
-  <a-select
-    style="width: 100%; margin: 5px 0"
-    placeholder="选择芯片"
-    :options="chipTypeList"
-  ></a-select>
-
   <a-table
     :pagination="false"
     :dataSource="firmwareList"
@@ -62,21 +56,58 @@
   </a-table>
 
   <div style="display: flex">
-    <a-button type="primary" style="flex: 1; margin: 5px" block>合并</a-button>
-    <a-button type="primary" style="flex: 1; margin: 5px" block>烧录</a-button>
+    <a-button type="primary" @click="flash" style="flex: 1; margin: 5px" block
+      >烧录</a-button
+    >
+
+    <!-- <a-popover title="选择芯片" trigger="focus">
+      <template #content>
+        <a-select
+          style="width: 100%; margin: 5px 0"
+          v-model:value="selectedChip"
+          placeholder="选择芯片"
+          :options="chipTypeList"
+        ></a-select>
+      </template>
+      <a-button type="primary" @click="merge" style="flex: 1; margin: 5px" block
+        >合并</a-button
+      >
+    </a-popover> -->
+    <a-dropdown>
+      <template #overlay>
+        <a-menu>
+          <a-menu-item
+            @click="merge(item)"
+            :key="item"
+            v-for="item in chipTypeList"
+            >{{ item }}</a-menu-item
+          >
+        </a-menu>
+      </template>
+      <a-button type="primary" style="flex: 1; margin: 5px" block>
+        合并
+      </a-button>
+    </a-dropdown>
   </div>
 </template>
 <script setup lang="ts">
 import { ref } from "vue";
-import { message } from "ant-design-vue";
 import { Firmware } from "../../utils/model";
-import { getChipTypeList } from "../../utils/common";
+import { message } from "ant-design-vue";
+import {
+  getChipTypeList,
+  selectedPort,
+  executedCommand,
+  openFileInExplorer,
+  getCurrentDir,
+} from "../../utils/common";
 import { open } from "@tauri-apps/api/dialog";
+import moment from "moment";
 const spiMode = ref("keep");
 const firmware = ref({} as Firmware);
 const firmwareList = ref([] as Firmware[]);
 const firmwareModal = ref({ visible: false, title: "添加固件", isEdit: false });
-
+const currentDir = await getCurrentDir();
 const columns = ref([
   {
     title: "路径",
@@ -97,6 +128,45 @@ const columns = ref([
   },
 ]);
 
+const flash = () => {
+  if (firmwareList.value.length == 0) {
+    message.warning("请先添加固件");
+    return;
+  }
+  let cmd = [
+    "-p",
+    selectedPort(),
+    "-b",
+    "1152000",
+    "--before=default_reset",
+    "--after=hard_reset",
+    "write_flash",
+    ...firmwareList.value.flatMap((x) => [x.address, x.path]),
+  ];
+  executedCommand(cmd);
+};
+
+const merge = async (item: string) => {
+  if (firmwareList.value.length == 0) {
+    message.warning("请先添加固件");
+    return;
+  }
+  let filename = `${currentDir}\\firmware\\${item}-merge-bin-${moment().format(
+    "YYYYMMDDHHmmss"
+  )}.bin`;
+  let cmd = [
+    "--chip",
+    item,
+    "merge_bin",
+    "-o",
+    filename,
+    ...firmwareList.value.flatMap((x) => [x.address, x.path]),
+  ];
+  executedCommand(cmd);
+  await new Promise((r) => setTimeout(r, 2500));
+  openFileInExplorer(filename);
+};
+
 const removeFirmwareBtn = (item: Firmware) => {
   firmwareList.value = firmwareList.value.filter(
     (x: Firmware) => x.path != item.path
@@ -108,18 +178,10 @@ const editFirmwareBtn = (item: Firmware) => {
   firmwareModal.value.visible = true;
   firmwareModal.value.title = `编辑固件`;
   firmwareModal.value.isEdit = true;
-
   firmware.value = item;
 };
 
-const chipTypeList = ref(
-  (await getChipTypeList()).map((item: string) => {
-    return {
-      value: item,
-      label: item,
-    };
-  })
-);
+const chipTypeList = ref(await getChipTypeList());
 
 const handle = (path: string[]) => {
   let regex = /0x[\da-f]+/gi;
