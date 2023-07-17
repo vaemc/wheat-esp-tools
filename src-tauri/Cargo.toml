@@ -1,7 +1,7 @@
 [package]
 name = "wheat-esp-tools"
 version = "0.0.0"
-description = "wheat esp tools"
+description = "wheat-esp-tools"
 authors = ["you"]
 license = ""
 repository = ""
@@ -27,5 +27,5 @@ regex = "1.9.0"
 custom-protocol = ["tauri/custom-protocol"]
 
 [profile.release.package.wry]
-debug = true
-debug-assertions = true
+# debug = true
+# debug-assertions = true

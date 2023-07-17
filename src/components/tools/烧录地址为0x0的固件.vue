@@ -1,24 +1,12 @@
 <template>
-  <a-tag color="#108ee9">SPI MODE</a-tag>
-  <a-radio-group
-    v-model:value="spiMode"
-    button-style="solid"
-    style="margin-bottom: 5px"
-    size="small"
-  >
-    <a-radio-button value="keep">keep</a-radio-button>
-    <a-radio-button value="qio">qio</a-radio-button>
-    <a-radio-button value="qout">qout</a-radio-button>
-    <a-radio-button value="dio">dio</a-radio-button>
-    <a-radio-button value="dout">dout</a-radio-button>
-  </a-radio-group>
+  <SPIMode v-model="selectedMode" />
   <Upload
     title="选择或者拖拽文件到此"
     subtitle="烧录地址为0x0的固件"
     :isDirectory="false"
     :isMultiple="false"
-    @open="handle"
-    @drop="handle"
+    @open="uploadHandle"
+    @drop="uploadHandle"
   />
 </template>
 <script setup lang="ts">
@@ -28,8 +16,8 @@ import {
   addHistoryPath,
 } from "../../utils/common";
 import { ref } from "vue";
-
-const spiMode = ref("keep");
+import SPIMode from "../SPIMode.vue";
+const selectedMode = ref("keep");
 
 function generatedCommand(data: any) {
   const { path } = data;
@@ -40,7 +28,7 @@ function generatedCommand(data: any) {
     "1152000",
     "write_flash",
     "--flash_mode",
-    spiMode.value,
+    selectedMode.value,
     "0x0",
     path,
   ];
@@ -48,8 +36,7 @@ function generatedCommand(data: any) {
   addHistoryPath(path);
 }
 
-const handle = (path: string | string[]) => {
+const uploadHandle = (path: string | string[]) => {
   generatedCommand({ path: path });
 };
-
 </script>

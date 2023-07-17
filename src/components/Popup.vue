@@ -7,19 +7,7 @@
     >
       <template #content>
         <view style="display: block">
-          <a-tag color="#108ee9">SPI MODE</a-tag>
-          <a-radio-group
-            v-model:value="spiMode"
-            button-style="solid"
-            style="margin-bottom: 5px"
-            size="small"
-          >
-            <a-radio-button value="keep">keep</a-radio-button>
-            <a-radio-button value="qio">qio</a-radio-button>
-            <a-radio-button value="qout">qout</a-radio-button>
-            <a-radio-button value="dio">dio</a-radio-button>
-            <a-radio-button value="dout">dout</a-radio-button>
-          </a-radio-group>
+          <SPIMode v-model="selectedMode" />
         </view>
         <view>
           <a-button style="margin: 3px" @click="flash(item)">烧录</a-button>
@@ -40,6 +28,7 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import { message } from "ant-design-vue";
+import SPIMode from "./SPIMode.vue";
 import {
   executedCommand,
   openFileInExplorer,
@@ -47,11 +36,11 @@ import {
   getFlasherArgs,
   isFile,
 } from "../utils/common";
+const selectedMode = ref("keep");
 import { Path } from "../utils/model";
 const {pathList} = defineProps<{
   pathList: Path[];
 }>();
-const spiMode = ref("keep");
 
 const emit = defineEmits<{
   (e: "remove", path: string): void;
@@ -72,7 +61,7 @@ async function flash(item: Path) {
       "--after=hard_reset",
       "write_flash",
       "--flash_mode",
-      spiMode.value,
+      selectedMode.value,
       ...appInfo.flashArgs,
     ];
     executedCommand(cmd);
@@ -85,7 +74,7 @@ async function flash(item: Path) {
     "1152000",
     "write_flash",
     "--flash_mode",
-    spiMode.value,
+    selectedMode.value,
     "0x0",
     item.full,
   ];

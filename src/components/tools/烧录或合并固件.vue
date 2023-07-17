@@ -19,24 +19,12 @@
       </a-form-item>
     </a-form>
   </a-modal>
-  <a-tag color="#108ee9">SPI MODE</a-tag>
-  <a-radio-group
-    v-model:value="spiMode"
-    button-style="solid"
-    style="margin-bottom: 5px"
-    size="small"
-  >
-    <a-radio-button value="keep">keep</a-radio-button>
-    <a-radio-button value="qio">qio</a-radio-button>
-    <a-radio-button value="qout">qout</a-radio-button>
-    <a-radio-button value="dio">dio</a-radio-button>
-    <a-radio-button value="dout">dout</a-radio-button>
-  </a-radio-group>
+  <SPIMode v-model="selectedMode" />
   <Upload
     title="选择或者拖拽多个bin文件到此"
     subtitle="工具可以自动解析结尾使用下划线加烧录地址的固件,如 'ESP32_0x222.bin'"
-    @open="handle"
-    @drop="handle"
+    @open="uploadHandle"
+    @drop="uploadHandle"
     :isMultiple="true"
   />
 
@@ -56,28 +44,18 @@
   </a-table>
 
   <div style="display: flex">
-    <a-button type="primary" @click="flash" style="flex: 1; margin: 5px" block
+    <a-button
+      type="primary"
+      @click="handle(flash)"
+      style="flex: 1; margin: 5px"
+      block
       >烧录</a-button
     >
-
-    <!-- <a-popover title="选择芯片" trigger="focus">
-      <template #content>
-        <a-select
-          style="width: 100%; margin: 5px 0"
-          v-model:value="selectedChip"
-          placeholder="选择芯片"
-          :options="chipTypeList"
-        ></a-select>
-      </template>
-      <a-button type="primary" @click="merge" style="flex: 1; margin: 5px" block
-        >合并</a-button
-      >
-    </a-popover> -->
     <a-dropdown>
       <template #overlay>
         <a-menu>
           <a-menu-item
-            @click="merge(item)"
+            @click="handle(merge, item)"
             :key="item"
             v-for="item in chipTypeList"
             >{{ item }}</a-menu-item
@@ -101,9 +79,10 @@ import {
   openFileInExplorer,
   getCurrentDir,
 } from "../../utils/common";
+import SPIMode from "../SPIMode.vue";
+const selectedMode = ref("keep");
 import { open } from "@tauri-apps/api/dialog";
 import moment from "moment";
-const spiMode = ref("keep");
 const firmware = ref({} as Firmware);
 const firmwareList = ref([] as Firmware[]);
 const firmwareModal = ref({ visible: false, title: "添加固件", isEdit: false });
@@ -129,10 +108,6 @@ const columns = ref([
 ]);
 
 const flash = () => {
-  if (firmwareList.value.length == 0) {
-    message.warning("请先添加固件");
-    return;
-  }
   let cmd = [
     "-p",
     selectedPort(),
@@ -141,16 +116,14 @@ const flash = () => {
     "--before=default_reset",
     "--after=hard_reset",
     "write_flash",
+    "--flash_mode",
+    selectedMode.value,
     ...firmwareList.value.flatMap((x) => [x.address, x.path]),
   ];
   executedCommand(cmd);
 };
 
 const merge = async (item: string) => {
-  if (firmwareList.value.length == 0) {
-    message.warning("请先添加固件");
-    return;
-  }
   let filename = `${currentDir}\\firmware\\${item}-merge-bin-${moment().format(
     "YYYYMMDDHHmmss"
   )}.bin`;
@@ -165,6 +138,25 @@ const merge = async (item: string) => {
   executedCommand(cmd);
   await new Promise((r) => setTimeout(r, 2500));
   openFileInExplorer(filename);
+};
+
+const handle = (fun: Function, data: string = "") => {
+  if (firmwareList.value.length == 0) {
+    message.warning("请添加固件");
+    return;
+  }
+
+  if (firmwareList.value.filter((x) => x.address == "").length > 0) {
+    message.warning("烧录地址未填写");
+    return;
+  }
+
+  if (firmwareList.value.filter((x) => x.path == "").length > 0) {
+    message.warning("固件路径未填写");
+    return;
+  }
+
+  fun(data);
 };
 
 const removeFirmwareBtn = (item: Firmware) => {
@@ -183,7 +175,7 @@ const editFirmwareBtn = (item: Firmware) => {
 
 const chipTypeList = ref(await getChipTypeList());
 
-const handle = (path: string[]) => {
+const uploadHandle = (path: string[]) => {
   let regex = /0x[\da-f]+/gi;
   firmwareList.value = path.map((item) => {
     console.log(item);

@@ -96,7 +96,7 @@ fn main() {
     }
 
     if !Path::new("chip.list.json").exists() {
-        let data ="[\"ESP32\",\"ESP32C2\",\"ESP32C3\",\"ESP32C6\",\"ESP32S2\",\"ESP32S3\",\"ESP32H2\",\"ESP8266\",\"ESP8285\"]";
+        let data ="[\"ESP32\",\"ESP32C2\",\"ESP32C3\",\"ESP32C6\",\"ESP32S2\",\"ESP32S3\",\"ESP32H2\",\"ESP8266\"]";
         fs::write("chip.list.json", data).unwrap();
     }
 

@@ -3,6 +3,7 @@
     v-model:value="option"
     style="margin-bottom: 5px"
     button-style="solid"
+    size="small"
   >
     <a-radio-button value="flash">烧录</a-radio-button>
     <a-radio-button value="merge">合并</a-radio-button>
@@ -13,8 +14,8 @@
     subtitle="合并build目录的固件"
     :isDirectory="true"
     :isMultiple="false"
-    @open="handle"
-    @drop="handle"
+    @open="uploadHandle"
+    @drop="uploadHandle"
   />
 </template>
 <script setup lang="ts">
@@ -63,7 +64,7 @@ async function generatedCommand(data: any) {
   addHistoryPath(path);
 }
 
-const handle = (path: String | String[]) => {
+const uploadHandle = (path: String | String[]) => {
   generatedCommand({ path: path });
 };
 </script>
