@@ -28,6 +28,13 @@ import ToolList from "./ToolList.vue";
 import Terminal from "./Terminal.vue";
 import FirmwareList from "./FirmwareList.vue";
 import HistoryPath from "./HistoryPath.vue";
+import WebSocket from "tauri-plugin-websocket-api";
+
+const ws = await WebSocket.connect("ws://localhost:8686");
+
+await ws.send("Hello World");
+
+await ws.disconnect();
 const activeKey = ref("1");
 </script>
 <style>

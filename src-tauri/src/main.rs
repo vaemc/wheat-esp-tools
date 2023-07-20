@@ -101,6 +101,7 @@ fn main() {
     }
 
     tauri::Builder::default()
+        .plugin(tauri_plugin_websocket::init())
         .invoke_handler(tauri::generate_handler![
             greet,
             get_serial_port_list,

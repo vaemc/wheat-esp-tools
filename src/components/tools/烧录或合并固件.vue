@@ -177,13 +177,13 @@ const chipTypeList = ref(await getChipTypeList());
 
 const uploadHandle = (path: string[]) => {
   let regex = /0x[\da-f]+/gi;
-  firmwareList.value = path.map((item) => {
+  path.map((item) => {
     console.log(item);
     let address = item.match(regex);
-    return {
+    firmwareList.value.push({
       path: item,
       address: address == null ? "" : address[0],
-    };
+    });
   });
 };
 
