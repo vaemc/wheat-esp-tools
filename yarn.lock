@@ -162,7 +162,7 @@
     core-js "^3.15.1"
     nanopop "^2.1.0"
 
-"@tauri-apps/api@1.4.0", "@tauri-apps/api@^1.4.0":
+"@tauri-apps/api@^1.4.0":
   version "1.4.0"
   resolved "https://registry.yarnpkg.com/@tauri-apps/api/-/api-1.4.0.tgz#b4013ca3d17b853f7df29fe14079ebb4d52dbffa"
   integrity sha512-Jd6HPoTM1PZSFIzq7FB8VmMu3qSSyo/3lSwLpoapW+lQ41CL5Dow2KryLg+gyazA/58DRWI9vu/XpEeHK4uMdw==
@@ -732,12 +732,6 @@ sourcemap-codec@^1.4.8:
   version "1.4.8"
   resolved "https://registry.yarnpkg.com/sourcemap-codec/-/sourcemap-codec-1.4.8.tgz#ea804bd94857402e6992d05a38ef1ae35a9ab4c4"
   integrity sha512-9NykojV5Uih4lgo5So5dtw+f0JgJX30KCNI8gwhz2J9A15wD0Ml6tjHKwf6fTSa6fAdVBdZeNOs9eJ71qCk8vA==
-
-"tauri-plugin-websocket-api@https://github.com/tauri-apps/tauri-plugin-websocket#v1":
-  version "0.0.0"
-  resolved "https://github.com/tauri-apps/tauri-plugin-websocket#81f3e26114fb20d2952212ed98c8b63ab18dc52c"
-  dependencies:
-    "@tauri-apps/api" "1.4.0"
 
 typescript@^4.9.5:
   version "4.9.5"

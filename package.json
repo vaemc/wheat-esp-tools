@@ -17,7 +17,6 @@
     "moment": "^2.29.4",
     "pinia": "^2.0.34",
     "pinia-plugin-persistedstate": "^3.1.0",
-    "tauri-plugin-websocket-api": "https://github.com/tauri-apps/tauri-plugin-websocket#v1",
     "vue": "^3.2.45",
     "vue-router": "^4.2.3",
     "xterm": "^5.1.0",
