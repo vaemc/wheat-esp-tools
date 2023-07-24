@@ -1,18 +1,15 @@
 <template>
-  <a-tag color="#108ee9">SPI MODE</a-tag>
-  <a-radio-group
-    :value="modelValue"
-    button-style="solid"
-    style="margin-bottom: 5px"
-    @change="$emit('update:modelValue', $event.target.value)"
-    size="small"
-  >
-    <a-radio-button value="keep">keep</a-radio-button>
-    <a-radio-button value="qio">qio</a-radio-button>
-    <a-radio-button value="qout">qout</a-radio-button>
-    <a-radio-button value="dio">dio</a-radio-button>
-    <a-radio-button value="dout">dout</a-radio-button>
-  </a-radio-group>
+  <a-tooltip>
+    <template #title>SPI Mode</template>
+    <a-radio-group :value="modelValue" button-style="solid" style="margin-bottom: 5px"
+      @change="$emit('update:modelValue', $event.target.value)" size="small">
+      <a-radio-button value="keep">keep</a-radio-button>
+      <a-radio-button value="qio">qio</a-radio-button>
+      <a-radio-button value="qout">qout</a-radio-button>
+      <a-radio-button value="dio">dio</a-radio-button>
+      <a-radio-button value="dout">dout</a-radio-button>
+    </a-radio-group>
+  </a-tooltip>
 
   <!-- <a-tag style="margin-left: 5px" color="#108ee9">BAUD</a-tag>
   <a-radio-group
