@@ -1,12 +1,7 @@
 <template>
   <div style="width: 100%">
     <div id="terminal" style="height: 160px" class="xterm"></div>
-    <a-progress
-      :percent="progress.value"
-      v-if="progress.visible"
-      :status="progress.status"
-      :show-info="false"
-    />
+    <a-progress :percent="progress.value" v-if="progress.visible" :status="progress.status" :show-info="false" />
   </div>
 </template>
 <script setup lang="ts">
@@ -34,6 +29,18 @@ const terminal = new Terminal({
     magenta: "#e39ef7",
   },
 });
+
+terminal.attachCustomKeyEventHandler((arg) => {
+  if (arg.ctrlKey && arg.code === 'KeyC' && arg.type === 'keydown') {
+    const selection = terminal.getSelection()
+    if (selection) {
+      navigator.clipboard.writeText(selection)
+      return true
+    }
+  }
+  return true
+})
+
 
 emitter.on("terminalWrite", (data) => {
   terminal.write(data as string);
