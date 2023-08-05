@@ -1,29 +1,33 @@
 <template>
-  <div style="overflow: auto">
-    <a-popover
-      v-for="item in pathList"
-      :title="item.full"
-      trigger="click"
-    >
-      <template #content>
-        <view style="display: block">
-          <SPIMode v-model="selectedMode" />
-        </view>
-        <view>
-          <a-button style="margin: 3px" @click="flash(item)">烧录</a-button>
-          <a-button style="margin: 3px" @click="open(item)" primary
-            >打开</a-button
+  <a-list
+    size="small"
+    :pagination="{ pageSize: 5, size: 'small' }"
+    bordered
+    :data-source="pathList"
+  >
+    <template #renderItem="{ item }">
+      <a-list-item
+        ><template #actions>
+          <a-popover title="SPI Mode">
+            <template #content>
+              <SPIMode v-model="selectedMode" />
+            </template>
+            <a @click="flash(item)">烧录</a>
+          </a-popover>
+
+          <a
+            @click="
+              () => {
+                open(item);
+              }
+            "
+            >打开</a
           >
-          <a-button style="margin: 3px" @click="remove(item)" danger
-            >删除</a-button
-          >
-        </view>
-      </template>
-      <a-button type="dashed" size="small" style="margin: 3px">{{
-        item.name
-      }}</a-button>
-    </a-popover>
-  </div>
+          <a @click="remove(item.full)">删除</a> </template
+        >{{ item.name }}</a-list-item
+      >
+    </template>
+  </a-list>
 </template>
 <script setup lang="ts">
 import { ref } from "vue";
@@ -38,7 +42,7 @@ import {
 } from "../utils/common";
 const selectedMode = ref("keep");
 import { Path } from "../utils/model";
-const {pathList} = defineProps<{
+const { pathList } = defineProps<{
   pathList: Path[];
 }>();
 
