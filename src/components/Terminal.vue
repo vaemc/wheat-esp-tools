@@ -35,7 +35,7 @@ terminal.attachCustomKeyEventHandler((arg) => {
     const selection = terminal.getSelection()
     if (selection) {
       navigator.clipboard.writeText(selection)
-      return true
+      return false
     }
   }
   return true

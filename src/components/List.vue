@@ -12,17 +12,20 @@
             <template #content>
               <SPIMode v-model="selectedMode" />
             </template>
-            <a @click="flash(item)">烧录</a>
+            <a @click="flash(item.full)">烧录</a>
           </a-popover>
 
-          <a
-            @click="
-              () => {
-                open(item);
-              }
-            "
-            >打开</a
-          >
+         <a-tooltip>
+            <template #title>在资源管理器中打开</template>
+            <a
+              @click="
+                () => {
+                  openFileInExplorer(item.full)
+                }
+              "
+              >打开</a
+            >
+          </a-tooltip>
           <a @click="remove(item.full)">删除</a> </template
         >{{ item.name }}</a-list-item
       >
@@ -50,10 +53,10 @@ const emit = defineEmits<{
   (e: "remove", path: string): void;
 }>();
 
-async function flash(item: Path) {
-  const result = await isFile(item.full);
+async function flash(path: string) {
+  const result = await isFile(path);
   if (!result) {
-    let appInfo = await getFlasherArgs(item.full);
+    let appInfo = await getFlasherArgs(path);
     let cmd = [
       "--chip",
       appInfo.chip,
@@ -80,17 +83,13 @@ async function flash(item: Path) {
     "--flash_mode",
     selectedMode.value,
     "0x0",
-    item.full,
+    path,
   ];
   executedCommand(cmd);
 }
 
-function open(item: Path) {
-  openFileInExplorer(item.full);
-}
 
-async function remove(item: Path) {
-  emit("remove", item.full);
-  message.success("删除成功！");
+async function remove(path: string) {
+  emit("remove", path);
 }
 </script>

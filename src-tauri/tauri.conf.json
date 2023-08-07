@@ -68,8 +68,8 @@
         "center": true,
         "fileDropEnabled": true,
         "theme": "Dark",
-        "height": 750,
-        "minHeight": 750,
+        "height": 800,
+        "minHeight": 800,
         "title": "WHEAT ESP TOOLS",
         "width": 900,
         "minWidth": 900

@@ -33,16 +33,8 @@ export async function saveFileDialog() {
 }
 
 export function addHistoryPath(data: string) {
-  let path = data.split("\\");
   let result = {} as Path;
-  if (path.length >= 5) {
-    let ellipsis = `${path[0]}\\${path[1]}\\${path[2]}\\...\\${
-      path[path.length - 2]
-    }\\${path[path.length - 1]}`;
-    result = { full: data, name: data };
-  } else {
-    result = { full: data, name: data };
-  }
+  result = { full: data, name: data };
   let historyPathList = historyPathStore().pathList;
   if (historyPathList.filter((x) => x.full === result.full).length == 0) {
     historyPathStore().pathList.push(result);
@@ -117,8 +109,8 @@ export async function executedCommand(cmd: String[]) {
   let result = await esptoolExists();
   if (!result) {
     notification.open({
-      message: "未检测到esptool",
-      description: "请将esptool放在软件根目录esptool文件夹！",
+      message: "未找到esptool",
+      description: "请将乐鑫官方esptool放在esptool文件夹！",
       btn: () =>
         h(
           Button,
