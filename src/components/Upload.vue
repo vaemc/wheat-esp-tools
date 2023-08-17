@@ -41,7 +41,6 @@ const handle = async () => {
     directory: isDirectory,
     multiple: isMultiple,
   });
-
   if (selected !== null) {
     emit("open", selected);
   }

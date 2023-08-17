@@ -88,7 +88,6 @@ async function flash(path: string) {
   executedCommand(cmd);
 }
 
-
 async function remove(path: string) {
   emit("remove", path);
 }

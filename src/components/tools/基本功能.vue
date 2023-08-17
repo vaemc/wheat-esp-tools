@@ -10,7 +10,7 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import { selectedPort, executedCommand } from "../../utils/common";
-
+defineProps(["drop"]);
 const click = (item: string[]) => {
   executedCommand(
     item.map((x) => {

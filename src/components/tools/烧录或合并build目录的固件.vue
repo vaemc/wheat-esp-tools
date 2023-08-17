@@ -10,6 +10,7 @@
   </a-radio-group>
 
   <Upload
+    v-if="drop"
     title="选择或者拖拽文件到此"
     subtitle="合并build目录的固件"
     :isDirectory="true"
@@ -28,6 +29,8 @@ import {
   openFileInExplorer,
   addHistoryPath,
 } from "../../utils/common";
+
+defineProps(["drop"]);
 const currentDir = await getCurrentDir();
 const option = ref("flash");
 async function generatedCommand(data: any) {

@@ -1,6 +1,7 @@
 <template>
   <SPIMode v-model="selectedMode" />
   <Upload
+    v-if="drop"
     title="选择或者拖拽文件到此"
     subtitle="烧录地址为0x0的固件"
     :isDirectory="false"
@@ -17,8 +18,8 @@ import {
 } from "../../utils/common";
 import { ref } from "vue";
 import SPIMode from "../SPIMode.vue";
+defineProps(["drop"]);
 const selectedMode = ref("keep");
-
 function generatedCommand(data: any) {
   const { path } = data;
   let cmd = [

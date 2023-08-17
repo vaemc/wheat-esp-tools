@@ -28,8 +28,6 @@ import ToolList from "./ToolList.vue";
 import Terminal from "./Terminal.vue";
 import FirmwareList from "./FirmwareList.vue";
 import HistoryPath from "./HistoryPath.vue";
-
-
 import { resourceDir } from '@tauri-apps/api/path';
 const resourceDirPath = await resourceDir();
 console.log(resourceDirPath);

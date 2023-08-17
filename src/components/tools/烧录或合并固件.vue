@@ -21,6 +21,7 @@
   </a-modal>
   <SPIMode v-model="selectedMode" />
   <Upload
+    v-if="drop"
     title="选择或者拖拽多个bin文件到此"
     subtitle="工具可以自动解析结尾使用下划线加烧录地址的固件,如 'ESP32_0x222.bin'"
     @open="uploadHandle"
@@ -79,10 +80,13 @@ import {
   openFileInExplorer,
   getCurrentDir,
 } from "../../utils/common";
+
 import SPIMode from "../SPIMode.vue";
-const selectedMode = ref("keep");
 import { open } from "@tauri-apps/api/dialog";
 import moment from "moment";
+
+defineProps(["drop"]);
+const selectedMode = ref("keep");
 const firmware = ref({} as Firmware);
 const firmwareList = ref([] as Firmware[]);
 const firmwareModal = ref({ visible: false, title: "添加固件", isEdit: false });
