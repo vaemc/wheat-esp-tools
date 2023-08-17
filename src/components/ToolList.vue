@@ -28,7 +28,7 @@ toolList.map((item) => {
   });
 });
 
-const tabChange = (item: any) => {
+const tabChange = (item: string) => {
   compName.value = item;
   if (previousCompName.value != undefined) {
     components.value.map((x) => {
