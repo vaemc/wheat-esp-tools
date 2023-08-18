@@ -37,6 +37,9 @@
     class="scroll"
   >
     <template #bodyCell="{ column, record }">
+      <template v-if="column.key === 'check'">
+        <a-checkbox v-model:checked="record.check"></a-checkbox>
+      </template>
       <template v-if="column.key === 'action'">
         <a @click="editFirmwareBtn(record)">编辑</a> |
         <a @click="removeFirmwareBtn(record)">删除</a>
@@ -93,6 +96,12 @@ const firmwareModal = ref({ visible: false, title: "添加固件", isEdit: false
 const currentDir = await getCurrentDir();
 const columns = ref([
   {
+    title: "选择",
+    dataIndex: "check",
+    key: "check",
+    width: 50,
+  },
+  {
     title: "路径",
     dataIndex: "path",
     key: "path",
@@ -122,7 +131,7 @@ const flash = () => {
     "write_flash",
     "--flash_mode",
     selectedMode.value,
-    ...firmwareList.value.flatMap((x) => [x.address, x.path]),
+    ...firmwareList.value.filter(x=>x.check).flatMap((x) => [x.address, x.path]),
   ];
   executedCommand(cmd);
 };
@@ -137,7 +146,7 @@ const merge = async (item: string) => {
     "merge_bin",
     "-o",
     filename,
-    ...firmwareList.value.flatMap((x) => [x.address, x.path]),
+    ...firmwareList.value.filter(x=>x.check).flatMap((x) => [x.address, x.path]),
   ];
   executedCommand(cmd);
   await new Promise((r) => setTimeout(r, 2500));
@@ -147,6 +156,11 @@ const merge = async (item: string) => {
 const handle = (fun: Function, data: string = "") => {
   if (firmwareList.value.length == 0) {
     message.warning("请添加固件");
+    return;
+  }
+
+  if (firmwareList.value.filter((x) => x.check).length == 0) {
+    message.warning("请最少勾选一个固件");
     return;
   }
 
@@ -185,6 +199,7 @@ const uploadHandle = (path: string[]) => {
     console.log(item);
     let address = item.match(regex);
     firmwareList.value.push({
+      check: false,
       path: item,
       address: address == null ? "" : address[0],
     });

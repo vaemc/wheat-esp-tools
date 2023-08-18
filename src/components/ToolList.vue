@@ -4,6 +4,8 @@
       <a-tab-pane v-for="item in components" :tab="item.name" :key="item.name">
         <component :drop="item.drop" :is="item.component"></component>
       </a-tab-pane>
+      <a-tab-pane tab="历史操作" key="1"><HistoryPath /> </a-tab-pane>
+      <a-tab-pane tab="快捷烧录" key="2"><FirmwareList /> </a-tab-pane>
     </a-tabs>
   </a-card>
 </template>
@@ -11,6 +13,9 @@
 import { ref, defineAsyncComponent, markRaw } from "vue";
 import { balanced } from "../utils/balanced-match";
 import { usePrevious } from "@vueuse/core";
+import FirmwareList from "./FirmwareList.vue";
+import HistoryPath from "./HistoryPath.vue";
+
 const toolList = Object.keys(import.meta.glob("./tools/*.vue")).map((item) => {
   return balanced("./tools/", ".vue", item)?.body;
 });
@@ -28,7 +33,10 @@ toolList.map((item) => {
   });
 });
 
-const tabChange = (item: string) => {
+const tabChange = (item: any) => {
+  if (item == "1" || item == "2") {
+    return;
+  }
   compName.value = item;
   if (previousCompName.value != undefined) {
     components.value.map((x) => {

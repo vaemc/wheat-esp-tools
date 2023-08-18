@@ -1,7 +1,7 @@
 <template>
   <a-list
     size="small"
-    :pagination="{ pageSize: 5, size: 'small' }"
+    :pagination="{ pageSize: 10, size: 'small' }"
     bordered
     :data-source="pathList"
   >

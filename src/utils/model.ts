@@ -4,6 +4,7 @@ export interface Path {
 }
 
 export interface Firmware {
+  check:boolean;
   path: string;
   address: string;
 }

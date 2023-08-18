@@ -6,14 +6,6 @@
     <div class="row content">
       <div style="display: flex; flex-direction: column; height: 100%">
         <ToolList style="margin-top: 5px; flex: 1" />
-        <a-card size="small" style="margin-top: 5px; flex: 1">
-          <a-tabs v-model:activeKey="activeKey">
-            <a-tab-pane key="1" tab="历史操作"><HistoryPath /></a-tab-pane>
-            <a-tab-pane key="2" tab="快捷烧录" force-render
-              ><FirmwareList
-            /></a-tab-pane>
-          </a-tabs>
-        </a-card>
       </div>
     </div>
     <div class="row footer">
@@ -28,7 +20,7 @@ import ToolList from "./ToolList.vue";
 import Terminal from "./Terminal.vue";
 import FirmwareList from "./FirmwareList.vue";
 import HistoryPath from "./HistoryPath.vue";
-import { resourceDir } from '@tauri-apps/api/path';
+import { resourceDir } from "@tauri-apps/api/path";
 const resourceDirPath = await resourceDir();
 console.log(resourceDirPath);
 
@@ -42,11 +34,11 @@ const activeKey = ref("1");
 }
 .box .row.header {
   flex: 0 1 auto;
-  padding: 10px 10px 0 10px;
+  padding: 5px 5px 0 5px;
 }
 .box .row.content {
   flex: 1 1 auto;
-  padding: 0 10px 0 10px;
+  padding: 0 5px 0 5px;
 }
 .box .row.footer {
   flex: 0 1 auto;
