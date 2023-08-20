@@ -2,12 +2,15 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 use regex::Regex;
+use serde_json::Value;
 use serialport::available_ports;
 use std::env;
 use std::fs;
 use std::io::Read;
 use std::path::Path;
 use std::process::Command;
+use std::thread;
+use tauri::Manager;
 
 // Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
 
@@ -86,6 +89,34 @@ fn is_file(path: &str) -> bool {
     metadata.is_file()
 }
 
+fn read_flash(array: Vec<String>, window: tauri::Window) {
+    thread::spawn(move || loop {
+        let mut child = Command::new("./esptool/esptool")
+            .args(&array)
+            .spawn()
+            .unwrap();
+
+        let stdout = child.stdout.as_mut().unwrap();
+        let mut buffer = [0; 2048];
+        loop {
+            let n = match stdout.read(&mut buffer) {
+                Ok(n) if n == 0 => break,
+                Ok(n) => n,
+                Err(e) => {
+                    eprintln!("failed to read stdout: {}", e);
+                    break;
+                }
+            };
+            if let Ok(data) = std::str::from_utf8(&buffer[0..n]) {
+                window.emit("read_flash_output", data).unwrap();
+            }
+        }
+
+        let status = child.wait().unwrap();
+        println!("child exited with status: {}", status);
+    });
+}
+
 fn main() {
     if !Path::new("firmware").exists() {
         fs::create_dir("firmware").unwrap();
@@ -101,6 +132,25 @@ fn main() {
     }
 
     tauri::Builder::default()
+        .setup(|app| {
+            let window = app.get_window("main").unwrap();
+            let window_clone = window.clone();
+            window.listen_global("read_flash", move |event| {
+                let json_value: Value =
+                    serde_json::from_str(event.payload().unwrap().to_string().as_str())
+                        .expect("Failed to parse JSON");
+                let string_array: Vec<String> = json_value
+                    .as_array()
+                    .expect("JSON value is not an array")
+                    .iter()
+                    .map(|v| v.as_str().expect("JSON value is not a string").to_owned())
+                    .collect();
+
+                read_flash(string_array, window_clone.clone());
+            });
+
+            Ok(())
+        })
         .invoke_handler(tauri::generate_handler![
             greet,
             get_serial_port_list,

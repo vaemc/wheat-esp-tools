@@ -4,8 +4,12 @@
       <a-tab-pane v-for="item in components" :tab="item.name" :key="item.name">
         <component :drop="item.drop" :is="item.component"></component>
       </a-tab-pane>
-      <a-tab-pane tab="历史操作" key="1"><HistoryPath /> </a-tab-pane>
-      <a-tab-pane tab="快捷烧录" key="2"><FirmwareList /> </a-tab-pane>
+      <a-tab-pane tab="历史操作" key="1">
+        <HistoryPath />
+      </a-tab-pane>
+      <a-tab-pane tab="快捷烧录" key="2"><a href="#" @click="openFileInExplorer(currentDir + ' \\firmware')">打开文件夹</a>
+        <FirmwareList />
+      </a-tab-pane>
     </a-tabs>
   </a-card>
 </template>
@@ -15,6 +19,8 @@ import { balanced } from "../utils/balanced-match";
 import { usePrevious } from "@vueuse/core";
 import FirmwareList from "./FirmwareList.vue";
 import HistoryPath from "./HistoryPath.vue";
+import { openFileInExplorer, getCurrentDir, } from "../utils/common";
+const currentDir = await getCurrentDir();
 
 const toolList = Object.keys(import.meta.glob("./tools/*.vue")).map((item) => {
   return balanced("./tools/", ".vue", item)?.body;
