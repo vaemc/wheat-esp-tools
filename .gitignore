@@ -1,8 +1,8 @@
 
-src-tauri/esptool
+src-tauri/tools
 src-tauri/firmware
 
-src-tauri/target/release/esptool
+src-tauri/target/release/tools
 src-tauri/target/release/firmware
 # Logs
 logs

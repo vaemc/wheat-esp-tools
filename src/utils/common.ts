@@ -57,6 +57,14 @@ export async function getPluginList() {
   return await invoke("get_plugin_list");
 }
 
+export async function writeAllText(path: string, text: string) {
+  return await invoke("write_all_text", { path: path, text: text });
+}
+
+export async function getFulPartitionTable(text: string) {
+  return await invoke("get_full_partition_table", {text: text });
+}
+
 export async function getChipTypeList() {
   let jsonData = JSON.parse(
     await readTextFile((await getCurrentDir()) + "\\chip.list.json")
@@ -76,7 +84,7 @@ export async function getFirmwareList() {
 
 export async function esptoolExists() {
   let list = (await readDir(
-    (await getCurrentDir()) + "\\esptool"
+    (await getCurrentDir()) + "\\tools"
   )) as FileEntry[];
   let result = list.find((x) => x.name?.includes("esptool")) != null;
   if (result) {
@@ -110,7 +118,7 @@ export async function executedCommand(cmd: String[]) {
   if (!result) {
     notification.open({
       message: "未找到esptool",
-      description: "请将乐鑫官方esptool放在esptool文件夹！",
+      description: "请将乐鑫官方esptool放在tools文件夹！",
       btn: () =>
         h(
           Button,
@@ -118,7 +126,7 @@ export async function executedCommand(cmd: String[]) {
             type: "primary",
             size: "small",
             onClick: () => {
-              openFileInExplorer(currentDir + "\\esptool");
+              openFileInExplorer(currentDir + "\\tools");
             },
           },
           {

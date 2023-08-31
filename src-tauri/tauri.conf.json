@@ -35,7 +35,12 @@
         "scope": [
           {
             "name": "esptool",
-            "cmd": "./esptool/esptool",
+            "cmd": "./tools/esptool",
+            "args": true
+          },
+          {
+            "name": "gen_esp32part",
+            "cmd": "./tools/gen_esp32part",
             "args": true
           }
         ]

@@ -52,78 +52,51 @@ fn open_file_in_explorer(path: &str) {
 }
 
 #[tauri::command]
-fn get_plugin_list() -> Vec<Plugin> {
-    let mut file_data_vec = Vec::new();
-    // let path = get_current_dir() + "\\plugins";
-
-    let path = get_current_dir() + "\\..\\src\\components\\plugins";
-
-    if let Ok(entries) = fs::read_dir(path.clone()) {
-        for entry in entries {
-            if let Ok(entry) = entry {
-                let file_path = entry.path();
-                if let Ok(mut file) = fs::File::open(file_path.clone()) {
-                    let mut contents = String::new();
-                    if let Ok(_) = file.read_to_string(&mut contents) {
-                        let cleaned_contents = contents.replace(" ", "").replace("\r\n", "");
-                        let re = Regex::new(r#"constpluginName="([^"]+)"#).unwrap();
-                        if let Some(captures) = re.captures(cleaned_contents.as_str()) {
-                            let result = captures.get(1).unwrap().as_str();
-                            let file_data = Plugin {
-                                path: file_path.to_string_lossy().into_owned(),
-                                name: result.to_string(),
-                            };
-                            file_data_vec.push(file_data);
-                        }
-                    }
-                }
-            }
-        }
-    }
-    return file_data_vec;
-}
-
-#[tauri::command]
 fn is_file(path: &str) -> bool {
     let metadata = fs::metadata(path).unwrap();
     metadata.is_file()
 }
 
-fn read_flash(array: Vec<String>, window: tauri::Window) {
-    thread::spawn(move || loop {
-        let mut child = Command::new("./esptool/esptool")
-            .args(&array)
-            .spawn()
-            .unwrap();
+#[tauri::command]
+fn write_all_text(path: &str, text: &str) {
+    fs::write(path, text).unwrap();
+}
 
-        let stdout = child.stdout.as_mut().unwrap();
-        let mut buffer = [0; 2048];
-        loop {
-            let n = match stdout.read(&mut buffer) {
-                Ok(n) if n == 0 => break,
-                Ok(n) => n,
-                Err(e) => {
-                    eprintln!("failed to read stdout: {}", e);
-                    break;
-                }
-            };
-            if let Ok(data) = std::str::from_utf8(&buffer[0..n]) {
-                window.emit("read_flash_output", data).unwrap();
-            }
+#[tauri::command]
+fn get_full_partition_table(text: &str) -> String {
+    fs::write(format!("{}\\partitions\\temp.csv", get_current_dir()), text).unwrap();
+
+    let gen_esp32part_path = format!("{}\\tools\\gen_esp32part.exe", get_current_dir());
+    let csv_path = format!("{}\\partitions\\temp.csv", get_current_dir());
+    let bin_path = format!("{}\\partitions\\temp.bin", get_current_dir());
+
+    let mut output = Command::new(&gen_esp32part_path)
+        .arg(&csv_path)
+        .arg(&bin_path)
+        .output()
+        .expect("error");
+
+    if String::from_utf8_lossy(&output.stderr).contains("Verifying table...") {
+        output = Command::new(&gen_esp32part_path)
+            .arg(&bin_path)
+            .arg(&csv_path)
+            .output()
+            .expect("error");
+        if String::from_utf8_lossy(&output.stderr).contains("Verifying table...") {
+            fs::read_to_string(&csv_path).expect("error")
+        } else {
+            String::from_utf8_lossy(&output.stderr).to_string()
         }
-
-        let status = child.wait().unwrap();
-        println!("child exited with status: {}", status);
-    });
+    } else {
+        String::from_utf8_lossy(&output.stderr).to_string()
+    }
 }
 
 fn main() {
-    if !Path::new("firmware").exists() {
-        fs::create_dir("firmware").unwrap();
-    }
-
-    if !Path::new("esptool").exists() {
-        fs::create_dir("esptool").unwrap();
+    for item in ["firmware", "tools", "partitions"].iter() {
+        if !Path::new(item).exists() {
+            fs::create_dir(item).unwrap();
+        }
     }
 
     if !Path::new("chip.list.json").exists() {
@@ -135,19 +108,6 @@ fn main() {
         .setup(|app| {
             let window = app.get_window("main").unwrap();
             let window_clone = window.clone();
-            window.listen_global("read_flash", move |event| {
-                let json_value: Value =
-                    serde_json::from_str(event.payload().unwrap().to_string().as_str())
-                        .expect("Failed to parse JSON");
-                let string_array: Vec<String> = json_value
-                    .as_array()
-                    .expect("JSON value is not an array")
-                    .iter()
-                    .map(|v| v.as_str().expect("JSON value is not a string").to_owned())
-                    .collect();
-
-                read_flash(string_array, window_clone.clone());
-            });
 
             Ok(())
         })
@@ -156,8 +116,9 @@ fn main() {
             get_serial_port_list,
             get_current_dir,
             open_file_in_explorer,
-            get_plugin_list,
-            is_file
+            is_file,
+            write_all_text,
+            get_full_partition_table
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
