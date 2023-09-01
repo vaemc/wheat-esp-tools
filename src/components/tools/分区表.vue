@@ -24,11 +24,32 @@
         ><a-textarea v-model:value="newCSV" placeholder="计算结果" :rows="12"
       /></a-col>
     </a-row>
+
+    <hot-table :settings="hotSettings" ref="hotTableComponent"></hot-table>
   </a-card>
 </template>
 <script setup lang="ts">
-import { ref } from "vue";
+import { reactive, onMounted, ref } from "vue";
 import { getCurrentDir, getFulPartitionTable } from "../../utils/common";
+import { HotTable } from "@handsontable/vue3";
+import { registerAllModules } from "handsontable/registry";
+import "handsontable/dist/handsontable.full.css";
+import Papa from "papaparse";
+import "handsontable/languages/zh-CN"; //中文包
+registerAllModules();
+
+const hotSettings = ref({
+  data: [],
+  height: "auto",
+  colWidths: 120,
+  colHeaders: false,
+  rowHeaders: false,
+  contextMenu: false,
+  language: "zh-CN",
+  licenseKey: "non-commercial-and-evaluation",
+});
+
+const hotTableComponent = ref();
 const originalCSV = ref();
 const newCSV = ref();
 const flashSize = ["1M", "2M", "4M", "8M", "16M"];
@@ -37,10 +58,11 @@ const flashSizeOptions = ref(
     return { value: item, label: item };
   })
 );
-console.log(`${await getCurrentDir()}\\partitions\\temp.csv`);
 
 const ok = async () => {
-  console.log(originalCSV.value);
   newCSV.value = await getFulPartitionTable(originalCSV.value);
+  hotTableComponent.value?.hotInstance.updateData(
+    Papa.parse(newCSV.value, { header: false }).data
+  );
 };
 </script>

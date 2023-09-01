@@ -1,5 +1,11 @@
 <template>
-  <div>
+  <div style="margin: 5px">
+    <a-input-search
+      style="margin: 5px 0"
+      placeholder=""
+      enter-button
+      @search="onSearch"
+    />
     <List :pathList="pathList" @remove="remove" />
   </div>
 </template>
@@ -16,5 +22,15 @@ const remove = (path: string) => {
   );
   pathList.value = historyPathStore().pathList;
   message.success("删除成功!");
+};
+
+const onSearch = (text: string) => {
+  if (text == "") {
+    pathList.value = historyPathStore().pathList;
+  } else {
+    pathList.value = pathList.value.filter((x) =>
+      x.full.toLowerCase().includes(text.toLowerCase())
+    );
+  }
 };
 </script>
