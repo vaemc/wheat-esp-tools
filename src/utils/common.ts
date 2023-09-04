@@ -13,9 +13,10 @@ import { Path } from "../utils/model";
 import moment from "moment";
 import { historyPathStore } from "../utils/store";
 import { notification, Button } from "ant-design-vue";
-import { h } from "vue";
+import { h, ref } from "vue";
 
 import kleur from "kleur";
+import { log } from "console";
 
 const currentDir = await getCurrentDir();
 
@@ -59,10 +60,6 @@ export async function getPluginList() {
 
 export async function writeAllText(path: string, text: string) {
   return await invoke("write_all_text", { path: path, text: text });
-}
-
-export async function getFulPartitionTable(text: string) {
-  return await invoke("get_full_partition_table", {text: text });
 }
 
 export async function getChipTypeList() {
@@ -176,6 +173,46 @@ export async function executedCommand(cmd: String[]) {
   await new Promise((r) => setTimeout(r, 2500));
   await refreshFirmwareList();
   //console.log("pid:", child.pid);
+}
+
+export async function partitionTableConvert(
+  content: string,
+  flashSize: string
+) {
+  let currentDir = await getCurrentDir();
+  await writeAllText(currentDir + "\\partitions\\temp.csv", content);
+  const resultPromise = new Promise((resolve, reject) => {
+    let partitionContent = "#Name,Type,SubType,Offset,Size,Flags\n";
+    let command = new Command("gen_esp32part", [
+      currentDir + "\\partitions\\temp.csv",
+      "1",
+      ...(flashSize != "NONE" ? ["--flash-size", flashSize] : []),
+      "--out-string",
+      "1",
+    ]);
+    command.on("close", (data) => {
+      if (partitionContent.split("\n").length != 2) {
+        resolve(partitionContent);
+      }
+    });
+    command.on("error", (error) => terminalWrite(error));
+    command.stdout.on("data", async (line) => {
+      if (line.charAt(0) != "#") {
+        partitionContent += line + "\n";
+      }
+    });
+    command.stderr.on("data", (line) => {
+      terminalWrite(
+        kleur.bold().blue(`[${moment().format("YYYY-MM-DD HH:mm:ss")}] `)
+      );
+      terminalWriteLine(line);
+    });
+
+    const child = command.spawn();
+  });
+
+  const result = await resultPromise;
+  return result;
 }
 
 export async function openFileInExplorer(path: string) {

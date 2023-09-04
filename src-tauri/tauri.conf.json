@@ -59,7 +59,7 @@
         "icons/icon.icns",
         "icons/icon.ico"
       ],
-      "identifier": "com.tauri.test",
+      "identifier": "com.vaemc.wheat.esp.tools",
       "targets": "all"
     },
     "security": {

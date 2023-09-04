@@ -30,6 +30,8 @@
   />
 
   <a-table
+    style="margin: 5px 0"
+    :bordered="true"
     :pagination="false"
     :dataSource="firmwareList"
     :columns="columns"
@@ -131,7 +133,9 @@ const flash = () => {
     "write_flash",
     "--flash_mode",
     selectedMode.value,
-    ...firmwareList.value.filter(x=>x.check).flatMap((x) => [x.address, x.path]),
+    ...firmwareList.value
+      .filter((x) => x.check)
+      .flatMap((x) => [x.address, x.path]),
   ];
   executedCommand(cmd);
 };
@@ -146,7 +150,9 @@ const merge = async (item: string) => {
     "merge_bin",
     "-o",
     filename,
-    ...firmwareList.value.filter(x=>x.check).flatMap((x) => [x.address, x.path]),
+    ...firmwareList.value
+      .filter((x) => x.check)
+      .flatMap((x) => [x.address, x.path]),
   ];
   executedCommand(cmd);
   await new Promise((r) => setTimeout(r, 2500));

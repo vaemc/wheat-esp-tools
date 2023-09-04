@@ -1,5 +1,5 @@
 <template>
-  <a-card size="small" title="工具列表">
+  <a-card size="small">
     <a-tabs @change="tabChange">
       <a-tab-pane v-for="item in components" :tab="item.name" :key="item.name">
         <component :drop="item.drop" :is="item.component"></component>

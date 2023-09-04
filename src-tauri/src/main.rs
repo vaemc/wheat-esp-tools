@@ -1,15 +1,11 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use regex::Regex;
-use serde_json::Value;
 use serialport::available_ports;
 use std::env;
 use std::fs;
-use std::io::Read;
 use std::path::Path;
 use std::process::Command;
-use std::thread;
 use tauri::Manager;
 
 // Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
@@ -62,36 +58,6 @@ fn write_all_text(path: &str, text: &str) {
     fs::write(path, text).unwrap();
 }
 
-#[tauri::command]
-fn get_full_partition_table(text: &str) -> String {
-    fs::write(format!("{}\\partitions\\temp.csv", get_current_dir()), text).unwrap();
-
-    let gen_esp32part_path = format!("{}\\tools\\gen_esp32part.exe", get_current_dir());
-    let csv_path = format!("{}\\partitions\\temp.csv", get_current_dir());
-    let bin_path = format!("{}\\partitions\\temp.bin", get_current_dir());
-
-    let mut output = Command::new(&gen_esp32part_path)
-        .arg(&csv_path)
-        .arg(&bin_path)
-        .output()
-        .expect("error");
-
-    if String::from_utf8_lossy(&output.stderr).contains("Verifying table...") {
-        output = Command::new(&gen_esp32part_path)
-            .arg(&bin_path)
-            .arg(&csv_path)
-            .output()
-            .expect("error");
-        if String::from_utf8_lossy(&output.stderr).contains("Verifying table...") {
-            fs::read_to_string(&csv_path).expect("error")
-        } else {
-            String::from_utf8_lossy(&output.stderr).to_string()
-        }
-    } else {
-        String::from_utf8_lossy(&output.stderr).to_string()
-    }
-}
-
 fn main() {
     for item in ["firmware", "tools", "partitions"].iter() {
         if !Path::new(item).exists() {
@@ -117,8 +83,7 @@ fn main() {
             get_current_dir,
             open_file_in_explorer,
             is_file,
-            write_all_text,
-            get_full_partition_table
+            write_all_text
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
