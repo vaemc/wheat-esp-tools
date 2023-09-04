@@ -1,21 +1,17 @@
 <template>
   <div style="margin: 5px">
-    <a-input-search
-      style="margin: 5px 0"
-      placeholder=""
-      enter-button
-      @search="onSearch"
-    />
+    <a href="#" @click="openFileInExplorer(currentDir + ' \\firmware')">打开文件夹</a>
+    <a-input-search style="margin: 5px 0" placeholder="" enter-button @search="onSearch" />
     <List :pathList="pathList" @remove="remove" />
   </div>
 </template>
 <script setup lang="ts">
 import { ref } from "vue";
-import List from "./List.vue";
-import { getFirmwareList, getCurrentDir, removeFile } from "../utils/common";
-import { Path } from "../utils/model";
-import emitter from "../utils/bus";
-const search = ref();
+import List from "../List.vue";
+import { getFirmwareList, getCurrentDir, openFileInExplorer, removeFile } from "../../common";
+
+import { Path } from "../model";
+import emitter from "../bus";
 const pathList = ref([] as Path[]);
 const currentDir = await getCurrentDir();
 async function refresh() {

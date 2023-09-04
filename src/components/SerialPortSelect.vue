@@ -10,8 +10,8 @@
 </template>
 <script setup lang="ts">
 import { ref } from "vue";
-import { portStore } from "../utils/store";
-import { getSerialPortList } from "../utils/common";
+import { portStore } from "./store";
+import { getSerialPortList } from "./common";
 const selectedSerialPort = ref();
 const serialPortList = ref([] as any);
 

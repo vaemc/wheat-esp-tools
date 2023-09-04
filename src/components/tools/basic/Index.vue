@@ -4,14 +4,11 @@
 </template>
 <script setup lang="ts">
 import { ref } from "vue";
-import { selectedPort, executedCommand, getCurrentDir } from "../../utils/common";
-import { emit, listen } from '@tauri-apps/api/event'
+import { selectedPort, executedCommand, getCurrentDir } from "../../common";
+import { emit} from '@tauri-apps/api/event'
 import moment from 'moment'
-import { terminalWrite, terminalWriteLine } from "../../utils/bus";
-import kleur from "kleur";
 
 const currentDir = await getCurrentDir();
-defineProps(["drop"]);
 const click = (item: string[]) => {
   executedCommand(
     item.map((x) => {
@@ -32,7 +29,7 @@ const readFlash = () => {
 const list = ref([
   { name: "擦除固件", cmd: ["-p", "${port}", "erase_flash"] },
   { name: "获取flash大小", cmd: ["-p", "${port}", "flash_id"] },
- 
+
 ]);
 
 

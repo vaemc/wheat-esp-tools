@@ -1,5 +1,5 @@
 import { defineStore } from "pinia";
-import { Path } from "../utils/model";
+import { Path } from "./tools/model";
 export const portStore = defineStore("portStore", {
   state: () => ({
     port: "",

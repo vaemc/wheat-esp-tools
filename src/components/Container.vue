@@ -22,8 +22,6 @@ import FirmwareList from "./FirmwareList.vue";
 import HistoryPath from "./HistoryPath.vue";
 import { resourceDir } from "@tauri-apps/api/path";
 const resourceDirPath = await resourceDir();
-console.log(resourceDirPath);
-
 const activeKey = ref("1");
 </script>
 <style>

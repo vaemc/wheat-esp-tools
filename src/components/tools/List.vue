@@ -42,9 +42,9 @@ import {
   selectedPort,
   getFlasherArgs,
   isFile,
-} from "../utils/common";
+} from "../common";
 const selectedMode = ref("keep");
-import { Path } from "../utils/model";
+import { Path } from "./model";
 const { pathList } = defineProps<{
   pathList: Path[];
 }>();

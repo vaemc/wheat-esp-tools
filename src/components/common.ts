@@ -8,10 +8,10 @@ import {
 import { save } from "@tauri-apps/api/dialog";
 import { portStore } from "./store";
 import { Command } from "@tauri-apps/api/shell";
-import { terminalWrite, terminalWriteLine, refreshFirmwareList } from "./bus";
-import { Path } from "../utils/model";
+import { terminalWrite, terminalWriteLine, refreshFirmwareList } from "./tools/bus";
+import { Path } from "./tools/model";
 import moment from "moment";
-import { historyPathStore } from "../utils/store";
+import { historyPathStore } from "./store";
 import { notification, Button } from "ant-design-vue";
 import { h, ref } from "vue";
 
@@ -105,6 +105,17 @@ export async function getFlasherArgs(path: string) {
     appName: flasherArgs.app.file.split(".")[0],
     chip: flasherArgs.extra_esptool_args.chip,
     flashArgs: flattenedList,
+  };
+}
+
+export async function getFlasherArgs2(path: string) {
+  let flasherArgs = JSON.parse(await readTextFile(path));
+  console.log(flasherArgs);
+ 
+  return {
+    appName: flasherArgs.app.file.split(".")[0],
+    chip: flasherArgs.extra_esptool_args.chip,
+    flashFiles: flasherArgs.flash_files,
   };
 }
 
