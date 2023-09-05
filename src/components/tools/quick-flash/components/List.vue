@@ -34,17 +34,16 @@
 </template>
 <script setup lang="ts">
 import { ref } from "vue";
-import { message } from "ant-design-vue";
-import SPIMode from "./SPIMode.vue";
+import SPIMode from "../../SPIMode.vue";
 import {
   executedCommand,
   openFileInExplorer,
   selectedPort,
   getFlasherArgs,
   isFile,
-} from "../common";
+} from "../../../common";
 const selectedMode = ref("keep");
-import { Path } from "./model";
+import { Path } from "../../model";
 const { pathList } = defineProps<{
   pathList: Path[];
 }>();
@@ -54,38 +53,40 @@ const emit = defineEmits<{
 }>();
 
 async function flash(path: string) {
-  const result = await isFile(path);
-  if (!result) {
-    let appInfo = await getFlasherArgs(path);
-    let cmd = [
-      "--chip",
-      appInfo.chip,
-      "-p",
-      selectedPort(),
-      "-b",
-      "1152000",
-      "--before=default_reset",
-      "--after=hard_reset",
-      "write_flash",
-      "--flash_mode",
-      selectedMode.value,
-      ...appInfo.flashArgs,
-    ];
-    executedCommand(cmd);
-    return;
-  }
-  let cmd = [
-    "-p",
-    selectedPort(),
-    "-b",
-    "1152000",
-    "write_flash",
-    "--flash_mode",
-    selectedMode.value,
-    "0x0",
-    path,
-  ];
-  executedCommand(cmd);
+  console.log(path);
+  
+  // const result = await isFile(path);
+  // if (!result) {
+  //   let appInfo = await getFlasherArgs(path);
+  //   let cmd = [
+  //     "--chip",
+  //     appInfo.chip,
+  //     "-p",
+  //     selectedPort(),
+  //     "-b",
+  //     "1152000",
+  //     "--before=default_reset",
+  //     "--after=hard_reset",
+  //     "write_flash",
+  //     "--flash_mode",
+  //     selectedMode.value,
+  //     ...appInfo.flashArgs,
+  //   ];
+  //   executedCommand(cmd);
+  //   return;
+  // }
+  // let cmd = [
+  //   "-p",
+  //   selectedPort(),
+  //   "-b",
+  //   "1152000",
+  //   "write_flash",
+  //   "--flash_mode",
+  //   selectedMode.value,
+  //   "0x0",
+  //   path,
+  // ];
+  // executedCommand(cmd);
 }
 
 async function remove(path: string) {

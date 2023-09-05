@@ -7,11 +7,10 @@
 </template>
 <script setup lang="ts">
 import { ref } from "vue";
-import List from "../List.vue";
-import { getFirmwareList, getCurrentDir, openFileInExplorer, removeFile } from "../../common";
-
-import { Path } from "../model";
-import emitter from "../bus";
+import List from "./List.vue";
+import { getFirmwareList, getCurrentDir, openFileInExplorer, removeFile } from "../../../common";
+import { Path } from "../../model";
+import emitter from "../../bus";
 const pathList = ref([] as Path[]);
 const currentDir = await getCurrentDir();
 async function refresh() {

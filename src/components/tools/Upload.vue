@@ -19,7 +19,7 @@ import { useVModels } from "@vueuse/core";
 
 const props = defineProps({
   title: { type: String, required: true },
-  subtitle: { type: String, required: true },
+  subtitle: { type: String, required: false },
   isDirectory: { type: Boolean, default: false },
   isMultiple: { type: Boolean, default: false },
 });

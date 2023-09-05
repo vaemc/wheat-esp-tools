@@ -1,55 +1,85 @@
 <template>
   <div>
-
-
     <a-row :gutter="16">
       <a-col :span="11">
-        <div style="margin-bottom: 5px">
-          <a-select v-model:value="flashSize" style="width: 160px" :options="flashSizeOptions">
-          </a-select>
-          <a-button type="primary" style="margin-left: 5px" @click="ok">计算</a-button>
-        </div>
-        <a-textarea placeholder="CSV内容" v-model:value="beforePartition" max :rows="18" />
+        <a-tabs>
+          <a-tab-pane key="1" tab="偏移地址计算">
+            <div style="margin-bottom: 5px">
+              <a-select
+                v-model:value="flashSize"
+                style="width: 160px"
+                :options="flashSizeOptions"
+              >
+              </a-select>
+              <a-button type="primary" style="margin-left: 5px" @click="ok"
+                >计算</a-button
+              >
+            </div>
+            <a-textarea
+              placeholder="CSV内容"
+              v-model:value="beforePartition"
+              max
+              :rows="18"
+          /></a-tab-pane>
+          <a-tab-pane key="2" tab="二进制文件转换">
+            <Upload
+              title="选择或者拖拽分区表bin文件到此"
+              :isDirectory="false"
+              :isMultiple="false"
+          /></a-tab-pane>
+        </a-tabs>
       </a-col>
       <a-col :span="13">
-        <a-tag color="success" v-if="partitionSize.kb != ''">分区表大小: {{ partitionSize.kb }} {{ partitionSize.byte }} B
+        <a-tag color="success" v-if="partitionSize.kb != ''"
+          >分区表大小: {{ partitionSize.kb }} {{ partitionSize.byte }} B
         </a-tag>
-        <a-tabs v-model:activeKey="activeKey">
+        <a-tabs>
           <a-tab-pane key="1" tab="表格">
-            <a-table :bordered="true" :pagination="false" size="small" class="scroll" :dataSource="dataSource" :columns="[
-              {
-                title: 'Name',
-                dataIndex: '#Name',
-                key: '#Name',
-              },
-              {
-                title: 'Type',
-                dataIndex: 'Type',
-                key: 'Type',
-              },
-              {
-                title: 'SubType',
-                dataIndex: 'SubType',
-                key: 'SubType',
-              },
-              {
-                title: 'Offset',
-                dataIndex: 'Offset',
-                key: 'Offset',
-              },
-              {
-                title: 'Size',
-                dataIndex: 'Size',
-                key: 'Size',
-              },
-              {
-                title: 'Flags',
-                dataIndex: 'Flags',
-                key: 'Flags',
-              },
-            ]" /></a-tab-pane>
-          <a-tab-pane key="2" tab="文本" force-render><a-textarea v-model:value="afterPartition" placeholder=""
-              :rows="12" /></a-tab-pane>
+            <a-table
+              :bordered="true"
+              :pagination="false"
+              size="small"
+              class="scroll"
+              :dataSource="dataSource"
+              :columns="[
+                {
+                  title: 'Name',
+                  dataIndex: '#Name',
+                  key: '#Name',
+                },
+                {
+                  title: 'Type',
+                  dataIndex: 'Type',
+                  key: 'Type',
+                },
+                {
+                  title: 'SubType',
+                  dataIndex: 'SubType',
+                  key: 'SubType',
+                },
+                {
+                  title: 'Offset',
+                  dataIndex: 'Offset',
+                  key: 'Offset',
+                },
+                {
+                  title: 'Size',
+                  dataIndex: 'Size',
+                  key: 'Size',
+                },
+                {
+                  title: 'Flags',
+                  dataIndex: 'Flags',
+                  key: 'Flags',
+                },
+              ]"
+          /></a-tab-pane>
+          <a-tab-pane key="2" tab="文本"
+            ><a-textarea
+              v-model:value="afterPartition"
+              placeholder=""
+              :rows="12"
+          /></a-tab-pane>
         </a-tabs>
       </a-col>
     </a-row>
@@ -60,8 +90,8 @@ import { ref } from "vue";
 import { partitionTableConvert } from "../../common";
 import Papa from "papaparse";
 import prettyBytes from "pretty-bytes";
+import Upload from "../Upload.vue";
 
-const activeKey = ref("1");
 
 const beforePartition = ref();
 const afterPartition = ref();
@@ -101,8 +131,9 @@ const ok = async () => {
     kb: prettyBytes(
       parseInt(last.Offset) + parseInt(last.Size.slice(0, -1)) * 1024
     ),
-    byte: String(parseInt(last.Offset) + parseInt(last.Size.slice(0, -1)) * 1024),
+    byte: String(
+      parseInt(last.Offset) + parseInt(last.Size.slice(0, -1)) * 1024
+    ),
   };
 };
 </script>
-  

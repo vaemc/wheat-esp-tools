@@ -10,11 +10,11 @@
   </div>
 </template>
 <script setup lang="ts">
-import List from "../List.vue";
+import List from "./List.vue";
 import { message } from "ant-design-vue";
-import { Path } from "../model";
+import { Path } from "../../model";
 import { ref } from "vue";
-import { historyPathStore } from "../../store";
+import { historyPathStore } from "../../../store";
 const pathList = ref(historyPathStore().pathList as Path[]);
 const remove = (path: string) => {
   historyPathStore().pathList = historyPathStore().pathList.filter(

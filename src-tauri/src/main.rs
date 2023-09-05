@@ -48,6 +48,12 @@ fn open_file_in_explorer(path: &str) {
 }
 
 #[tauri::command]
+fn get_file_size(path: &str) -> u64 {
+    let metadata = fs::metadata(path).unwrap();
+    metadata.len()
+}
+
+#[tauri::command]
 fn is_file(path: &str) -> bool {
     let metadata = fs::metadata(path).unwrap();
     metadata.is_file()
@@ -83,7 +89,8 @@ fn main() {
             get_current_dir,
             open_file_in_explorer,
             is_file,
-            write_all_text
+            write_all_text,
+            get_file_size
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

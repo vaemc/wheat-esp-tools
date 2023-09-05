@@ -234,6 +234,10 @@ export async function isFile(path: string) {
   return await invoke("is_file", { path: path });
 }
 
+export async function getFileSize(path: string) {
+  return await invoke("get_file_size", { path: path });
+}
+
 export async function removeFile(path: string) {
   await rf(path);
 }
