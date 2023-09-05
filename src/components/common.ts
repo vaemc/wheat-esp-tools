@@ -8,7 +8,11 @@ import {
 import { save } from "@tauri-apps/api/dialog";
 import { portStore } from "./store";
 import { Command } from "@tauri-apps/api/shell";
-import { terminalWrite, terminalWriteLine, refreshFirmwareList } from "./tools/bus";
+import {
+  terminalWrite,
+  terminalWriteLine,
+  refreshFirmwareList,
+} from "./tools/bus";
 import { Path } from "./tools/model";
 import moment from "moment";
 import { historyPathStore } from "./store";
@@ -111,7 +115,7 @@ export async function getFlasherArgs(path: string) {
 export async function getFlasherArgs2(path: string) {
   let flasherArgs = JSON.parse(await readTextFile(path));
   console.log(flasherArgs);
- 
+
   return {
     appName: flasherArgs.app.file.split(".")[0],
     chip: flasherArgs.extra_esptool_args.chip,
@@ -187,15 +191,19 @@ export async function executedCommand(cmd: String[]) {
 }
 
 export async function partitionTableConvert(
-  content: string,
-  flashSize: string
+  input: string,
+  flashSize: string,
+  isBin: boolean
 ) {
   let currentDir = await getCurrentDir();
-  await writeAllText(currentDir + "\\partitions\\temp.csv", content);
+  if (!isBin) {
+    await writeAllText(currentDir + "\\partitions\\temp.csv", input);
+  }
+
   const resultPromise = new Promise((resolve, reject) => {
     let partitionContent = "#Name,Type,SubType,Offset,Size,Flags\n";
     let command = new Command("gen_esp32part", [
-      currentDir + "\\partitions\\temp.csv",
+      !isBin ? currentDir + "\\partitions\\temp.csv" : input,
       "1",
       ...(flashSize != "NONE" ? ["--flash-size", flashSize] : []),
       "--out-string",

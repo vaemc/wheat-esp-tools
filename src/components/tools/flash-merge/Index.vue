@@ -20,12 +20,27 @@
     </a-form>
   </a-modal>
 
-  <a-row>
-    <a-col :span="12">
+  <a-row
+    style="margin-bottom: 5px"
+    type="flex"
+    justify="space-around"
+    align="middle"
+  >
+    <a-col :span="8">
       <FlashOption v-model="selectedFlashOption" @change="flashOptionChange" />
     </a-col>
-    <a-col :span="12">
+    <a-col :span="8">
       <SPIMode v-model="selectedMode" />
+    </a-col>
+    <a-col :span="8">
+      <a-select
+        style="width: 120px"
+        size="small"
+        placeholder="芯片类型"
+        v-model:value="selectedChipType"
+        :options="chipTypeList"
+      >
+      </a-select>
     </a-col>
   </a-row>
 
@@ -72,30 +87,18 @@
     </template>
   </a-table>
 
-  <div style="display: flex">
-    <a-button
-      type="primary"
-      @click="handle(flash)"
-      style="flex: 1; margin: 5px"
-      block
-      >烧录</a-button
+  <a-row :gutter="16">
+    <a-col :span="12">
+      <a-button type="primary" @click="handle(flash)" block
+        >烧录</a-button
+      ></a-col
     >
-    <a-dropdown>
-      <template #overlay>
-        <a-menu>
-          <a-menu-item
-            @click="handle(merge, item)"
-            :key="item"
-            v-for="item in chipTypeList"
-            >{{ item }}</a-menu-item
-          >
-        </a-menu>
-      </template>
-      <a-button type="primary" style="flex: 1; margin: 5px" block>
+    <a-col :span="12"
+      ><a-button type="primary" @click="handle(merge)" block>
         合并
-      </a-button>
-    </a-dropdown>
-  </div>
+      </a-button></a-col
+    >
+  </a-row>
 </template>
 <script setup lang="ts">
 import { ref } from "vue";
@@ -179,13 +182,18 @@ const flash = () => {
   executedCommand(cmd);
 };
 
-const merge = async (item: string) => {
-  let filename = `${currentDir}\\firmware\\${item}-merge-bin-${moment().format(
-    "YYYYMMDDHHmmss"
-  )}.bin`;
+const merge = async () => {
+  if (selectedChipType.value == undefined) {
+    message.warning("请选择芯片类型");
+    return;
+  }
+
+  let filename = `${currentDir}\\firmware\\${
+    selectedChipType.value
+  }-merge-bin-${moment().format("YYYYMMDDHHmmss")}.bin`;
   let cmd = [
     "--chip",
-    item,
+    selectedChipType.value,
     "merge_bin",
     "-o",
     filename,
@@ -198,7 +206,7 @@ const merge = async (item: string) => {
   openFileInExplorer(filename);
 };
 
-const handle = (fun: Function, data: string = "") => {
+const handle = (fun: Function) => {
   if (firmwareList.value.length == 0) {
     message.warning("请添加固件");
     return;
@@ -219,7 +227,7 @@ const handle = (fun: Function, data: string = "") => {
     return;
   }
 
-  fun(data);
+  fun();
 };
 
 const removeFirmwareBtn = (item: Firmware) => {
@@ -227,6 +235,11 @@ const removeFirmwareBtn = (item: Firmware) => {
     (x: Firmware) => x.path != item.path
   );
   message.success("删除成功！");
+
+  if (firmwareList.value.filter((x) => x.check).length == 0) {
+    flashCheckOption.value.indeterminate = false;
+    flashCheckOption.value.selectAll = false;
+  }
 };
 
 const flashFirmwareBtn = (item: Firmware) => {
@@ -253,7 +266,13 @@ const editFirmwareBtn = (item: Firmware) => {
   firmware.value = item;
 };
 
-const chipTypeList = ref(await getChipTypeList());
+const selectedChipType = ref();
+
+const chipTypeList = ref(
+  (await getChipTypeList()).map((item: string) => {
+    return { label: item, value: item };
+  })
+);
 
 const uploadHandle = async (path: string | string[]) => {
   const filteredPaths = await Promise.all(
@@ -310,6 +329,11 @@ const flashCheckSingleChange = (e: any) => {
     flashCheckOption.value.indeterminate = false;
   } else {
     flashCheckOption.value.indeterminate = true;
+  }
+
+  if (firmwareList.value.filter((x) => x.check).length == 0) {
+    flashCheckOption.value.indeterminate = false;
+    flashCheckOption.value.selectAll = false;
   }
 };
 

@@ -26,6 +26,8 @@
               title="选择或者拖拽分区表bin文件到此"
               :isDirectory="false"
               :isMultiple="false"
+              @open="uploadHandle"
+              @drop="uploadHandle"
           /></a-tab-pane>
         </a-tabs>
       </a-col>
@@ -92,7 +94,6 @@ import Papa from "papaparse";
 import prettyBytes from "pretty-bytes";
 import Upload from "../Upload.vue";
 
-
 const beforePartition = ref();
 const afterPartition = ref();
 const partitionSize = ref({ kb: "", byte: "" });
@@ -109,13 +110,14 @@ const flashSizeOptions = ref([
 
 flashSize.value = flashSizeOptions.value[0].value;
 
-const ok = async () => {
+const convert = async (input: string, isBin: boolean) => {
   partitionSize.value = { kb: "", byte: "" };
   afterPartition.value = "";
   dataSource.value = [];
   afterPartition.value = await partitionTableConvert(
-    beforePartition.value,
-    flashSize.value
+    input,
+    flashSize.value,
+    isBin
   );
 
   let partition = Papa.parse(afterPartition.value, {
@@ -135,5 +137,13 @@ const ok = async () => {
       parseInt(last.Offset) + parseInt(last.Size.slice(0, -1)) * 1024
     ),
   };
+};
+
+const uploadHandle = async (path: string | string[]) => {
+  convert(path[0], true);
+};
+
+const ok = async () => {
+  convert(beforePartition.value, false);
 };
 </script>

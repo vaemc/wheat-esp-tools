@@ -1,7 +1,7 @@
 <template>
   <a-tooltip>
     <template #title>SPI Mode</template>
-    <a-radio-group :value="modelValue" button-style="solid" style="margin-bottom: 5px"
+    <a-radio-group :value="modelValue" button-style="solid" 
       @change="$emit('update:modelValue', $event.target.value)" size="small">
       <a-radio-button value="keep">keep</a-radio-button>
       <a-radio-button value="qio">qio</a-radio-button>
