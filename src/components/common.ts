@@ -126,32 +126,32 @@ export async function getFlasherArgs2(path: string) {
 let retryCount = 0;
 
 export async function executedCommand(cmd: String[]) {
-  let result = await esptoolExists();
-  if (!result) {
-    notification.open({
-      message: "未找到esptool",
-      description: "请将乐鑫官方esptool放在tools文件夹！",
-      btn: () =>
-        h(
-          Button,
-          {
-            type: "primary",
-            size: "small",
-            onClick: () => {
-              openFileInExplorer(currentDir + "\\tools");
-            },
-          },
-          {
-            default: () => "打开文件夹",
-          }
-        ),
-    });
+  // let result = await esptoolExists();
+  // if (!result) {
+  //   notification.open({
+  //     message: "未找到esptool",
+  //     description: "请将乐鑫官方esptool放在tools文件夹！",
+  //     btn: () =>
+  //       h(
+  //         Button,
+  //         {
+  //           type: "primary",
+  //           size: "small",
+  //           onClick: () => {
+  //             openFileInExplorer(currentDir + "\\tools");
+  //           },
+  //         },
+  //         {
+  //           default: () => "打开文件夹",
+  //         }
+  //       ),
+  //   });
 
-    return;
-  }
+  //   return;
+  // }
 
   cmd = cmd.filter((x: String) => x != "");
-  let command = new Command("esptool", cmd as string[]);
+  let command = Command.sidecar("bin/esptool", cmd as string[]);
   command.on("close", (data) => {});
   command.on("error", (error) => terminalWrite(error));
   command.stdout.on("data", async (line) => {
@@ -202,7 +202,7 @@ export async function partitionTableConvert(
 
   const resultPromise = new Promise((resolve, reject) => {
     let partitionContent = "#Name,Type,SubType,Offset,Size,Flags\n";
-    let command = new Command("gen_esp32part", [
+    let command = Command.sidecar("bin/gen_esp32part", [
       !isBin ? currentDir + "\\partitions\\temp.csv" : input,
       "1",
       ...(flashSize != "NONE" ? ["--flash-size", flashSize] : []),

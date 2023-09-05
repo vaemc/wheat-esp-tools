@@ -65,7 +65,7 @@ fn write_all_text(path: &str, text: &str) {
 }
 
 fn main() {
-    for item in ["firmware", "tools", "partitions"].iter() {
+    for item in ["firmware",  "partitions"].iter() {
         if !Path::new(item).exists() {
             fs::create_dir(item).unwrap();
         }

@@ -1,17 +1,8 @@
 <template>
-  <a-modal
-    v-model:visible="firmwareModal.visible"
-    :title="firmwareModal.title"
-    :footer="null"
-    width="80%"
-  >
+  <a-modal v-model:visible="firmwareModal.visible" :title="firmwareModal.title" :footer="null" width="80%">
     <a-form :label-col="{ span: 4 }">
       <a-form-item label="路径" name="description">
-        <a-input-search
-          enter-button="选择固件"
-          v-model:value="firmware.path"
-          @search="openFileDialog(firmware)"
-        />
+        <a-input-search enter-button="选择固件" v-model:value="firmware.path" @search="openFileDialog(firmware)" />
       </a-form-item>
 
       <a-form-item label="烧录地址" name="address">
@@ -20,12 +11,7 @@
     </a-form>
   </a-modal>
 
-  <a-row
-    style="margin-bottom: 5px"
-    type="flex"
-    justify="space-around"
-    align="middle"
-  >
+  <a-row style="margin-bottom: 5px" type="flex" justify="space-around" align="middle">
     <a-col :span="8">
       <FlashOption v-model="selectedFlashOption" @change="flashOptionChange" />
     </a-col>
@@ -33,50 +19,27 @@
       <SPIMode v-model="selectedMode" />
     </a-col>
     <a-col :span="8">
-      <a-select
-        style="width: 120px"
-        size="small"
-        placeholder="芯片类型"
-        v-model:value="selectedChipType"
-        :options="chipTypeList"
-      >
+      <a-select style="width: 120px" size="small" placeholder="芯片类型" v-model:value="selectedChipType"
+        :options="chipTypeList">
       </a-select>
     </a-col>
   </a-row>
 
-  <Upload
-    :title="selectedFlashOptionConfig.title"
-    :subtitle="selectedFlashOptionConfig.subtitle"
-    @open="uploadHandle"
-    @drop="uploadHandle"
-    :isDirectory="false"
-    :isMultiple="true"
-  />
-
-  <a-table
-    style="margin: 5px 0"
-    :bordered="true"
-    :pagination="false"
-    :dataSource="firmwareList"
-    :columns="columns"
-    size="small"
-    class="scroll"
-  >
+  <div ref="target">
+    <Upload v-if="destroyDrop" :title="selectedFlashOptionConfig.title" :subtitle="selectedFlashOptionConfig.subtitle"
+      @open="uploadHandle" @drop="uploadHandle" :isDirectory="false" :isMultiple="true" />
+  </div>
+  <a-table style="margin: 5px 0" :bordered="true" :pagination="false" :dataSource="firmwareList" :columns="columns"
+    size="small" class="scroll">
     <template #headerCell="{ column }">
       <template v-if="column.key === 'check'">
-        <a-checkbox
-          v-model:checked="flashCheckOption.selectAll"
-          :indeterminate="flashCheckOption.indeterminate"
-          @change="flashCheckAllChange"
-        ></a-checkbox>
+        <a-checkbox v-model:checked="flashCheckOption.selectAll" :indeterminate="flashCheckOption.indeterminate"
+          @change="flashCheckAllChange"></a-checkbox>
       </template>
     </template>
     <template #bodyCell="{ column, record }">
       <template v-if="column.key === 'check'">
-        <a-checkbox
-          v-model:checked="record.check"
-          @change="flashCheckSingleChange"
-        ></a-checkbox>
+        <a-checkbox v-model:checked="record.check" @change="flashCheckSingleChange"></a-checkbox>
       </template>
 
       <template v-if="column.key === 'action'">
@@ -89,19 +52,14 @@
 
   <a-row :gutter="16">
     <a-col :span="12">
-      <a-button type="primary" @click="handle(flash)" block
-        >烧录</a-button
-      ></a-col
-    >
-    <a-col :span="12"
-      ><a-button type="primary" @click="handle(merge)" block>
+      <a-button type="primary" @click="handle(flash)" block>烧录</a-button></a-col>
+    <a-col :span="12"><a-button type="primary" @click="handle(merge)" block>
         合并
-      </a-button></a-col
-    >
+      </a-button></a-col>
   </a-row>
 </template>
 <script setup lang="ts">
-import { ref } from "vue";
+import { ref, watch } from "vue";
 import { Firmware } from "./model";
 import { message } from "ant-design-vue";
 import Upload from "../Upload.vue";
@@ -122,6 +80,9 @@ import SPIMode from "../SPIMode.vue";
 import { open } from "@tauri-apps/api/dialog";
 import moment from "moment";
 import prettyBytes from "pretty-bytes";
+import { useElementVisibility } from '@vueuse/core'
+const target = ref(null)
+const destroyDrop = useElementVisibility(target)
 
 const flashCheckOption = ref({ indeterminate: false, selectAll: false });
 
@@ -188,9 +149,8 @@ const merge = async () => {
     return;
   }
 
-  let filename = `${currentDir}\\firmware\\${
-    selectedChipType.value
-  }-merge-bin-${moment().format("YYYYMMDDHHmmss")}.bin`;
+  let filename = `${currentDir}\\firmware\\${selectedChipType.value
+    }-merge-bin-${moment().format("YYYYMMDDHHmmss")}.bin`;
   let cmd = [
     "--chip",
     selectedChipType.value,
@@ -239,6 +199,13 @@ const removeFirmwareBtn = (item: Firmware) => {
   if (firmwareList.value.filter((x) => x.check).length == 0) {
     flashCheckOption.value.indeterminate = false;
     flashCheckOption.value.selectAll = false;
+  }
+  if (
+    firmwareList.value.filter((x) => x.check).length ==
+    firmwareList.value.length
+  ) {
+    flashCheckOption.value.selectAll = true;
+    flashCheckOption.value.indeterminate = false;
   }
 };
 
@@ -315,6 +282,8 @@ const uploadHandle = async (path: string | string[]) => {
         address: item,
       });
     });
+
+    selectedChipType.value = flasherArgs.chip.toUpperCase();
   }
 
   flashCheckOption.value.selectAll = true;

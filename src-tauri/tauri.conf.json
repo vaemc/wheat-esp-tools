@@ -33,16 +33,10 @@
         "sidecar": true,
         "open": true,
         "scope": [
-          {
-            "name": "esptool",
-            "cmd": "./tools/esptool",
-            "args": true
-          },
-          {
-            "name": "gen_esp32part",
-            "cmd": "./tools/gen_esp32part",
-            "args": true
-          }
+          { "name": "bin/esptool", "args": true, "sidecar": true },
+          { "name": "bin/gen_esp32part", "args": true, "sidecar": true },
+          { "name": "bin/mklittlefs", "args": true, "sidecar": true },
+          { "name": "bin/mkspiffs", "args": true, "sidecar": true }
         ]
       },
       "protocol": {
@@ -51,6 +45,12 @@
       }
     },
     "bundle": {
+      "externalBin": [
+        "bin/esptool",
+        "bin/gen_esp32part",
+        "bin/mklittlefs",
+        "bin/mkspiffs"
+      ],
       "active": true,
       "icon": [
         "icons/32x32.png",
