@@ -7,7 +7,7 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import { message } from "ant-design-vue";
-import emitter from "./tools/bus";
+import emitter from "@/utils/bus";
 import "xterm/css/xterm.css";
 import "xterm/lib/xterm.js";
 import { Terminal } from "xterm";
@@ -20,12 +20,14 @@ const progress = ref({
   status: "active",
 });
 
+const fitAddon = new FitAddon();
+
 const terminal = new Terminal({
   fontSize: 14,
   allowProposedApi: true,
   cursorStyle: "bar",
   theme: {
-    background: "#202020",
+    background: "#181818",
     magenta: "#e39ef7",
   },
 });
@@ -41,36 +43,43 @@ terminal.attachCustomKeyEventHandler((arg) => {
   return true
 })
 
+window.onresize = () => {
+  fitAddon.fit()
+}
 
-emitter.on("terminalWrite", (data) => {
-  terminal.write(data as string);
-});
+window.onpageshow = () => {
+  fitAddon.fit()
+}
 
-emitter.on("terminalWriteLine", (data) => {
-  terminal.writeln(data as string);
+// emitter.on("terminalWrite", (data) => {
+//   terminal.write(data as string);
+// });
 
-  let regex = /Writing at\s(0x[0-9a-fA-F]+)\.\.\.\s\((\d+)\s%\)/;
-  let match = (data as string).match(regex);
-  if (match) {
-    const percentage = parseInt(match[2]);
-    progress.value.visible = true;
-    progress.value.value = percentage;
-    progress.value.status = "active";
+// emitter.on("terminalWriteLine", (data) => {
+//   terminal.writeln(data as string);
 
-    if (percentage == 100) {
-      progress.value.status = "normal";
-    }
-  }
+//   let regex = /Writing at\s(0x[0-9a-fA-F]+)\.\.\.\s\((\d+)\s%\)/;
+//   let match = (data as string).match(regex);
+//   if (match) {
+//     const percentage = parseInt(match[2]);
+//     progress.value.visible = true;
+//     progress.value.value = percentage;
+//     progress.value.status = "active";
 
-  regex = /Detected flash size: (\d+)MB/;
-  match = (data as string).match(regex);
-  if (match) {
-    message.info(`${match[1]}MB`);
-  }
-});
+//     if (percentage == 100) {
+//       progress.value.status = "normal";
+//     }
+//   }
+
+//   regex = /Detected flash size: (\d+)MB/;
+//   match = (data as string).match(regex);
+//   if (match) {
+//     message.info(`${match[1]}MB`);
+//   }
+// });
 
 onMounted(() => {
-  const fitAddon = new FitAddon();
+
   terminal.loadAddon(fitAddon);
   terminal.open(document.getElementById("terminal") as HTMLElement);
   fitAddon.fit();

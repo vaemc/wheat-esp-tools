@@ -1,7 +1,8 @@
 <template>
   <a-config-provider :locale="locale">
-    <!-- <Container /> -->
-    <RouterView />
+    <Suspense>
+      <RouterView />
+    </Suspense>
   </a-config-provider>
 </template>
 <script setup lang="ts">

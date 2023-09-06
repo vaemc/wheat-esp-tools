@@ -11,8 +11,7 @@ import {
   terminalWrite,
   terminalWriteLine,
   refreshFirmwareList,
-} from "./tools/bus";
-import { Path } from "./tools/model";
+} from "./bus";
 import moment from "moment";
 import { notification, Button } from "ant-design-vue";
 import { h, ref } from "vue";
@@ -36,15 +35,15 @@ export async function saveFileDialog() {
 }
 
 export function addHistoryPath(data: string) {
-  let result = {} as Path;
-  result = { full: data, name: data };
-  let historyPathList = JSON.parse(
-    localStorage.getItem("pathList") as string
-  ) as Path[];
-  if (historyPathList.filter((x) => x.full === result.full).length == 0) {
-    historyPathList.push(result);
-    localStorage.setItem("pathList", JSON.stringify(historyPathList));
-  }
+  // let result = {} as Path;
+  // result = { full: data, name: data };
+  // let historyPathList = JSON.parse(
+  //   localStorage.getItem("pathList") as string
+  // ) as Path[];
+  // if (historyPathList.filter((x) => x.full === result.full).length == 0) {
+  //   historyPathList.push(result);
+  //   localStorage.setItem("pathList", JSON.stringify(historyPathList));
+  // }
 }
 
 export async function getSerialPortList() {

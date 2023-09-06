@@ -65,10 +65,10 @@
 </template>
 <script setup lang="ts">
 import { ref } from "vue";
-import { partitionTableConvert } from "../../common";
+import { partitionTableConvert } from "@/utils/common";
 import Papa from "papaparse";
 import prettyBytes from "pretty-bytes";
-import Upload from "../Upload.vue";
+import Upload from "@/components/Upload.vue";
 import { useElementVisibility } from '@vueuse/core'
 const target = ref(null)
 const destroyDrop = useElementVisibility(target)

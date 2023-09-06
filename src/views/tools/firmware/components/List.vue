@@ -34,18 +34,16 @@
 </template>
 <script setup lang="ts">
 import { ref } from "vue";
-import SPIMode from "../../SPIMode.vue";
+import SPIMode from "@/components/SPIMode.vue";
 import {
   executedCommand,
   openFileInExplorer,
-  selectedPort,
   getFlasherArgs,
   isFile,
-} from "../../../common";
+} from "@/utils/common";
 const selectedMode = ref("keep");
-import { Path } from "../../model";
 const { pathList } = defineProps<{
-  pathList: Path[];
+  pathList: [];
 }>();
 
 const emit = defineEmits<{

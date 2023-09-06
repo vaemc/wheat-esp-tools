@@ -6,7 +6,7 @@
 </template>
 <script setup lang="ts">
 import { ref } from "vue";
-import { executedCommand, getCurrentDir } from "../../common";
+import { executedCommand, getCurrentDir } from "@/utils/common";
 import moment from "moment";
 const currentDir = await getCurrentDir();
 const click = (item: string[]) => {

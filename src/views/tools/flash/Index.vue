@@ -102,10 +102,10 @@
 </template>
 <script setup lang="ts">
 import { ref } from "vue";
-import { writeFlash } from "../../../common/ESPTool";
+import { writeFlash } from "@/utils/ESPTool";
 import { Firmware } from "./model";
 import { message } from "ant-design-vue";
-import Upload from "../Upload.vue";
+import Upload from "@/components/Upload.vue";
 import {
   getChipTypeList,
   executedCommand,
@@ -115,10 +115,8 @@ import {
   isFile,
   getFileSize,
   collectAllPaths,
-} from "../../common";
-import { config } from "./";
-import { Option } from "./model";
-import SPIMode from "../SPIMode.vue";
+} from "@/utils/common";
+import SPIMode from "@/components/SPIMode.vue";
 import { open } from "@tauri-apps/api/dialog";
 import moment from "moment";
 import prettyBytes from "pretty-bytes";

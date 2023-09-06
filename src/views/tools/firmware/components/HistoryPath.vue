@@ -12,9 +12,9 @@
 <script setup lang="ts">
 import List from "./List.vue";
 import { message } from "ant-design-vue";
-import { Path } from "../../model";
+
 import { ref } from "vue";
-// const pathList = ref(historyPathStore().pathList as Path[]);
+ const pathList = ref();
 const remove = (path: string) => {
   // historyPathStore().pathList = historyPathStore().pathList.filter(
   //   (x) => x.full !== path
