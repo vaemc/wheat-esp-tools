@@ -6,7 +6,6 @@ import {
   FileEntry,
 } from "@tauri-apps/api/fs";
 import { save } from "@tauri-apps/api/dialog";
-import { portStore } from "./store";
 import { Command } from "@tauri-apps/api/shell";
 import {
   terminalWrite,
@@ -15,7 +14,6 @@ import {
 } from "./tools/bus";
 import { Path } from "./tools/model";
 import moment from "moment";
-import { historyPathStore } from "./store";
 import { notification, Button } from "ant-design-vue";
 import { h, ref } from "vue";
 
@@ -40,18 +38,17 @@ export async function saveFileDialog() {
 export function addHistoryPath(data: string) {
   let result = {} as Path;
   result = { full: data, name: data };
-  let historyPathList = historyPathStore().pathList;
+  let historyPathList = JSON.parse(
+    localStorage.getItem("pathList") as string
+  ) as Path[];
   if (historyPathList.filter((x) => x.full === result.full).length == 0) {
-    historyPathStore().pathList.push(result);
+    historyPathList.push(result);
+    localStorage.setItem("pathList", JSON.stringify(historyPathList));
   }
 }
 
 export async function getSerialPortList() {
   return (await invoke("get_serial_port_list")) as string[];
-}
-
-export function selectedPort() {
-  return portStore().port;
 }
 
 export async function getCurrentDir() {
@@ -81,17 +78,6 @@ export async function getFirmwareList() {
     return item.name;
   });
   return fileNameList;
-}
-
-export async function esptoolExists() {
-  let list = (await readDir(
-    (await getCurrentDir()) + "\\tools"
-  )) as FileEntry[];
-  let result = list.find((x) => x.name?.includes("esptool")) != null;
-  if (result) {
-    return true;
-  }
-  return false;
 }
 
 export async function getFlasherArgs(path: string) {
@@ -126,29 +112,7 @@ export async function getFlasherArgs2(path: string) {
 let retryCount = 0;
 
 export async function executedCommand(cmd: String[]) {
-  // let result = await esptoolExists();
-  // if (!result) {
-  //   notification.open({
-  //     message: "未找到esptool",
-  //     description: "请将乐鑫官方esptool放在tools文件夹！",
-  //     btn: () =>
-  //       h(
-  //         Button,
-  //         {
-  //           type: "primary",
-  //           size: "small",
-  //           onClick: () => {
-  //             openFileInExplorer(currentDir + "\\tools");
-  //           },
-  //         },
-  //         {
-  //           default: () => "打开文件夹",
-  //         }
-  //       ),
-  //   });
-
-  //   return;
-  // }
+  const port = localStorage.getItem("port") as string;
 
   cmd = cmd.filter((x: String) => x != "");
   let command = Command.sidecar("bin/esptool", cmd as string[]);
@@ -162,7 +126,7 @@ export async function executedCommand(cmd: String[]) {
     terminalWriteLine(line);
     if (
       line.includes(
-        `A fatal error occurred: Could not open ${selectedPort()}, the port doesn't exist`
+        `A fatal error occurred: Could not open ${port}, the port doesn't exist`
       )
     ) {
       if (retryCount != 3) {
@@ -187,7 +151,6 @@ export async function executedCommand(cmd: String[]) {
 
   await new Promise((r) => setTimeout(r, 2500));
   await refreshFirmwareList();
-  //console.log("pid:", child.pid);
 }
 
 export async function partitionTableConvert(
@@ -240,6 +203,10 @@ export async function openFileInExplorer(path: string) {
 
 export async function isFile(path: string) {
   return await invoke("is_file", { path: path });
+}
+
+export async function collectAllPaths(path: string, level: number) {
+  return await invoke("collect_all_paths", { path: path, level: level });
 }
 
 export async function getFileSize(path: string) {

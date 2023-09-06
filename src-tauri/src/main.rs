@@ -64,8 +64,34 @@ fn write_all_text(path: &str, text: &str) {
     fs::write(path, text).unwrap();
 }
 
+#[tauri::command]
+fn collect_all_paths(path: &str, level: u32) -> Vec<String> {
+    let mut paths: Vec<String> = Vec::new();
+
+    if level >=2 {
+        return paths; 
+    }
+
+    if let Ok(entries) = fs::read_dir(path) {
+        for entry in entries {
+            if let Ok(entry) = entry {
+                let path = entry.path();
+                let path_str = path.to_str().unwrap().to_owned();
+                paths.push(path_str.clone());
+
+                if path.is_dir() {
+                    let sub_paths = collect_all_paths(path.to_str().unwrap(), level + 1); 
+                    paths.extend(sub_paths);
+                }
+            }
+        }
+    }
+
+    paths
+}
+
 fn main() {
-    for item in ["firmware",  "partitions"].iter() {
+    for item in ["firmware", "partitions"].iter() {
         if !Path::new(item).exists() {
             fs::create_dir(item).unwrap();
         }
@@ -90,7 +116,8 @@ fn main() {
             open_file_in_explorer,
             is_file,
             write_all_text,
-            get_file_size
+            get_file_size,
+            collect_all_paths
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

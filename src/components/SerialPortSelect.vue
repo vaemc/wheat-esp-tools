@@ -10,7 +10,6 @@
 </template>
 <script setup lang="ts">
 import { ref } from "vue";
-import { portStore } from "./store";
 import { getSerialPortList } from "./common";
 const selectedSerialPort = ref();
 const serialPortList = ref([] as any);
@@ -25,7 +24,7 @@ const refreshList = async (showDefaultPort = false) => {
   serialPortList.value = list;
   if (list.length > 0 && showDefaultPort) {
     selectedSerialPort.value = list[0].value;
-    portStore().port = list[0].value;
+    localStorage.setItem("port", list[0].value);
   }
 };
 
@@ -34,7 +33,7 @@ const focus = () => {
 };
 
 const change = (data: string) => {
-  portStore().port = data;
+  localStorage.setItem("port", data);
 };
 
 refreshList(true);

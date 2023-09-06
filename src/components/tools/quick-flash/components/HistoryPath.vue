@@ -14,23 +14,22 @@ import List from "./List.vue";
 import { message } from "ant-design-vue";
 import { Path } from "../../model";
 import { ref } from "vue";
-import { historyPathStore } from "../../../store";
-const pathList = ref(historyPathStore().pathList as Path[]);
+// const pathList = ref(historyPathStore().pathList as Path[]);
 const remove = (path: string) => {
-  historyPathStore().pathList = historyPathStore().pathList.filter(
-    (x) => x.full !== path
-  );
-  pathList.value = historyPathStore().pathList;
-  message.success("删除成功!");
+  // historyPathStore().pathList = historyPathStore().pathList.filter(
+  //   (x) => x.full !== path
+  // );
+  // pathList.value = historyPathStore().pathList;
+  // message.success("删除成功!");
 };
 
 const onSearch = (text: string) => {
-  if (text == "") {
-    pathList.value = historyPathStore().pathList;
-  } else {
-    pathList.value = pathList.value.filter((x) =>
-      x.full.toLowerCase().includes(text.toLowerCase())
-    );
-  }
+  // if (text == "") {
+  //   pathList.value = historyPathStore().pathList;
+  // } else {
+  //   pathList.value = pathList.value.filter((x) =>
+  //     x.full.toLowerCase().includes(text.toLowerCase())
+  //   );
+  // }
 };
 </script>

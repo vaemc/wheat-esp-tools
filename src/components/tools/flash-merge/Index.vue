@@ -1,8 +1,17 @@
 <template>
-  <a-modal v-model:visible="firmwareModal.visible" :title="firmwareModal.title" :footer="null" width="80%">
+  <a-modal
+    v-model:visible="firmwareModal.visible"
+    :title="firmwareModal.title"
+    :footer="null"
+    width="80%"
+  >
     <a-form :label-col="{ span: 4 }">
       <a-form-item label="路径" name="description">
-        <a-input-search enter-button="选择固件" v-model:value="firmware.path" @search="openFileDialog(firmware)" />
+        <a-input-search
+          enter-button="选择固件"
+          v-model:value="firmware.path"
+          @search="openFileDialog(firmware)"
+        />
       </a-form-item>
 
       <a-form-item label="烧录地址" name="address">
@@ -11,35 +20,63 @@
     </a-form>
   </a-modal>
 
-  <a-row style="margin-bottom: 5px" type="flex" justify="space-around" align="middle">
-    <a-col :span="8">
-      <FlashOption v-model="selectedFlashOption" @change="flashOptionChange" />
-    </a-col>
+  <a-row
+    style="margin-bottom: 5px"
+    type="flex"
+    justify="space-around"
+    align="middle"
+  >
     <a-col :span="8">
       <SPIMode v-model="selectedMode" />
     </a-col>
     <a-col :span="8">
-      <a-select style="width: 120px" size="small" placeholder="芯片类型" v-model:value="selectedChipType"
-        :options="chipTypeList">
+      <a-select
+        style="width: 120px"
+        size="small"
+        placeholder="芯片类型"
+        v-model:value="selectedChipType"
+        :options="chipTypeList"
+      >
       </a-select>
     </a-col>
+    <a-col :span="8"> </a-col>
   </a-row>
 
   <div ref="target">
-    <Upload v-if="destroyDrop" :title="selectedFlashOptionConfig.title" :subtitle="selectedFlashOptionConfig.subtitle"
-      @open="uploadHandle" @drop="uploadHandle" :isDirectory="false" :isMultiple="true" />
+    <Upload
+      v-if="destroyDrop"
+      title="选择或者拖拽多个bin文件到此"
+      subtitle="工具可以自动解析结尾使用下划线加烧录地址的固件,如 'ESP32_0x222.bin'"
+      @open="uploadHandle"
+      @drop="uploadHandle"
+      :isDirectory="false"
+      :isMultiple="true"
+    />
   </div>
-  <a-table style="margin: 5px 0" :bordered="true" :pagination="false" :dataSource="firmwareList" :columns="columns"
-    size="small" class="scroll">
+  <a-table
+    style="margin: 5px 0"
+    :bordered="true"
+    :pagination="false"
+    :dataSource="firmwareList"
+    :columns="columns"
+    size="small"
+    class="scroll"
+  >
     <template #headerCell="{ column }">
       <template v-if="column.key === 'check'">
-        <a-checkbox v-model:checked="flashCheckOption.selectAll" :indeterminate="flashCheckOption.indeterminate"
-          @change="flashCheckAllChange"></a-checkbox>
+        <a-checkbox
+          v-model:checked="flashCheckOption.selectAll"
+          :indeterminate="flashCheckOption.indeterminate"
+          @change="flashCheckAllChange"
+        ></a-checkbox>
       </template>
     </template>
     <template #bodyCell="{ column, record }">
       <template v-if="column.key === 'check'">
-        <a-checkbox v-model:checked="record.check" @change="flashCheckSingleChange"></a-checkbox>
+        <a-checkbox
+          v-model:checked="record.check"
+          @change="flashCheckSingleChange"
+        ></a-checkbox>
       </template>
 
       <template v-if="column.key === 'action'">
@@ -52,43 +89,47 @@
 
   <a-row :gutter="16">
     <a-col :span="12">
-      <a-button type="primary" @click="handle(flash)" block>烧录</a-button></a-col>
-    <a-col :span="12"><a-button type="primary" @click="handle(merge)" block>
+      <a-button type="primary" @click="handle(flash)" block
+        >烧录</a-button
+      ></a-col
+    >
+    <a-col :span="12"
+      ><a-button type="primary" @click="handle(merge)" block>
         合并
-      </a-button></a-col>
+      </a-button></a-col
+    >
   </a-row>
 </template>
 <script setup lang="ts">
-import { ref, watch } from "vue";
+import { ref } from "vue";
+import { writeFlash } from "../../../common/ESPTool";
 import { Firmware } from "./model";
 import { message } from "ant-design-vue";
 import Upload from "../Upload.vue";
 import {
   getChipTypeList,
-  selectedPort,
   executedCommand,
   openFileInExplorer,
   getCurrentDir,
   getFlasherArgs2,
   isFile,
   getFileSize,
+  collectAllPaths,
 } from "../../common";
 import { config } from "./";
 import { Option } from "./model";
-import FlashOption from "./components/FlashOption.vue";
 import SPIMode from "../SPIMode.vue";
 import { open } from "@tauri-apps/api/dialog";
 import moment from "moment";
 import prettyBytes from "pretty-bytes";
-import { useElementVisibility } from '@vueuse/core'
-const target = ref(null)
-const destroyDrop = useElementVisibility(target)
+import { useElementVisibility } from "@vueuse/core";
+
+const target = ref(null);
+const destroyDrop = useElementVisibility(target);
 
 const flashCheckOption = ref({ indeterminate: false, selectAll: false });
 
 const selectedMode = ref("keep");
-const selectedFlashOption = ref("custom");
-const selectedFlashOptionConfig = ref(config[0]);
 const firmware = ref({} as Firmware);
 const firmwareList = ref([] as Firmware[]);
 const firmwareModal = ref({ visible: false, title: "添加固件", isEdit: false });
@@ -126,9 +167,10 @@ const columns = ref([
 ]);
 
 const flash = () => {
+  const port = localStorage.getItem("port") as string;
   let cmd = [
     "-p",
-    selectedPort(),
+    port,
     "-b",
     "1152000",
     "--before=default_reset",
@@ -140,7 +182,7 @@ const flash = () => {
       .filter((x) => x.check)
       .flatMap((x) => [x.address, x.path]),
   ];
-  executedCommand(cmd);
+  writeFlash(cmd);
 };
 
 const merge = async () => {
@@ -149,8 +191,9 @@ const merge = async () => {
     return;
   }
 
-  let filename = `${currentDir}\\firmware\\${selectedChipType.value
-    }-merge-bin-${moment().format("YYYYMMDDHHmmss")}.bin`;
+  let filename = `${currentDir}\\firmware\\${
+    selectedChipType.value
+  }-merge-bin-${moment().format("YYYYMMDDHHmmss")}.bin`;
   let cmd = [
     "--chip",
     selectedChipType.value,
@@ -162,8 +205,8 @@ const merge = async () => {
       .flatMap((x) => [x.address, x.path]),
   ];
   executedCommand(cmd);
-  await new Promise((r) => setTimeout(r, 2500));
-  openFileInExplorer(filename);
+  // await new Promise((r) => setTimeout(r, 2500));
+  // openFileInExplorer(filename);
 };
 
 const handle = (fun: Function) => {
@@ -194,12 +237,12 @@ const removeFirmwareBtn = (item: Firmware) => {
   firmwareList.value = firmwareList.value.filter(
     (x: Firmware) => x.path != item.path
   );
-  message.success("删除成功！");
 
   if (firmwareList.value.filter((x) => x.check).length == 0) {
     flashCheckOption.value.indeterminate = false;
     flashCheckOption.value.selectAll = false;
   }
+
   if (
     firmwareList.value.filter((x) => x.check).length ==
     firmwareList.value.length
@@ -207,12 +250,18 @@ const removeFirmwareBtn = (item: Firmware) => {
     flashCheckOption.value.selectAll = true;
     flashCheckOption.value.indeterminate = false;
   }
+
+  if (firmwareList.value.length == 0) {
+    flashCheckOption.value.selectAll = false;
+    flashCheckOption.value.indeterminate = false;
+  }
 };
 
 const flashFirmwareBtn = (item: Firmware) => {
+  const port = localStorage.getItem("port") as string;
   let cmd = [
     "-p",
-    selectedPort(),
+    port,
     "-b",
     "1152000",
     "--before=default_reset",
@@ -242,7 +291,7 @@ const chipTypeList = ref(
 );
 
 const uploadHandle = async (path: string | string[]) => {
-  const filteredPaths = await Promise.all(
+  const fillPaths = await Promise.all(
     (path as string[]).map(async (item) => {
       const isFileResult = (await isFile(item)) as boolean;
       const fileSize = (await getFileSize(item)) as number;
@@ -250,43 +299,60 @@ const uploadHandle = async (path: string | string[]) => {
     })
   );
 
-  const filterPath = filteredPaths.filter((x) => x.isFile);
-
-  if (selectedFlashOptionConfig.value.type == "custom") {
-    let regex = /0x[\da-f]+/gi;
-    filterPath.map((item) => {
-      let address = item.path.match(regex);
-      firmwareList.value.push({
-        size: prettyBytes(item.size),
-        check: true,
-        path: item.path,
-        address: address == null ? "" : address[0],
-      });
-    });
+  let flasherArgsJsonFilePath;
+  if (fillPaths.length == 1 && !fillPaths[0].isFile) {
+    flasherArgsJsonFilePath = (
+      (await collectAllPaths(fillPaths[0].path, 0)) as string[]
+    ).find((x) => x.substring(x.lastIndexOf("\\") + 1) == "flasher_args.json");
+  } else {
+    flasherArgsJsonFilePath = fillPaths
+      .filter((x) => x.isFile)
+      .find(
+        (x) =>
+          x.path.substring(x.path.lastIndexOf("\\") + 1) == "flasher_args.json"
+      )?.path;
   }
 
-  if (selectedFlashOptionConfig.value.type == "flasher_args.json") {
-    const flasherArgs = await getFlasherArgs2(filterPath[0].path);
-    const folderPath = filterPath[0].path.substring(
+  if (
+    flasherArgsJsonFilePath !== null &&
+    flasherArgsJsonFilePath !== undefined
+  ) {
+    const flasherArgs = await getFlasherArgs2(flasherArgsJsonFilePath);
+    const folderPath = flasherArgsJsonFilePath.substring(
       0,
-      filterPath[0].path.lastIndexOf("\\")
+      flasherArgsJsonFilePath.lastIndexOf("\\")
     );
-
-    Object.keys(flasherArgs.flashFiles).map(async (item) => {
-      const fullPath =
-        folderPath + "\\" + flasherArgs.flashFiles[item].replace(/\//g, "\\");
-      firmwareList.value.push({
-        size: prettyBytes((await getFileSize(fullPath)) as number),
-        check: true,
-        path: fullPath,
-        address: item,
-      });
-    });
-
+    await Promise.all(
+      Object.keys(flasherArgs.flashFiles).map(async (item) => {
+        const fullPath =
+          folderPath + "\\" + flasherArgs.flashFiles[item].replace(/\//g, "\\");
+        firmwareList.value.push({
+          size: prettyBytes((await getFileSize(fullPath)) as number),
+          check: true,
+          path: fullPath,
+          address: item,
+        });
+      })
+    );
     selectedChipType.value = flasherArgs.chip.toUpperCase();
+  } else {
+    let regex = /0x[\da-f]+/gi;
+    fillPaths
+      .filter((x) => x.isFile)
+      .map((item) => {
+        let address = item.path.match(regex);
+        firmwareList.value.push({
+          size: prettyBytes(item.size),
+          check: true,
+          path: item.path,
+          address: address == null ? "" : address[0],
+        });
+      });
   }
 
-  flashCheckOption.value.selectAll = true;
+  if (firmwareList.value.length > 0) {
+    flashCheckOption.value.selectAll = true;
+  }
 };
 
 const flashCheckSingleChange = (e: any) => {
@@ -325,10 +391,6 @@ const flashCheckAllChange = (e: any) => {
   } else {
     flashCheckOption.value.selectAll = false;
   }
-};
-
-const flashOptionChange = (item: Option) => {
-  selectedFlashOptionConfig.value = item;
 };
 
 const openFileDialog = async (obj: any) => {
