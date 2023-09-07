@@ -6,20 +6,6 @@ import {
   FileEntry,
 } from "@tauri-apps/api/fs";
 import { save } from "@tauri-apps/api/dialog";
-import { Command } from "@tauri-apps/api/shell";
-import {
-  terminalWrite,
-  terminalWriteLine,
-  refreshFirmwareList,
-} from "./bus";
-import moment from "moment";
-import { notification, Button } from "ant-design-vue";
-import { h, ref } from "vue";
-
-import kleur from "kleur";
-import { log } from "console";
-
-const currentDir = await getCurrentDir();
 
 export async function saveFileDialog() {
   const filePath = await save({
@@ -73,10 +59,9 @@ export async function getFirmwareList() {
   let fileList = (await readDir(
     (await getCurrentDir()) + "\\firmware"
   )) as FileEntry[];
-  let fileNameList = fileList.map((item) => {
-    return item.name;
+  return fileList.map((item) => {
+    return item.path;
   });
-  return fileNameList;
 }
 
 export async function getFlasherArgs(path: string) {
@@ -106,94 +91,6 @@ export async function getFlasherArgs2(path: string) {
     chip: flasherArgs.extra_esptool_args.chip,
     flashFiles: flasherArgs.flash_files,
   };
-}
-
-let retryCount = 0;
-
-export async function executedCommand(cmd: String[]) {
-  const port = localStorage.getItem("port") as string;
-
-  cmd = cmd.filter((x: String) => x != "");
-  let command = Command.sidecar("bin/esptool", cmd as string[]);
-  command.on("close", (data) => {});
-  command.on("error", (error) => terminalWrite(error));
-  command.stdout.on("data", async (line) => {
-    console.log(line);
-    terminalWrite(
-      kleur.bold().blue(`[${moment().format("YYYY-MM-DD HH:mm:ss")}] `)
-    );
-    terminalWriteLine(line);
-    if (
-      line.includes(
-        `A fatal error occurred: Could not open ${port}, the port doesn't exist`
-      )
-    ) {
-      if (retryCount != 3) {
-        notification["warning"]({
-          message: "端口不存在或被占用，正在重试...",
-        });
-
-        retryCount++;
-        await new Promise((r) => setTimeout(r, 2000));
-        executedCommand(cmd);
-      } else {
-        retryCount = 0;
-      }
-    }
-  });
-  command.stderr.on("data", (line) => {
-    console.log(line);
-    terminalWrite(moment().format("YYYY-MM-DD HH:mm:ss"));
-    terminalWriteLine(line);
-  });
-  const child = await command.spawn();
-
-  await new Promise((r) => setTimeout(r, 2500));
-  await refreshFirmwareList();
-}
-
-export async function partitionTableConvert(
-  input: string,
-  flashSize: string,
-  isBin: boolean
-) {
-  let currentDir = await getCurrentDir();
-  if (!isBin) {
-    await writeAllText(currentDir + "\\partitions\\temp.csv", input);
-  }
-
-  const resultPromise = new Promise((resolve, reject) => {
-    let partitionContent = "#Name,Type,SubType,Offset,Size,Flags\n";
-    let command = Command.sidecar("bin/gen_esp32part", [
-      !isBin ? currentDir + "\\partitions\\temp.csv" : input,
-      "1",
-      ...(flashSize != "NONE" ? ["--flash-size", flashSize] : []),
-      "--out-string",
-      "1",
-    ]);
-    command.on("close", (data) => {
-      if (partitionContent.split("\n").length != 2) {
-        resolve(partitionContent);
-      }
-    });
-    command.on("error", (error) => terminalWrite(error));
-    command.stdout.on("data", async (line) => {
-      if (line.charAt(0) != "#") {
-        partitionContent += line + "\n";
-      }
-    });
-    command.stderr.on("data", (line) => {
-      terminalWrite(
-        kleur.bold().blue(`[${moment().format("YYYY-MM-DD HH:mm:ss")}] `)
-      );
-      terminalWriteLine(line);
-    });
-
-    const child = command.spawn();
-  });
-
-  const result = await resultPromise;
-  return result;
 }
 
 export async function openFileInExplorer(path: string) {

@@ -2,7 +2,7 @@
   <div style="margin: 5px 0">
     <SerialPortSelect />
   </div>
-  
+
   <a-row
     style="margin-bottom: 5px"
     type="flex"
@@ -93,7 +93,6 @@ import Upload from "@/components/Upload.vue";
 import SerialPortSelect from "@/components/SerialPortSelect.vue";
 import {
   getChipTypeList,
-  executedCommand,
   openFileInExplorer,
   getCurrentDir,
   getFlasherArgs2,
@@ -102,10 +101,11 @@ import {
   collectAllPaths,
 } from "@/utils/common";
 import SPIMode from "@/components/SPIMode.vue";
-import { open } from "@tauri-apps/api/dialog";
+import db from "@/db/db";
 import moment from "moment";
 import prettyBytes from "pretty-bytes";
 import { useElementVisibility } from "@vueuse/core";
+
 const target = ref(null);
 const destroyDrop = useElementVisibility(target);
 
@@ -143,7 +143,7 @@ const columns = ref([
   {
     title: "操作",
     key: "action",
-    width: 130,
+    width: 90,
   },
 ]);
 
@@ -171,10 +171,9 @@ const flash = async () => {
     });
     cli.on("close", (data) => {
       console.log(data);
-      resolve();
+      cli.all.clear();
     });
   });
-
   const result = await resultPromise;
 };
 
@@ -202,14 +201,15 @@ const merge = async () => {
 
   const resultPromise = new Promise((resolve, reject) => {
     cli.on("stdout", (data) => {
-      console.log(data);
-      if (data.includes("ready to flash to offset 0x0")) {
+      if (String(data).includes("ready to flash to offset 0x0")) {
         openFileInExplorer(filename);
       }
     });
-    cli.on("close", (data) => {});
+    cli.on("close", (data) => {
+      console.log(data);
+      cli.all.clear();
+    });
   });
-
   const result = await resultPromise;
 };
 
@@ -261,7 +261,7 @@ const removeFirmwareBtn = (item: Firmware) => {
   }
 };
 
-const flashFirmwareBtn = (item: Firmware) => {
+const flashFirmwareBtn = async (item: Firmware) => {
   const port = localStorage.getItem("port") as string;
   let cmd = [
     "-p",
@@ -276,7 +276,17 @@ const flashFirmwareBtn = (item: Firmware) => {
     item.address,
     item.path,
   ];
-  executedCommand(cmd);
+  execute("esptool", cmd);
+  const resultPromise = new Promise((resolve, reject) => {
+    cli.on("stdout", (data) => {
+      console.log(data);
+    });
+    cli.on("close", (data) => {
+      console.log(data);
+      cli.all.clear();
+    });
+  });
+  const result = await resultPromise;
 };
 
 const selectedChipType = ref();
@@ -331,6 +341,9 @@ const uploadHandle = async (path: string | string[]) => {
         });
       })
     );
+    console.log(flasherArgsJsonFilePath);
+    db.add("paths", { path: flasherArgsJsonFilePath });
+
     selectedChipType.value = flasherArgs.chip.toUpperCase();
   } else {
     let regex = /0x[\da-f]+/gi;

@@ -6,30 +6,70 @@
       enter-button
       @search="onSearch"
     />
-    <List :pathList="pathList" @remove="remove" />
+    <a-list
+      size="small"
+      :pagination="{ pageSize: 10, size: 'small' }"
+      bordered
+      :data-source="pathList"
+    >
+      <template #renderItem="{ item }">
+        <a-list-item
+          ><template #actions>
+            <a-popover title="SPI Mode">
+              <template #content>
+                <SPIMode v-model="selectedMode" />
+              </template>
+              <a @click="flash(item)">烧录</a>
+            </a-popover>
+
+            <a-tooltip>
+              <template #title>在资源管理器中打开</template>
+              <a
+                @click="
+                  () => {
+                    openFileInExplorer(item);
+                  }
+                "
+                >打开</a
+              >
+            </a-tooltip>
+            <a @click="remove(item)">删除</a> </template
+          >{{ item }}</a-list-item
+        >
+      </template>
+    </a-list>
   </div>
 </template>
 <script setup lang="ts">
-import List from "./List.vue";
-import { message } from "ant-design-vue";
-
+import db from "@/db/db";
 import { ref } from "vue";
- const pathList = ref();
-const remove = (path: string) => {
-  // historyPathStore().pathList = historyPathStore().pathList.filter(
-  //   (x) => x.full !== path
-  // );
-  // pathList.value = historyPathStore().pathList;
-  // message.success("删除成功!");
+import { openFileInExplorer } from "@/utils/common";
+import SPIMode from "@/components/SPIMode.vue";
+
+import { useRouter, useRoute } from "vue-router";
+const router = useRouter();
+
+const selectedMode = ref("keep");
+const pathList = ref((await db.getAll("paths")).map((item) => item.path));
+
+async function flash(path: string) {
+  router.push({
+    name: "flash",
+  });
+}
+
+const remove =async (path: string) => {
+  db.delete("paths", path);
+  pathList.value=(await db.getAll("paths")).map((item) => item.path);
 };
 
-const onSearch = (text: string) => {
-  // if (text == "") {
-  //   pathList.value = historyPathStore().pathList;
-  // } else {
-  //   pathList.value = pathList.value.filter((x) =>
-  //     x.full.toLowerCase().includes(text.toLowerCase())
-  //   );
-  // }
+const onSearch = async (text: string) => {
+  if (text == "") {
+    pathList.value = (await db.getAll("paths")).map((item) => item.path);
+  } else {
+    pathList.value = (await db.getAll("paths"))
+      .map((item) => item.path)
+      .filter((x) => x.toLowerCase().includes(text.toLowerCase()));
+  }
 };
 </script>

@@ -104,8 +104,7 @@ fn main() {
 
     tauri::Builder::default()
         .setup(|app| {
-            let window = app.get_window("main").unwrap();
-            let window_clone = window.clone();
+            let _window = app.get_window("main").unwrap();
 
             Ok(())
         })

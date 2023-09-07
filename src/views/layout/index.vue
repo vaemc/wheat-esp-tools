@@ -10,11 +10,11 @@
                         </span>
                     </template>
                     <!-- 🐶 🐱 🐭 🐹 🐰 🦊 🐻 -->
-                    <a-menu-item key="1-1" @click="$router.push('/tools/basic')">🐼基本</a-menu-item>
-                    <a-menu-item key="1-2" @click="$router.push('/tools/flash')">🐶烧录或合并固件</a-menu-item>
-                    <a-menu-item key="1-3" @click="$router.push('/tools/partition')">🐱分区表</a-menu-item>
-                    <a-menu-item key="1-4" @click="$router.push('/tools/fs')">🐻文件系统</a-menu-item>
-                    <a-menu-item key="1-5" @click="$router.push('/tools/firmware')">🐰固件管理</a-menu-item>
+                    <a-menu-item key="basic" @click="$router.push('/tools/basic')">🐼基本</a-menu-item>
+                    <a-menu-item key="flash" @click="$router.push('/tools/flash')">🐶烧录或合并固件</a-menu-item>
+                    <a-menu-item key="partition" @click="$router.push('/tools/partition')">🐱分区表</a-menu-item>
+                    <a-menu-item key="fs" @click="$router.push('/tools/fs')">🐻文件系统</a-menu-item>
+                    <a-menu-item key="firmware" @click="$router.push('/tools/firmware')">🐰固件管理</a-menu-item>
                 </a-sub-menu>
                 <a-menu-item key="2">
                     <span class="nav-text">⚙️设置</span>
@@ -44,6 +44,8 @@
 import Terminal from "@/components/Terminal.vue";
 import SerialPortSelect from "@/components/SerialPortSelect.vue";
 import { ref } from 'vue';
+import { useRoute} from "vue-router";
+
 
 const openKeys = ref(['sub1']);
 
@@ -55,7 +57,7 @@ const onBreakpoint = (broken: boolean) => {
     console.log(broken);
 };
 
-const selectedKeys = ref<string[]>(['4']);
+const selectedKeys = ref([useRoute().name]);
 
 
 </script>

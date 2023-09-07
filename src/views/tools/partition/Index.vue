@@ -5,59 +5,88 @@
         <a-tabs>
           <a-tab-pane key="1" tab="偏移地址计算">
             <div style="margin-bottom: 5px">
-              <a-select v-model:value="flashSize" style="width: 160px" :options="flashSizeOptions">
+              <a-select
+                v-model:value="flashSize"
+                style="width: 160px"
+                :options="flashSizeOptions"
+              >
               </a-select>
-              <a-button type="primary" style="margin-left: 5px" @click="ok">计算</a-button>
+              <a-button type="primary" style="margin-left: 5px" @click="ok"
+                >计算</a-button
+              >
             </div>
-            <a-textarea placeholder="CSV内容" v-model:value="beforePartition" max :rows="18" />
+            <a-textarea
+              placeholder="CSV内容"
+              v-model:value="beforePartition"
+              max
+              :rows="18"
+            />
           </a-tab-pane>
           <a-tab-pane key="2" tab="二进制文件转换">
             <div ref="target">
-              <Upload v-if="destroyDrop" title="选择或者拖拽分区表bin文件到此" :isDirectory="false" :isMultiple="false"
-                @open="uploadHandle" @drop="uploadHandle" />
+              <Upload
+                v-if="destroyDrop"
+                title="选择或者拖拽分区表bin文件到此"
+                :isDirectory="false"
+                :isMultiple="false"
+                @open="uploadHandle"
+                @drop="uploadHandle"
+              />
             </div>
           </a-tab-pane>
         </a-tabs>
       </a-col>
       <a-col :span="13">
-        <a-tag color="success" v-if="partitionSize.kb != ''">分区表大小: {{ partitionSize.kb }} {{ partitionSize.byte }} B
+        <a-tag color="success" v-if="partitionSize.kb != ''"
+          >分区表大小: {{ partitionSize.kb }} {{ partitionSize.byte }} B
         </a-tag>
         <a-tabs>
           <a-tab-pane key="1" tab="表格">
-            <a-table :bordered="true" :pagination="false" size="small" class="scroll" :dataSource="dataSource" :columns="[
-              {
-                title: 'Name',
-                dataIndex: '#Name',
-                key: '#Name',
-              },
-              {
-                title: 'Type',
-                dataIndex: 'Type',
-                key: 'Type',
-              },
-              {
-                title: 'SubType',
-                dataIndex: 'SubType',
-                key: 'SubType',
-              },
-              {
-                title: 'Offset',
-                dataIndex: 'Offset',
-                key: 'Offset',
-              },
-              {
-                title: 'Size',
-                dataIndex: 'Size',
-                key: 'Size',
-              },
-              {
-                title: 'Flags',
-                dataIndex: 'Flags',
-                key: 'Flags',
-              },
-            ]" /></a-tab-pane>
-          <a-tab-pane key="2" tab="文本"><a-textarea v-model:value="afterPartition" placeholder=""
-              :rows="12" /></a-tab-pane>
+            <a-table
+              :bordered="true"
+              :pagination="false"
+              size="small"
+              class="scroll"
+              :dataSource="dataSource"
+              :columns="[
+                {
+                  title: 'Name',
+                  dataIndex: '#Name',
+                  key: '#Name',
+                },
+                {
+                  title: 'Type',
+                  dataIndex: 'Type',
+                  key: 'Type',
+                },
+                {
+                  title: 'SubType',
+                  dataIndex: 'SubType',
+                  key: 'SubType',
+                },
+                {
+                  title: 'Offset',
+                  dataIndex: 'Offset',
+                  key: 'Offset',
+                },
+                {
+                  title: 'Size',
+                  dataIndex: 'Size',
+                  key: 'Size',
+                },
+                {
+                  title: 'Flags',
+                  dataIndex: 'Flags',
+                  key: 'Flags',
+                },
+              ]"
+          /></a-tab-pane>
+          <a-tab-pane key="2" tab="文本"
+            ><a-textarea
+              v-model:value="afterPartition"
+              placeholder=""
+              :rows="12"
+          /></a-tab-pane>
         </a-tabs>
       </a-col>
     </a-row>
@@ -65,13 +94,14 @@
 </template>
 <script setup lang="ts">
 import { ref } from "vue";
-import { partitionTableConvert } from "@/utils/common";
+import { getCurrentDir, writeAllText } from "@/utils/common";
 import Papa from "papaparse";
 import prettyBytes from "pretty-bytes";
 import Upload from "@/components/Upload.vue";
-import { useElementVisibility } from '@vueuse/core'
-const target = ref(null)
-const destroyDrop = useElementVisibility(target)
+import { useElementVisibility } from "@vueuse/core";
+import cli, { execute } from "@/utils/cli";
+const target = ref(null);
+const destroyDrop = useElementVisibility(target);
 
 const beforePartition = ref();
 const afterPartition = ref();
@@ -89,50 +119,44 @@ const flashSizeOptions = ref([
 
 flashSize.value = flashSizeOptions.value[0].value;
 
+async function partitionTableConvert(
+  input: string,
+  flashSize: string,
+  isBin: boolean
+) {
+  // let currentDir = await getCurrentDir();
+  let currentDir = "D:\\aaaaaaaaa";
+  if (!isBin) {
+    await writeAllText(currentDir + "\\partitions\\temp.csv", input);
+  }
 
-// async function partitionTableConvert(
-//   input: string,
-//   flashSize: string,
-//   isBin: boolean
-// ) {
-//   let currentDir = await getCurrentDir();
-//   if (!isBin) {
-//     await writeAllText(currentDir + "\\partitions\\temp.csv", input);
-//   }
+  execute("gen_esp32part", [
+    !isBin ? currentDir + "\\partitions\\temp.csv" : input,
+    "1",
+    ...(flashSize != "NONE" ? ["--flash-size", flashSize] : []),
+    "--out-string",
+    "1",
+  ]);
 
-//   const resultPromise = new Promise((resolve, reject) => {
-//     let partitionContent = "#Name,Type,SubType,Offset,Size,Flags\n";
-//     let command = Command.sidecar("bin/gen_esp32part", [
-//       !isBin ? currentDir + "\\partitions\\temp.csv" : input,
-//       "1",
-//       ...(flashSize != "NONE" ? ["--flash-size", flashSize] : []),
-//       "--out-string",
-//       "1",
-//     ]);
-//     command.on("close", (data) => {
-//       if (partitionContent.split("\n").length != 2) {
-//         resolve(partitionContent);
-//       }
-//     });
-//     command.on("error", (error) => terminalWrite(error));
-//     command.stdout.on("data", async (line) => {
-//       if (line.charAt(0) != "#") {
-//         partitionContent += line + "\n";
-//       }
-//     });
-//     command.stderr.on("data", (line) => {
-//       terminalWrite(
-//         kleur.bold().blue(`[${moment().format("YYYY-MM-DD HH:mm:ss")}] `)
-//       );
-//       terminalWriteLine(line);
-//     });
+  let partitionContent = "#Name,Type,SubType,Offset,Size,Flags\n";
 
-//     const child = command.spawn();
-//   });
-
-//   const result = await resultPromise;
-//   return result;
-// }
+  const resultPromise = new Promise((resolve, reject) => {
+    cli.on("stdout", (data) => {
+      console.log(data);
+      if (String(data).charAt(0) != "#") {
+        partitionContent += data + "\n";
+      }
+    });
+    cli.on("close", (data) => {
+      cli.all.clear();
+      if (partitionContent.split("\n").length != 2) {
+        resolve(partitionContent);
+      }
+    });
+  });
+  const result = await resultPromise;
+  return result;
+}
 
 const convert = async (input: string, isBin: boolean) => {
   partitionSize.value = { kb: "", byte: "" };
@@ -144,14 +168,14 @@ const convert = async (input: string, isBin: boolean) => {
     isBin
   );
 
-  let partition = Papa.parse(afterPartition.value, {
+  let partitionTable = Papa.parse(afterPartition.value, {
     header: true,
     skipEmptyLines: true,
   }).data.filter((item: any) => Object.keys(item).length == 6);
 
-  dataSource.value = partition;
+  dataSource.value = partitionTable;
 
-  let last = partition.at(-1) as any;
+  let last = partitionTable.at(-1) as any;
 
   partitionSize.value = {
     kb: prettyBytes(

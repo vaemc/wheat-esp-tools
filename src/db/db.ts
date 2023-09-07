@@ -1,18 +1,12 @@
 import { openDB } from "idb";
 
-const db = await openDB("database", 1, {
-  upgrade(db, oldVersion, newVersion, transaction, event) {
-    
+const db = await openDB("db1", 1, {
+  upgrade(db) {
+    db.createObjectStore("paths",{ keyPath: 'path' });
   },
-  blocked(currentVersion, blockedVersion, event) {
-    
-  },
-  blocking(currentVersion, blockedVersion, event) {
-   
-  },
-  terminated() {
-   
-  },
+  blocked(currentVersion, blockedVersion, event) {},
+  blocking(currentVersion, blockedVersion, event) {},
+  terminated() {},
 });
 
 export default db;
@@ -28,4 +22,3 @@ export async function findAll(storeName: string) {
 export async function edit(storeName: string, value: any) {
   await db.put(storeName, value);
 }
-
