@@ -89,6 +89,51 @@ const flashSizeOptions = ref([
 
 flashSize.value = flashSizeOptions.value[0].value;
 
+
+// async function partitionTableConvert(
+//   input: string,
+//   flashSize: string,
+//   isBin: boolean
+// ) {
+//   let currentDir = await getCurrentDir();
+//   if (!isBin) {
+//     await writeAllText(currentDir + "\\partitions\\temp.csv", input);
+//   }
+
+//   const resultPromise = new Promise((resolve, reject) => {
+//     let partitionContent = "#Name,Type,SubType,Offset,Size,Flags\n";
+//     let command = Command.sidecar("bin/gen_esp32part", [
+//       !isBin ? currentDir + "\\partitions\\temp.csv" : input,
+//       "1",
+//       ...(flashSize != "NONE" ? ["--flash-size", flashSize] : []),
+//       "--out-string",
+//       "1",
+//     ]);
+//     command.on("close", (data) => {
+//       if (partitionContent.split("\n").length != 2) {
+//         resolve(partitionContent);
+//       }
+//     });
+//     command.on("error", (error) => terminalWrite(error));
+//     command.stdout.on("data", async (line) => {
+//       if (line.charAt(0) != "#") {
+//         partitionContent += line + "\n";
+//       }
+//     });
+//     command.stderr.on("data", (line) => {
+//       terminalWrite(
+//         kleur.bold().blue(`[${moment().format("YYYY-MM-DD HH:mm:ss")}] `)
+//       );
+//       terminalWriteLine(line);
+//     });
+
+//     const child = command.spawn();
+//   });
+
+//   const result = await resultPromise;
+//   return result;
+// }
+
 const convert = async (input: string, isBin: boolean) => {
   partitionSize.value = { kb: "", byte: "" };
   afterPartition.value = "";

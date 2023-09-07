@@ -26,10 +26,10 @@
             </a-menu>
         </a-layout-sider>
         <a-layout>
-            <div style="margin: 5px;">
+            <!-- <div style="margin: 10px;">
                 <SerialPortSelect />
-            </div>
-            <a-layout-content :style="{ padding: '20px', minHeight: '280px' }">
+            </div> -->
+            <a-layout-content :style="{ padding: '10px', minHeight: '280px' }">
                 <router-view v-slot="{ Component }">
                     <keep-alive>
                         <component :is="Component" />
@@ -43,7 +43,6 @@
 <script setup lang="ts">
 import Terminal from "@/components/Terminal.vue";
 import SerialPortSelect from "@/components/SerialPortSelect.vue";
-import { ToolOutlined, SettingOutlined, QuestionCircleOutlined, UploadOutlined } from '@ant-design/icons-vue';
 import { ref } from 'vue';
 
 const openKeys = ref(['sub1']);

@@ -1,12 +1,16 @@
 <template>
-  <a-button v-for="item in list" @click="click(item.cmd)" style="margin: 5px">{{
+  <div style="margin: 5px 0">
+    <SerialPortSelect />
+  </div>
+  <a-button v-for="item in list" @click="click(item.cmd)">{{
     item.name
   }}</a-button>
-  <a-button @click="readFlash()" style="margin: 5px">读取固件</a-button>
+  <a-button @click="readFlash()">读取固件</a-button>
 </template>
 <script setup lang="ts">
 import { ref } from "vue";
 import { executedCommand, getCurrentDir } from "@/utils/common";
+import SerialPortSelect from "@/components/SerialPortSelect.vue";
 import moment from "moment";
 const currentDir = await getCurrentDir();
 const click = (item: string[]) => {

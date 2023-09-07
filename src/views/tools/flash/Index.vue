@@ -1,25 +1,8 @@
 <template>
-  <a-modal
-    v-model:visible="firmwareModal.visible"
-    :title="firmwareModal.title"
-    :footer="null"
-    width="80%"
-  >
-    <a-form :label-col="{ span: 4 }">
-      <a-form-item label="路径" name="description">
-        <a-input-search
-          enter-button="选择固件"
-          v-model:value="firmware.path"
-          @search="openFileDialog(firmware)"
-        />
-      </a-form-item>
-
-      <a-form-item label="烧录地址" name="address">
-        <a-input v-model:value="firmware.address" />
-      </a-form-item>
-    </a-form>
-  </a-modal>
-
+  <div style="margin: 5px 0">
+    <SerialPortSelect />
+  </div>
+  
   <a-row
     style="margin-bottom: 5px"
     type="flex"
@@ -78,10 +61,11 @@
           @change="flashCheckSingleChange"
         ></a-checkbox>
       </template>
-
+      <template v-if="column.key === 'address'">
+        <a-input :bordered="false" v-model:value="record.address" />
+      </template>
       <template v-if="column.key === 'action'">
         <a @click="flashFirmwareBtn(record)">烧录</a> |
-        <a @click="editFirmwareBtn(record)">编辑</a> |
         <a @click="removeFirmwareBtn(record)">删除</a>
       </template>
     </template>
@@ -102,10 +86,11 @@
 </template>
 <script setup lang="ts">
 import { ref } from "vue";
-import { writeFlash } from "@/utils/ESPTool";
+import cli, { execute } from "@/utils/cli";
 import { Firmware } from "./model";
 import { message } from "ant-design-vue";
 import Upload from "@/components/Upload.vue";
+import SerialPortSelect from "@/components/SerialPortSelect.vue";
 import {
   getChipTypeList,
   executedCommand,
@@ -121,7 +106,6 @@ import { open } from "@tauri-apps/api/dialog";
 import moment from "moment";
 import prettyBytes from "pretty-bytes";
 import { useElementVisibility } from "@vueuse/core";
-
 const target = ref(null);
 const destroyDrop = useElementVisibility(target);
 
@@ -130,7 +114,6 @@ const flashCheckOption = ref({ indeterminate: false, selectAll: false });
 const selectedMode = ref("keep");
 const firmware = ref({} as Firmware);
 const firmwareList = ref([] as Firmware[]);
-const firmwareModal = ref({ visible: false, title: "添加固件", isEdit: false });
 const currentDir = await getCurrentDir();
 const columns = ref([
   {
@@ -149,7 +132,7 @@ const columns = ref([
     title: "烧录地址",
     dataIndex: "address",
     key: "address",
-    width: 80,
+    width: 100,
   },
   {
     title: "大小",
@@ -164,7 +147,7 @@ const columns = ref([
   },
 ]);
 
-const flash = () => {
+const flash = async () => {
   const port = localStorage.getItem("port") as string;
   let cmd = [
     "-p",
@@ -180,7 +163,19 @@ const flash = () => {
       .filter((x) => x.check)
       .flatMap((x) => [x.address, x.path]),
   ];
-  writeFlash(cmd);
+  execute("esptool", cmd);
+
+  const resultPromise = new Promise((resolve, reject) => {
+    cli.on("stdout", (data) => {
+      console.log(data);
+    });
+    cli.on("close", (data) => {
+      console.log(data);
+      resolve();
+    });
+  });
+
+  const result = await resultPromise;
 };
 
 const merge = async () => {
@@ -192,6 +187,7 @@ const merge = async () => {
   let filename = `${currentDir}\\firmware\\${
     selectedChipType.value
   }-merge-bin-${moment().format("YYYYMMDDHHmmss")}.bin`;
+
   let cmd = [
     "--chip",
     selectedChipType.value,
@@ -202,9 +198,19 @@ const merge = async () => {
       .filter((x) => x.check)
       .flatMap((x) => [x.address, x.path]),
   ];
-  executedCommand(cmd);
-  // await new Promise((r) => setTimeout(r, 2500));
-  // openFileInExplorer(filename);
+  execute("esptool", cmd);
+
+  const resultPromise = new Promise((resolve, reject) => {
+    cli.on("stdout", (data) => {
+      console.log(data);
+      if (data.includes("ready to flash to offset 0x0")) {
+        openFileInExplorer(filename);
+      }
+    });
+    cli.on("close", (data) => {});
+  });
+
+  const result = await resultPromise;
 };
 
 const handle = (fun: Function) => {
@@ -271,13 +277,6 @@ const flashFirmwareBtn = (item: Firmware) => {
     item.path,
   ];
   executedCommand(cmd);
-};
-
-const editFirmwareBtn = (item: Firmware) => {
-  firmwareModal.value.visible = true;
-  firmwareModal.value.title = `编辑固件`;
-  firmwareModal.value.isEdit = true;
-  firmware.value = item;
 };
 
 const selectedChipType = ref();
@@ -388,16 +387,6 @@ const flashCheckAllChange = (e: any) => {
     }
   } else {
     flashCheckOption.value.selectAll = false;
-  }
-};
-
-const openFileDialog = async (obj: any) => {
-  const selected = await open({
-    directory: false,
-    multiple: false,
-  });
-  if (!Array.isArray(selected) && selected !== null) {
-    obj.path = selected;
   }
 };
 </script>

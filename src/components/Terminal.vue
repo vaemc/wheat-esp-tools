@@ -1,7 +1,12 @@
 <template>
   <div style="width: 100%">
     <div id="terminal" style="height: 160px" class="xterm"></div>
-    <a-progress :percent="progress.value" v-if="progress.visible" :status="progress.status" :show-info="false" />
+    <a-progress
+      :percent="progress.value"
+      v-if="progress.visible"
+      :status="progress.status"
+      :show-info="false"
+    />
   </div>
 </template>
 <script setup lang="ts">
@@ -13,6 +18,9 @@ import "xterm/lib/xterm.js";
 import { Terminal } from "xterm";
 import { FitAddon } from "xterm-addon-fit";
 import { onMounted } from "vue";
+import bus from "@/bus/terminal";
+import kleur from "kleur";
+import moment from "moment";
 
 const progress = ref({
   value: 0,
@@ -33,27 +41,35 @@ const terminal = new Terminal({
 });
 
 terminal.attachCustomKeyEventHandler((arg) => {
-  if (arg.ctrlKey && arg.code === 'KeyC' && arg.type === 'keydown') {
-    const selection = terminal.getSelection()
+  if (arg.ctrlKey && arg.code === "KeyC" && arg.type === "keydown") {
+    const selection = terminal.getSelection();
     if (selection) {
-      navigator.clipboard.writeText(selection)
-      return false
+      navigator.clipboard.writeText(selection);
+      return false;
     }
   }
-  return true
-})
+  return true;
+});
 
 window.onresize = () => {
-  fitAddon.fit()
-}
+  fitAddon.fit();
+};
 
 window.onpageshow = () => {
-  fitAddon.fit()
-}
+  fitAddon.fit();
+};
 
-// emitter.on("terminalWrite", (data) => {
-//   terminal.write(data as string);
-// });
+bus.on("write", (data) => {
+  terminal.write(data as string);
+});
+
+bus.on("writeln",async (data) => {
+  terminal.writeln(
+    `${kleur
+      .bold()
+      .blue(`[${moment().format("YYYY-MM-DD HH:mm:ss")}] `)}${data}`
+  );
+});
 
 // emitter.on("terminalWriteLine", (data) => {
 //   terminal.writeln(data as string);
@@ -79,7 +95,6 @@ window.onpageshow = () => {
 // });
 
 onMounted(() => {
-
   terminal.loadAddon(fitAddon);
   terminal.open(document.getElementById("terminal") as HTMLElement);
   fitAddon.fit();
