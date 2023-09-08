@@ -42,13 +42,40 @@ import {
   removeFile,
 } from "@/utils/common";
 import SPIMode from "@/components/SPIMode.vue";
+import cli, { execute } from "@/utils/cli";
+
 const selectedMode = ref("keep");
 
 const pathList = ref(await getFirmwareList());
 const currentDir = await getCurrentDir();
 
 async function flash(path: string) {
-  console.log(path);
+  const port = localStorage.getItem("port") as string;
+
+  let cmd = [
+    "-p",
+    port,
+    "-b",
+    "1152000",
+    "write_flash",
+    "--flash_mode",
+    selectedMode.value,
+    "0x0",
+    path,
+  ];
+
+  execute("esptool", cmd);
+
+  const resultPromise = new Promise((resolve, reject) => {
+    cli.on("stdout", (data) => {
+      console.log(data);
+    });
+    cli.on("close", (data) => {
+      console.log(data);
+      cli.all.clear();
+    });
+  });
+  const result = await resultPromise;
 }
 
 const remove = async (path: string) => {

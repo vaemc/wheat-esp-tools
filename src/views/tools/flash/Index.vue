@@ -341,7 +341,6 @@ const uploadHandle = async (path: string | string[]) => {
         });
       })
     );
-    console.log(flasherArgsJsonFilePath);
     db.add("paths", { path: flasherArgsJsonFilePath });
 
     selectedChipType.value = flasherArgs.chip.toUpperCase();
