@@ -18,8 +18,8 @@
             <a-textarea
               placeholder="CSV内容"
               v-model:value="beforePartition"
-              max
               :rows="18"
+              allow-clear
             />
           </a-tab-pane>
           <a-tab-pane key="2" tab="二进制文件转换">

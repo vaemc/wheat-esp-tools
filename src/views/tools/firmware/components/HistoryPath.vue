@@ -5,6 +5,7 @@
       style="margin: 5px 0"
       placeholder=""
       enter-button
+      allow-clear
       @search="onSearch"
     />
     <a-list

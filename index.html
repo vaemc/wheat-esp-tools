@@ -23,5 +23,15 @@
   <body>
     <div id="app" style="height: 100%"></div>
     <script type="module" src="/src/main.ts"></script>
+    <script>
+      document.addEventListener("contextmenu", function (e) {
+        e.preventDefault();
+      });
+      document.onkeydown = function (e) {
+        if (e.keyCode === 116 || (e.ctrlKey && e.keyCode === 82)) {
+          e.preventDefault();
+        }
+      };
+    </script>
   </body>
 </html>

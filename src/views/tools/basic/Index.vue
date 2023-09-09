@@ -2,41 +2,71 @@
   <div style="margin: 5px 0">
     <SerialPortSelect />
   </div>
-  <a-button style="margin: 0 5px;" v-for="item in list" @click="click(item.cmd)">{{
-    item.name
-  }}</a-button>
-  <a-button style="margin: 0 5px;" @click="readFlash()">读取固件</a-button>
+  <a-button
+    style="margin-right: 5px"
+    v-for="item in list"
+    @click="click(item.cmd)"
+    >{{ item.name }}</a-button
+  >
+  <a-button style="margin-right: 5px" @click="readFlash()">读取固件</a-button>
 </template>
 <script setup lang="ts">
 import { ref } from "vue";
-import {  getCurrentDir } from "@/utils/common";
+import { getCurrentDir, openFileInExplorer } from "@/utils/common";
 import SerialPortSelect from "@/components/SerialPortSelect.vue";
+import cli, { execute } from "@/utils/cli";
 import moment from "moment";
 const currentDir = await getCurrentDir();
-const click = (item: string[]) => {
+const click = async (item: string[]) => {
   const port = localStorage.getItem("port") as string;
-  // executedCommand(
-  //   item.map((x) => {
-  //     if (x == "${port}") {
-  //       return port;
-  //     }
-  //     return x;
-  //   }) as string[]
-  // );
+  execute(
+    "esptool",
+    item.map((x) => {
+      if (x == "${port}") {
+        return port;
+      }
+      return x;
+    }) as string[]
+  );
+
+  const resultPromise = new Promise((resolve, reject) => {
+    cli.on("stdout", (data) => {
+      console.log(data);
+    });
+    cli.on("close", (data) => {
+      console.log(data);
+      cli.all.clear();
+    });
+  });
+  const result = await resultPromise;
 };
 
-const readFlash = () => {
+const readFlash = async () => {
   const port = localStorage.getItem("port") as string;
-  // executedCommand([
-  //   "-p",
-  //   port,
-  //   "-b",
-  //   "460800",
-  //   "read_flash",
-  //   "0",
-  //   "ALL",
-  //   `${currentDir}\\firmware\\read-${moment().valueOf()}.bin`,
-  // ]);
+  let savePath = `${currentDir}\\firmware\\read-${moment().valueOf()}.bin`;
+  execute("esptool", [
+    "-p",
+    port,
+    "-b",
+    "460800",
+    "read_flash",
+    "0",
+    "ALL",
+    savePath,
+  ]);
+
+  const resultPromise = new Promise((resolve, reject) => {
+    cli.on("stdout", (data) => {
+      if (String(data).includes("Hard resetting via RTS pin...")) {
+        openFileInExplorer(savePath);
+      }
+    });
+    cli.on("close", (data) => {
+      console.log(data);
+      cli.all.clear();
+    });
+  });
+  const result = await resultPromise;
 };
 
 const list = ref([
