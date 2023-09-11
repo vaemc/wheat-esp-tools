@@ -6,6 +6,7 @@ import {
   FileEntry,
 } from "@tauri-apps/api/fs";
 import { save } from "@tauri-apps/api/dialog";
+import { FileInfo } from "@/model/model";
 
 export async function saveFileDialog() {
   const filePath = await save({
@@ -20,28 +21,12 @@ export async function saveFileDialog() {
   return filePath;
 }
 
-export function addHistoryPath(data: string) {
-  // let result = {} as Path;
-  // result = { full: data, name: data };
-  // let historyPathList = JSON.parse(
-  //   localStorage.getItem("pathList") as string
-  // ) as Path[];
-  // if (historyPathList.filter((x) => x.full === result.full).length == 0) {
-  //   historyPathList.push(result);
-  //   localStorage.setItem("pathList", JSON.stringify(historyPathList));
-  // }
-}
-
 export async function getSerialPortList() {
   return (await invoke("get_serial_port_list")) as string[];
 }
 
 export async function getCurrentDir() {
   return await invoke("get_current_dir");
-}
-
-export async function getPluginList() {
-  return await invoke("get_plugin_list");
 }
 
 export async function writeAllText(path: string, text: string) {
@@ -64,7 +49,7 @@ export async function getFirmwareList() {
   });
 }
 
-export async function getFlasherArgs(path: string) {
+export async function getFlasherArgs2(path: string) {
   let flasherArgs = JSON.parse(
     await readTextFile(`${path}\\flasher_args.json`)
   );
@@ -82,7 +67,7 @@ export async function getFlasherArgs(path: string) {
   };
 }
 
-export async function getFlasherArgs2(path: string) {
+export async function getFlasherArgs(path: string) {
   let flasherArgs = JSON.parse(await readTextFile(path));
   console.log(flasherArgs);
 
@@ -97,16 +82,18 @@ export async function openFileInExplorer(path: string) {
   invoke("open_file_in_explorer", { path: path });
 }
 
-export async function isFile(path: string) {
-  return await invoke("is_file", { path: path });
+export async function getFileInfo(path: string) {
+  const info = (await invoke("get_file_info", { path: path })) as any;
+  return {
+    isFile: info.is_file,
+    isDir: info.is_dir,
+    len: info.len,
+    createTime: info.create_time,
+  } as FileInfo;
 }
 
 export async function collectAllPaths(path: string, level: number) {
   return await invoke("collect_all_paths", { path: path, level: level });
-}
-
-export async function getFileSize(path: string) {
-  return await invoke("get_file_size", { path: path });
 }
 
 export async function removeFile(path: string) {

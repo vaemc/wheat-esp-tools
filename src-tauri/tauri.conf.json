@@ -7,7 +7,7 @@
     "withGlobalTauri": false
   },
   "package": {
-    "productName": "Wheat ESP Tool",
+    "productName": "Wheat ESP Tools",
     "version": "0.0.1"
   },
   "tauri": {
@@ -78,7 +78,7 @@
         "theme": "Dark",
         "height": 800,
         "minHeight": 800,
-        "title": "Wheat ESP Tool",
+        "title": "Wheat ESP Tools",
         "width": 950,
         "minWidth": 950
       }

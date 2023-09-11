@@ -10,48 +10,101 @@ const router = createRouter({
       children: [
         {
           path: "/",
-          name: "home",
-          component: () => import("@/views/home/index.vue"),
+          name: "tools",
+          meta: {
+            icon: "🛠️",
+            title: "工具列表",
+          },
+          children: [
+            {
+              path: "/",
+              name: "home",
+              component: () => import("@/views/home/index.vue"),
+              meta: {
+                icon: "🐯",
+                title: "首页",
+                display: false,
+                portShow: false,
+              },
+            },
+            {
+              path: "/tools/basic",
+              name: "basic",
+              component: () => import("@/views/tools/basic/index.vue"),
+              meta: {
+                icon: "🐼",
+                title: "基本",
+                display: true,
+                portShow: true,
+              },
+            },
+            {
+              path: "/tools/flash",
+              name: "flash",
+              component: () => import("@/views/tools/flash/index.vue"),
+              meta: {
+                icon: "🐶",
+                title: "烧录或合并固件",
+                display: true,
+                portShow: true,
+              },
+            },
+            {
+              path: "/tools/partition",
+              name: "partition",
+              component: () => import("@/views/tools/partition/index.vue"),
+              meta: {
+                icon: "🐱",
+                title: "分区表",
+                display: true,
+                portShow: false,
+              },
+            },
+            {
+              path: "/tools/firmware",
+              name: "firmware",
+              component: () => import("@/views/tools/firmware/index.vue"),
+              meta: {
+                icon: "🐰",
+                title: "固件管理",
+                display: true,
+                portShow: true,
+              },
+            },
+            {
+              path: "/tools/fs",
+              name: "fs",
+              component: () => import("@/views/tools/fs/index.vue"),
+              meta: {
+                icon: "🐻",
+                title: "文件系统",
+                display: true,
+                portShow: false,
+              },
+            },
+          ],
         },
         {
-          path: "/tools/basic",
-          name: "basic",
-          component: () => import("@/views/tools/basic/index.vue"),
+          path: "/setting",
+          name: "setting",
           meta: {
-            keepAlive: true,
+            icon: "⚙️",
+            title: "设置",
+            display: true,
+            portShow: false,
           },
+          component: () => import("@/views/setting/index.vue"),
         },
         {
-          path: "/tools/flash",
-          name: "flash",
-          component: () => import("@/views/tools/flash/index.vue"),
+          path: "/help",
+          name: "help",
           meta: {
-            keepAlive: true,
+            icon: "📙",
+            title: "帮助",
+            display: true,
+            portShow: false,
           },
-        },
-        {
-          path: "/tools/partition",
-          name: "partition",
-          component: () => import("@/views/tools/partition/index.vue"),
-          meta: {
-            keepAlive: true,
-          },
-        },
-        {
-          path: "/tools/firmware",
-          name: "firmware",
-          component: () => import("@/views/tools/firmware/index.vue"),
-          meta: {
-            keepAlive: true,
-          },
-        },
-        {
-          path: "/tools/fs",
-          name: "fs",
-          component: () => import("@/views/tools/fs/index.vue"),
-          meta: {
-            keepAlive: true,
-          },
+          component: () => import("@/views/help/index.vue"),
         },
       ],
     },

@@ -1,66 +1,77 @@
-
 <template>
+  <a-layout>
+    <a-layout-sider
+      style="height: 100vh"
+      collapsed-width="0"
+      @collapse="onCollapse"
+      @breakpoint="onBreakpoint"
+    >
+      <a-menu
+        :open-keys="openKeys"
+        v-model:selectedKeys="selectedKeys"
+        theme="dark"
+        mode="inline"
+      >
+        <div v-for="subMenu in routerList">
+          <a-sub-menu
+            v-if="subMenu.hasOwnProperty('children')"
+            :key="subMenu.name"
+          >
+            <template #title>
+              <span>{{ subMenu.meta?.icon }}{{ subMenu.meta?.title }} </span>
+            </template>
+            <div v-for="menu in subMenu.children">
+              <a-menu-item
+                v-if="menu.meta?.display"
+                @click="to(menu)"
+                :key="menu.name"
+                >{{ menu.meta?.icon }}{{ menu.meta?.title }}
+              </a-menu-item>
+            </div>
+          </a-sub-menu>
+          <a-menu-item
+            @click="to(subMenu)"
+            v-if="!subMenu.hasOwnProperty('children') && subMenu.meta?.display"
+            :key="subMenu.name"
+          >
+            <span>{{ subMenu.meta?.icon }}{{ subMenu.meta?.title }}</span>
+          </a-menu-item>
+        </div>
+      </a-menu>
+    </a-layout-sider>
     <a-layout>
-        <a-layout-sider style="height: 100vh;" collapsed-width="0" @collapse="onCollapse" @breakpoint="onBreakpoint">
-            <a-menu :open-keys="openKeys" v-model:selectedKeys="selectedKeys" theme="dark" mode="inline">
-                <a-sub-menu key="sub1">
-                    <template #title>
-                        <span>
-                            🛠️工具列表
-                        </span>
-                    </template>
-                    <!-- 🐶 🐱 🐭 🐹 🐰 🦊 🐻 -->
-                    <a-menu-item key="basic" @click="$router.push('/tools/basic')">🐼基本</a-menu-item>
-                    <a-menu-item key="flash" @click="$router.push('/tools/flash')">🐶烧录或合并固件</a-menu-item>
-                    <a-menu-item key="partition" @click="$router.push('/tools/partition')">🐱分区表</a-menu-item>
-                    <a-menu-item key="fs" @click="$router.push('/tools/fs')">🐻文件系统</a-menu-item>
-                    <a-menu-item key="firmware" @click="$router.push('/tools/firmware')">🐰固件管理</a-menu-item>
-                </a-sub-menu>
-                <a-menu-item key="2">
-                    <span class="nav-text">⚙️设置</span>
-                </a-menu-item>
-                <a-menu-item key="3">
-                    <span class="nav-text">📙帮助</span>
-                </a-menu-item>
-
-            </a-menu>
-        </a-layout-sider>
-        <a-layout>
-            <!-- <div style="margin: 10px;">
-                <SerialPortSelect />
-            </div> -->
-            <a-layout-content :style="{ padding: '10px', minHeight: '280px' }">
-                <router-view v-slot="{ Component }">
-                    <keep-alive>
-                        <component :is="Component" />
-                    </keep-alive>
-                </router-view>
-            </a-layout-content>
-            <Terminal />
-        </a-layout>
+      <div v-if="portShow" style="margin: 10px">
+        <SerialPortSelect />
+      </div>
+      <a-layout-content :style="{ padding: '10px', minHeight: '280px' }">
+        <router-view v-slot="{ Component }">
+          <keep-alive>
+            <component :is="Component" />
+          </keep-alive>
+        </router-view>
+      </a-layout-content>
+      <Terminal />
     </a-layout>
+  </a-layout>
 </template>
 <script setup lang="ts">
 import Terminal from "@/components/Terminal.vue";
 import SerialPortSelect from "@/components/SerialPortSelect.vue";
-import { ref } from 'vue';
-import { useRoute} from "vue-router";
-
-
-const openKeys = ref(['sub1']);
-
+import { ref } from "vue";
+import { useRoute, useRouter } from "vue-router";
+const router = useRouter();
+const portShow = ref(true);
+const routerList = ref(router.options.routes[0].children);
+const openKeys = ref(["tools"]);
 const onCollapse = (collapsed: boolean, type: string) => {
-    console.log(collapsed, type);
+  console.log(collapsed, type);
 };
-
 const onBreakpoint = (broken: boolean) => {
-    console.log(broken);
+  console.log(broken);
 };
-
 const selectedKeys = ref([useRoute().name]);
-
-
+const to = (data: any) => {
+  router.push(data.path);
+  portShow.value = data.meta?.portShow;
+};
 </script>
-  
-  
-  

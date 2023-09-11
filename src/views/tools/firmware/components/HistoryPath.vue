@@ -1,5 +1,4 @@
 <template>
-  
   <div style="margin: 5px">
     <a-input-search
       style="margin: 5px 0"
@@ -45,17 +44,16 @@
 <script setup lang="ts">
 import db from "@/db/db";
 import { ref } from "vue";
-import { openFileInExplorer, getFlasherArgs2 } from "@/utils/common";
+import { openFileInExplorer, getFlasherArgs } from "@/utils/common";
 import SPIMode from "@/components/SPIMode.vue";
 import cli, { execute } from "@/utils/cli";
-
 const selectedMode = ref("keep");
 const pathList = ref((await db.getAll("paths")).map((item) => item.path));
 
 async function flash(path: string) {
   const port = localStorage.getItem("port") as string;
 
-  const flasherArgs = await getFlasherArgs2(path);
+  const flasherArgs = await getFlasherArgs(path);
   console.log(flasherArgs);
   const folderPath = path.substring(0, path.lastIndexOf("\\"));
 

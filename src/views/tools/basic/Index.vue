@@ -1,7 +1,4 @@
 <template>
-  <div style="margin: 5px 0">
-    <SerialPortSelect />
-  </div>
   <a-button
     style="margin-right: 5px"
     v-for="item in list"

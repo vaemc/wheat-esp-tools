@@ -6,6 +6,7 @@ use std::env;
 use std::fs;
 use std::path::Path;
 use std::process::Command;
+use std::time::SystemTime;
 use tauri::Manager;
 
 // Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
@@ -14,6 +15,14 @@ use tauri::Manager;
 struct Plugin {
     path: String,
     name: String,
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
+struct FileInfo {
+    is_dir: bool,
+    is_file: bool,
+    len: u64,
+    create_time: u64,
 }
 
 #[tauri::command]
@@ -48,15 +57,19 @@ fn open_file_in_explorer(path: &str) {
 }
 
 #[tauri::command]
-fn get_file_size(path: &str) -> u64 {
+fn get_file_info(path: &str) -> FileInfo {
     let metadata = fs::metadata(path).unwrap();
-    metadata.len()
-}
-
-#[tauri::command]
-fn is_file(path: &str) -> bool {
-    let metadata = fs::metadata(path).unwrap();
-    metadata.is_file()
+    FileInfo {
+        is_dir: metadata.is_dir(),
+        is_file: metadata.is_file(),
+        len: metadata.len(),
+        create_time: metadata
+            .created()
+            .unwrap()
+            .duration_since(SystemTime::UNIX_EPOCH)
+            .unwrap()
+            .as_secs(),
+    }
 }
 
 #[tauri::command]
@@ -68,8 +81,8 @@ fn write_all_text(path: &str, text: &str) {
 fn collect_all_paths(path: &str, level: u32) -> Vec<String> {
     let mut paths: Vec<String> = Vec::new();
 
-    if level >=2 {
-        return paths; 
+    if level >= 2 {
+        return paths;
     }
 
     if let Ok(entries) = fs::read_dir(path) {
@@ -80,7 +93,7 @@ fn collect_all_paths(path: &str, level: u32) -> Vec<String> {
                 paths.push(path_str.clone());
 
                 if path.is_dir() {
-                    let sub_paths = collect_all_paths(path.to_str().unwrap(), level + 1); 
+                    let sub_paths = collect_all_paths(path.to_str().unwrap(), level + 1);
                     paths.extend(sub_paths);
                 }
             }
@@ -113,10 +126,9 @@ fn main() {
             get_serial_port_list,
             get_current_dir,
             open_file_in_explorer,
-            is_file,
             write_all_text,
-            get_file_size,
-            collect_all_paths
+            collect_all_paths,
+            get_file_info
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -1,8 +1,4 @@
 <template>
-  <div style="margin: 5px 0">
-    <SerialPortSelect />
-  </div>
-
   <a-row
     style="margin-bottom: 5px"
     type="flex"
@@ -87,7 +83,7 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import cli, { execute } from "@/utils/cli";
-import { Firmware } from "./model";
+import { Firmware, FileInfo } from "@/model/model";
 import { message } from "ant-design-vue";
 import Upload from "@/components/Upload.vue";
 import SerialPortSelect from "@/components/SerialPortSelect.vue";
@@ -95,9 +91,8 @@ import {
   getChipTypeList,
   openFileInExplorer,
   getCurrentDir,
-  getFlasherArgs2,
-  isFile,
-  getFileSize,
+  getFlasherArgs,
+  getFileInfo,
   collectAllPaths,
 } from "@/utils/common";
 import SPIMode from "@/components/SPIMode.vue";
@@ -105,7 +100,6 @@ import db from "@/db/db";
 import moment from "moment";
 import prettyBytes from "pretty-bytes";
 import { useElementVisibility } from "@vueuse/core";
-
 const target = ref(null);
 const destroyDrop = useElementVisibility(target);
 
@@ -300,9 +294,8 @@ const chipTypeList = ref(
 const uploadHandle = async (path: string | string[]) => {
   const fillPaths = await Promise.all(
     (path as string[]).map(async (item) => {
-      const isFileResult = (await isFile(item)) as boolean;
-      const fileSize = (await getFileSize(item)) as number;
-      return { path: item, isFile: isFileResult, size: fileSize };
+      const info = await getFileInfo(item);
+      return { path: item, isFile: info.isFile, size: info.len };
     })
   );
 
@@ -324,7 +317,7 @@ const uploadHandle = async (path: string | string[]) => {
     flasherArgsJsonFilePath !== null &&
     flasherArgsJsonFilePath !== undefined
   ) {
-    const flasherArgs = await getFlasherArgs2(flasherArgsJsonFilePath);
+    const flasherArgs = await getFlasherArgs(flasherArgsJsonFilePath);
     const folderPath = flasherArgsJsonFilePath.substring(
       0,
       flasherArgsJsonFilePath.lastIndexOf("\\")
@@ -334,7 +327,7 @@ const uploadHandle = async (path: string | string[]) => {
         const fullPath =
           folderPath + "\\" + flasherArgs.flashFiles[item].replace(/\//g, "\\");
         firmwareList.value.push({
-          size: prettyBytes((await getFileSize(fullPath)) as number),
+          size: prettyBytes((await getFileInfo(fullPath)).len),
           check: true,
           path: fullPath,
           address: item,
@@ -364,7 +357,7 @@ const uploadHandle = async (path: string | string[]) => {
   }
 };
 
-const flashCheckSingleChange = (e: any) => {
+const flashCheckSingleChange = () => {
   if (
     firmwareList.value.filter((x) => x.check).length ==
     firmwareList.value.length
@@ -381,7 +374,7 @@ const flashCheckSingleChange = (e: any) => {
   }
 };
 
-const flashCheckAllChange = (e: any) => {
+const flashCheckAllChange = () => {
   if (firmwareList.value.length != 0) {
     if (
       firmwareList.value.filter((x) => x.check).length !=

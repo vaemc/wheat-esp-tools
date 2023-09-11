@@ -24,16 +24,12 @@ const refreshList = async (showDefaultPort = false) => {
   serialPortList.value = list;
   if (list.length > 0 && showDefaultPort) {
     const localStoragePort = localStorage.getItem("port") as string;
-    console.log(localStoragePort);
-    
     if (localStoragePort != null) {
       if (list.find((x) => x.value === localStoragePort) != null) {
         selectedSerialPort.value = localStoragePort;
-
         return;
       }
     }
-
     selectedSerialPort.value = list[0].value;
     localStorage.setItem("port", list[0].value);
   }
@@ -47,9 +43,7 @@ const change = (data: string) => {
   localStorage.setItem("port", data);
 };
 
-refreshList(true);
-
 onMounted(() => {
-  console.log("aaaaaaaa");
+  refreshList(true);
 });
 </script>

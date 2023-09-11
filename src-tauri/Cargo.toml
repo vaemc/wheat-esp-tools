@@ -1,7 +1,7 @@
 [package]
 name = "wheat-esp-tools"
 version = "0.0.1"
-description = "Wheat ESP Tool"
+description = "Wheat ESP Tools"
 authors = ["you"]
 license = ""
 repository = ""
