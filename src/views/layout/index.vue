@@ -60,7 +60,7 @@ import SerialPortSelect from "@/components/SerialPortSelect.vue";
 import { ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 const router = useRouter();
-const portShow = ref(true);
+const portShow = ref(false);
 const routerList = ref(router.options.routes[0].children);
 const openKeys = ref(["tools"]);
 const onCollapse = (collapsed: boolean, type: string) => {

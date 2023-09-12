@@ -13,7 +13,7 @@
   "tauri": {
     "allowlist": {
       "notification": {
-        "all": true 
+        "all": true
       },
       "all": false,
       "fs": { "all": true, "scope": ["**"] },
@@ -48,6 +48,14 @@
       }
     },
     "bundle": {
+      "windows": {
+        "wix": {
+          "language": "zh-CN"
+        },
+        "webviewInstallMode": {
+          "type": "embedBootstrapper"
+        }
+      },
       "externalBin": [
         "bin/esptool",
         "bin/gen_esp32part",

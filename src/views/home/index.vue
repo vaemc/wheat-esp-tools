@@ -8,6 +8,6 @@
       font-size: 30px;
     "
   >
-    <h1>Wheat ESP Tools</h1>
+    <h1 style="color:#bcbcbc">Wheat ESP Tools</h1>
   </div>
 </template>
