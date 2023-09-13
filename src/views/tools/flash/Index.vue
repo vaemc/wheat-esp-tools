@@ -66,7 +66,7 @@
       </template>
     </template>
   </a-table>
-
+  <a-checkbox v-model:checked="eraseChecked">擦除固件</a-checkbox>
   <a-row :gutter="16">
     <a-col :span="12">
       <a-button type="primary" @click="handle(flash)" block
@@ -106,6 +106,7 @@ const destroyDrop = useElementVisibility(target);
 const flashCheckOption = ref({ indeterminate: false, selectAll: false });
 
 const selectedMode = ref("keep");
+const eraseChecked = ref(false);
 const firmware = ref({} as Firmware);
 const firmwareList = ref([] as Firmware[]);
 const currentDir = await getCurrentDir();
@@ -157,6 +158,9 @@ const flash = async () => {
       .filter((x) => x.check)
       .flatMap((x) => [x.address, x.path]),
   ];
+  if(eraseChecked.value){
+    cmd.push("--erase-all");
+  }
   execute("esptool", cmd);
 
   const resultPromise = new Promise((resolve, reject) => {

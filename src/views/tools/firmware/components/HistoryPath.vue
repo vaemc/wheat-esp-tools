@@ -16,9 +16,12 @@
       <template #renderItem="{ item }">
         <a-list-item
           ><template #actions>
-            <a-popover title="SPI Mode">
+            <a-popover placement="topLeft" title="烧录选项">
               <template #content>
-                <SPIMode v-model="selectedMode" />
+                <SPIMode v-model="selectedMode" /><a-checkbox
+                  v-model:checked="eraseChecked" style="margin-left: 5px;"
+                  >擦除固件</a-checkbox
+                >
               </template>
               <a @click="flash(item)">烧录</a>
             </a-popover>
@@ -49,7 +52,7 @@ import SPIMode from "@/components/SPIMode.vue";
 import cli, { execute } from "@/utils/cli";
 const selectedMode = ref("keep");
 const pathList = ref((await db.getAll("paths")).map((item) => item.path));
-
+const eraseChecked = ref(false);
 async function flash(path: string) {
   const port = localStorage.getItem("port") as string;
 
@@ -82,7 +85,9 @@ async function flash(path: string) {
       )
     ).flatMap((x) => [x.address, x.path]),
   ];
-
+  if(eraseChecked.value){
+    cmd.push("--erase-all");
+  }
   execute("esptool", cmd);
 
   const resultPromise = new Promise((resolve, reject) => {

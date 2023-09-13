@@ -19,9 +19,12 @@
       <template #renderItem="{ item }">
         <a-list-item
           ><template #actions>
-            <a-popover title="SPI Mode">
+            <a-popover placement="topLeft" title="烧录选项">
               <template #content>
-                <SPIMode v-model="selectedMode" />
+                <SPIMode v-model="selectedMode" /><a-checkbox
+                  v-model:checked="eraseChecked" style="margin-left: 5px;"
+                  >擦除固件</a-checkbox
+                >
               </template>
               <a @click="flash(item)">烧录</a>
             </a-popover>
@@ -46,7 +49,7 @@ import SPIMode from "@/components/SPIMode.vue";
 import cli, { execute } from "@/utils/cli";
 
 const selectedMode = ref("keep");
-
+const eraseChecked = ref(false);
 const pathList = ref(await getFirmwareList());
 const currentDir = await getCurrentDir();
 
@@ -64,7 +67,9 @@ async function flash(path: string) {
     "0x0",
     path,
   ];
-
+  if(eraseChecked.value){
+    cmd.push("--erase-all");
+  }
   execute("esptool", cmd);
 
   const resultPromise = new Promise((resolve, reject) => {

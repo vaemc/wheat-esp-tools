@@ -78,7 +78,7 @@ const router = createRouter({
               meta: {
                 icon: "🐻",
                 title: "文件系统",
-                display: true,
+                display: false,
                 portShow: false,
               },
             },

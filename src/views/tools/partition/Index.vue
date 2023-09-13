@@ -124,8 +124,7 @@ async function partitionTableConvert(
   flashSize: string,
   isBin: boolean
 ) {
-  // let currentDir = await getCurrentDir();
-  let currentDir = "D:\\aaaaaaaaa";
+  let currentDir = await getCurrentDir();
   if (!isBin) {
     await writeAllText(currentDir + "\\partitions\\temp.csv", input);
   }
