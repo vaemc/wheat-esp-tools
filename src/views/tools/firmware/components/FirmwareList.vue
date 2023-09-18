@@ -22,7 +22,8 @@
             <a-popover placement="topLeft" title="烧录选项">
               <template #content>
                 <SPIMode v-model="selectedMode" /><a-checkbox
-                  v-model:checked="eraseChecked" style="margin-left: 5px;"
+                  v-model:checked="eraseChecked"
+                  style="margin-left: 5px"
                   >擦除固件</a-checkbox
                 >
               </template>
@@ -67,7 +68,7 @@ async function flash(path: string) {
     "0x0",
     path,
   ];
-  if(eraseChecked.value){
+  if (eraseChecked.value) {
     cmd.push("--erase-all");
   }
   execute("esptool", cmd);
@@ -94,7 +95,10 @@ const onSearch = async (text: string) => {
     pathList.value = await getFirmwareList();
   } else {
     pathList.value = (await getFirmwareList()).filter((x) =>
-      x.toLowerCase().includes(text.toLowerCase())
+      x
+        .toLowerCase()
+        .substring(x.toLowerCase().lastIndexOf("\\") + 1)
+        .includes(text.toLowerCase())
     );
   }
 };
