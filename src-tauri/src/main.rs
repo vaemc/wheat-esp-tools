@@ -1,20 +1,93 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+use btleplug::api::{Central, Manager as _, Peripheral, ScanFilter};
+use btleplug::platform::Manager;
 use serialport::available_ports;
+use std::collections::HashMap;
 use std::env;
 use std::fs;
 use std::path::Path;
 use std::process::Command;
+use std::time::Duration;
 use std::time::SystemTime;
-use tauri::Manager;
+use tauri::Manager as TauriManager;
+use tokio::time;
 
 // Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
-struct Plugin {
-    path: String,
-    name: String,
+pub struct BleDevice {
+    pub address: String,
+    pub local_name: String,
+    pub rssi: i16,
+    pub manufacturer_data: HashMap<u16, Vec<u8>>,
+    pub services: Vec<String>,
+    pub service_data: HashMap<String, Vec<u8>>,
+    pub adv: Vec<u8>,
+}
+
+#[tauri::command]
+async fn ble_device_scan(window: tauri::Window) {
+    let manager = Manager::new().await.unwrap();
+    let adapter_list = manager.adapters().await.unwrap();
+    if adapter_list.is_empty() {
+        eprintln!("No Bluetooth adapters found");
+    }
+
+    for adapter in adapter_list.iter() {
+        // println!(
+        //     "Starting scan on {}...",
+        //     adapter.adapter_info().await.unwrap()
+        // );
+
+        adapter.start_scan(ScanFilter::default()).await.unwrap();
+
+        time::sleep(Duration::from_secs(3)).await;
+
+        let peripherals = adapter.peripherals().await.unwrap();
+
+        if !peripherals.is_empty() {
+            for peripheral in peripherals.iter() {
+                let properties = peripheral.properties().await.unwrap();
+                // let is_connected = peripheral.is_connected().await.unwrap();
+
+                let device = properties.unwrap();
+
+                let mr = BleDevice {
+                    address: device.address.to_string(),
+                    local_name: device.local_name.unwrap_or(String::from("Unknown")),
+                    rssi: device.rssi.unwrap(),
+                    manufacturer_data: device.manufacturer_data,
+                    services: device.services.iter().map(|x| x.to_string()).collect(),
+                    service_data: device
+                        .service_data
+                        .iter()
+                        .map(|(x, y)| (x.to_string(), y.clone()))
+                        .collect(),
+                    adv: device
+                        .service_data
+                        .iter()
+                        .flat_map(|x| x.1.clone())
+                        .collect(),
+                };
+
+                for service in peripheral.services() {
+                    println!(
+                        "Service UUID {}, primary: {}",
+                        service.uuid, service.primary
+                    );
+                    for characteristic in service.characteristics {
+                        println!("  {:?}", characteristic);
+                    }
+                }
+
+                window
+                    .emit("ble_device_scan_event", serde_json::to_string(&mr).unwrap())
+                    .unwrap();
+            }
+        }
+    }
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
@@ -128,7 +201,8 @@ fn main() {
             open_file_in_explorer,
             write_all_text,
             collect_all_paths,
-            get_file_info
+            get_file_info,
+            ble_device_scan
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

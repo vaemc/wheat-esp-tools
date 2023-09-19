@@ -1,3 +1,3 @@
 <template>
-    <h1>help</h1>
+  <h1 style="color: white">help</h1>
 </template>

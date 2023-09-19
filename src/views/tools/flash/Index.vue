@@ -59,6 +59,16 @@
       </template>
       <template v-if="column.key === 'address'">
         <a-input :bordered="false" v-model:value="record.address" />
+        <!-- <a-auto-complete
+          v-model:value="record.address"
+          :options="[
+            { value: '0x0' },
+            { value: '0x10000' },
+            { value: '0x8000' },
+          ]"
+          style="width: 100%"
+          :bordered="false"
+        /> -->
       </template>
       <template v-if="column.key === 'action'">
         <a @click="flashFirmwareBtn(record)">烧录</a> |
@@ -158,7 +168,7 @@ const flash = async () => {
       .filter((x) => x.check)
       .flatMap((x) => [x.address, x.path]),
   ];
-  if(eraseChecked.value){
+  if (eraseChecked.value) {
     cmd.push("--erase-all");
   }
   execute("esptool", cmd);
@@ -369,6 +379,7 @@ const flashCheckSingleChange = () => {
     flashCheckOption.value.selectAll = true;
     flashCheckOption.value.indeterminate = false;
   } else {
+    flashCheckOption.value.selectAll = false;
     flashCheckOption.value.indeterminate = true;
   }
 

@@ -1,11 +1,21 @@
 <template>
   <div>
     <div :class="dropBoxClass" @click="handle">
-      <inbox-outlined :style="{ fontSize: '40px', color: '#08c' }"></inbox-outlined>
-      <span style="display: block; font-size: 16px; align-self: center">{{
-        title
-      }}</span>
-      <span style="display: block; font-size: 14px; color: gray; align-self: center">{{ subtitle }}
+      <inbox-outlined
+        style="font-size: 40px; color: #08c; align-self: center"
+      ></inbox-outlined>
+      <span
+        style="
+          display: block;
+          font-size: 16px;
+          color: white;
+          align-self: center;
+        "
+        >{{ title }}</span
+      >
+      <span
+        style="display: block; font-size: 14px; color: gray; align-self: center"
+        >{{ subtitle }}
       </span>
     </div>
   </div>
@@ -26,13 +36,12 @@ const props = defineProps({
 const emit = defineEmits<{
   (e: "open", path: string | string[]): void;
   (e: "drop", path: string | string[]): void;
-  (e: "dropHoverDrop", { }): void;
-  (e: "dropCancelled", { }): void;
+  (e: "dropHoverDrop", {}): void;
+  (e: "dropCancelled", {}): void;
 }>();
-const { title, subtitle, isDirectory, isMultiple } = useVModels(props, emit)
+const { title, subtitle, isDirectory, isMultiple } = useVModels(props, emit);
 const dropBoxClass = ref("dropBox");
 const handle = async () => {
-
   const selected = await open({
     directory: isDirectory.value,
     multiple: isMultiple.value,

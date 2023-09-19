@@ -61,6 +61,17 @@ const router = createRouter({
               },
             },
             {
+              path: "/tools/ble",
+              name: "ble",
+              component: () => import("@/views/tools/ble/index.vue"),
+              meta: {
+                icon: "🐳",
+                title: "BLE",
+                display: true,
+                portShow: false,
+              },
+            },
+            {
               path: "/tools/firmware",
               name: "firmware",
               component: () => import("@/views/tools/firmware/index.vue"),
