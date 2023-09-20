@@ -1,12 +1,9 @@
 import { join } from 'path';
 <template>
-  <a-float-button
-    @click="aaa"
-    type="primary"
-    :style="{
-      right: '24px',
-    }"
-  >
+  <a-float-button @click="aaa" type="primary" :style="{
+    right: '24px',
+    marginBottom: '90px'
+  }">
     <template #icon>
       <ReloadOutlined />
     </template>
@@ -26,11 +23,7 @@ import { join } from 'path';
               <a href="https://www.antdv.com/">{{ item.local_name }}</a>
             </template>
           </a-list-item-meta>
-          <a-tag
-            color="#108ee9"
-            v-for="item in Object.keys(item.service_data)"
-            >{{ item }}</a-tag
-          >
+          <a-tag color="#108ee9" v-for="service in item.services">{{ service }}</a-tag>
         </a-list-item>
       </template>
     </a-list>
