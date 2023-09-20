@@ -21,10 +21,28 @@
           ><template #actions>
             <a-popover placement="topLeft" title="烧录选项">
               <template #content>
-                <SPIMode v-model="selectedMode" /><a-checkbox
-                  v-model:checked="eraseChecked"
-                  style="margin-left: 5px"
-                  >擦除固件</a-checkbox
+                <SPIMode v-model="selectedMode" /><br />
+                <div style="margin-bottom: 3px"></div>
+                <a-tooltip>
+                  <template #title>烧录波特率</template>
+                  <a-segmented
+                    v-model:value="selectedBaud"
+                    :options="[
+                      '115200',
+                      '230400',
+                      '460800',
+                      '921600',
+                      '1152000',
+                      '1500000',
+                    ]"
+                /></a-tooltip>
+                <a-tooltip>
+                  <template #title>烧录前是否先擦除固件</template>
+                  <a-checkbox
+                    v-model:checked="eraseChecked"
+                    style="margin-left: 5px"
+                    >擦除固件</a-checkbox
+                  ></a-tooltip
                 >
               </template>
               <a @click="flash(item)">烧录</a>
@@ -39,7 +57,6 @@
 </template>
 <script setup lang="ts">
 import { ref } from "vue";
-import List from "./List.vue";
 import {
   getFirmwareList,
   getCurrentDir,
@@ -48,7 +65,7 @@ import {
 } from "@/utils/common";
 import SPIMode from "@/components/SPIMode.vue";
 import cli, { execute } from "@/utils/cli";
-
+const selectedBaud = ref("1152000");
 const selectedMode = ref("keep");
 const eraseChecked = ref(false);
 const pathList = ref(await getFirmwareList());
@@ -61,7 +78,7 @@ async function flash(path: string) {
     "-p",
     port,
     "-b",
-    "1152000",
+    selectedBaud.value,
     "write_flash",
     "--flash_mode",
     selectedMode.value,

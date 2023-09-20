@@ -1,94 +1,112 @@
 <template>
-  <a-row
-    style="margin-bottom: 5px"
-    type="flex"
-    justify="space-around"
-    align="middle"
-  >
-    <a-col :span="8">
-      <SPIMode v-model="selectedMode" />
-    </a-col>
-    <a-col :span="8">
-      <a-select
-        style="width: 120px"
-        size="small"
-        placeholder="芯片类型"
-        v-model:value="selectedChipType"
-        :options="chipTypeList"
-      >
-      </a-select>
-    </a-col>
-    <a-col :span="8"> </a-col>
-  </a-row>
+  <div style="padding: 10px">
+    <SerialPortSelect />
+    <a-row
+      style="margin-bottom: 5px"
+      type="flex"
+      justify="space-around"
+      align="middle"
+    >
+      <a-col :span="8">
+        <SPIMode v-model="selectedMode" />
+      </a-col>
+      <a-col :span="8">
+        <a-tooltip>
+          <template #title>烧录波特率</template>
+          <a-auto-complete
+            style="width: 90%"
+            v-model:value="selectedBaud"
+            size="small"
+            placeholder="烧录波特率"
+            :options="[
+              { value: '115200' },
+              { value: '230400' },
+              { value: '460800' },
+              { value: '921600' },
+              { value: '1152000' },
+              { value: '1500000' },
+            ]"
+        /></a-tooltip>
+      </a-col>
+      <a-col :span="8">
+        <a-tooltip>
+          <template #title>仅合并固件时需要选择</template>
+          <a-select
+            style="width: 90%"
+            size="small"
+            placeholder="芯片类型"
+            v-model:value="selectedChipType"
+            :options="chipTypeList"
+          >
+          </a-select
+        ></a-tooltip>
+      </a-col>
+    </a-row>
 
-  <div ref="target">
-    <Upload
-      v-if="destroyDrop"
-      title="选择或者拖拽多个bin文件到此"
-      subtitle="工具可以自动解析结尾使用下划线加烧录地址的固件,如 'ESP32_0x222.bin'"
-      @open="uploadHandle"
-      @drop="uploadHandle"
-      :isDirectory="false"
-      :isMultiple="true"
-    />
+    <div ref="target">
+      <Upload
+        v-if="destroyDrop"
+        title="选择或者拖拽多个bin文件到此"
+        subtitle="工具可以自动解析结尾使用下划线加烧录地址的固件,如 'ESP32_0x222.bin'"
+        @open="uploadHandle"
+        @drop="uploadHandle"
+        :isDirectory="false"
+        :isMultiple="true"
+      />
+    </div>
+    <a-table
+      style="margin: 5px 0"
+      :bordered="true"
+      :pagination="false"
+      :dataSource="firmwareList"
+      :columns="columns"
+      size="small"
+      class="scroll"
+    >
+      <template #headerCell="{ column }">
+        <template v-if="column.key === 'check'">
+          <a-checkbox
+            v-model:checked="flashCheckOption.selectAll"
+            :indeterminate="flashCheckOption.indeterminate"
+            @change="flashCheckAllChange"
+          ></a-checkbox>
+        </template>
+      </template>
+      <template #bodyCell="{ column, record }">
+        <template v-if="column.key === 'check'">
+          <a-checkbox
+            v-model:checked="record.check"
+            @change="flashCheckSingleChange"
+          ></a-checkbox>
+        </template>
+        <template v-if="column.key === 'address'">
+          <a-input :bordered="false" v-model:value="record.address" />
+        </template>
+        <template v-if="column.key === 'action'">
+          <a @click="flashFirmwareBtn(record)">烧录</a> |
+          <a @click="removeFirmwareBtn(record)">删除</a>
+        </template>
+      </template>
+    </a-table>
+    <a-tooltip>
+      <template #title>烧录前是否先擦除固件</template>
+      <a-checkbox v-model:checked="eraseChecked"
+        >擦除固件</a-checkbox
+      ></a-tooltip
+    >
+    <a-row :gutter="16">
+      <a-col :span="12">
+        <a-button type="primary" @click="handle(flash)" block
+          >烧录</a-button
+        ></a-col
+      >
+      <a-col :span="12"
+        ><a-button type="primary" @click="handle(merge)" block>
+          合并
+        </a-button></a-col
+      >
+    </a-row>
   </div>
-  <a-table
-    style="margin: 5px 0"
-    :bordered="true"
-    :pagination="false"
-    :dataSource="firmwareList"
-    :columns="columns"
-    size="small"
-    class="scroll"
-  >
-    <template #headerCell="{ column }">
-      <template v-if="column.key === 'check'">
-        <a-checkbox
-          v-model:checked="flashCheckOption.selectAll"
-          :indeterminate="flashCheckOption.indeterminate"
-          @change="flashCheckAllChange"
-        ></a-checkbox>
-      </template>
-    </template>
-    <template #bodyCell="{ column, record }">
-      <template v-if="column.key === 'check'">
-        <a-checkbox
-          v-model:checked="record.check"
-          @change="flashCheckSingleChange"
-        ></a-checkbox>
-      </template>
-      <template v-if="column.key === 'address'">
-        <a-input :bordered="false" v-model:value="record.address" />
-        <!-- <a-auto-complete
-          v-model:value="record.address"
-          :options="[
-            { value: '0x0' },
-            { value: '0x10000' },
-            { value: '0x8000' },
-          ]"
-          style="width: 100%"
-          :bordered="false"
-        /> -->
-      </template>
-      <template v-if="column.key === 'action'">
-        <a @click="flashFirmwareBtn(record)">烧录</a> |
-        <a @click="removeFirmwareBtn(record)">删除</a>
-      </template>
-    </template>
-  </a-table>
-  <a-checkbox v-model:checked="eraseChecked">擦除固件</a-checkbox>
-  <a-row :gutter="16">
-    <a-col :span="12">
-      <a-button type="primary" @click="handle(flash)" block
-        >烧录</a-button
-      ></a-col
-    >
-    <a-col :span="12"
-      ><a-button type="primary" @click="handle(merge)" block>
-        合并
-      </a-button></a-col
-    >
-  </a-row>
 </template>
 <script setup lang="ts">
 import { ref } from "vue";
@@ -115,9 +133,11 @@ const destroyDrop = useElementVisibility(target);
 
 const flashCheckOption = ref({ indeterminate: false, selectAll: false });
 
+const selectedChipType = ref();
 const selectedMode = ref("keep");
+const selectedBaud = ref("1152000");
+
 const eraseChecked = ref(false);
-const firmware = ref({} as Firmware);
 const firmwareList = ref([] as Firmware[]);
 const currentDir = await getCurrentDir();
 const columns = ref([
@@ -158,7 +178,7 @@ const flash = async () => {
     "-p",
     port,
     "-b",
-    "1152000",
+    selectedBaud.value,
     "--before=default_reset",
     "--after=hard_reset",
     "write_flash",
@@ -275,7 +295,7 @@ const flashFirmwareBtn = async (item: Firmware) => {
     "-p",
     port,
     "-b",
-    "1152000",
+    selectedBaud.value,
     "--before=default_reset",
     "--after=hard_reset",
     "write_flash",
@@ -296,8 +316,6 @@ const flashFirmwareBtn = async (item: Firmware) => {
   });
   const result = await resultPromise;
 };
-
-const selectedChipType = ref();
 
 const chipTypeList = ref(
   (await getChipTypeList()).map((item: string) => {

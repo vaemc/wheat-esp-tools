@@ -24,7 +24,6 @@ const router = createRouter({
                 icon: "🐯",
                 title: "首页",
                 display: false,
-                portShow: false,
               },
             },
             {
@@ -35,7 +34,6 @@ const router = createRouter({
                 icon: "🐼",
                 title: "基本",
                 display: true,
-                portShow: true,
               },
             },
             {
@@ -46,7 +44,6 @@ const router = createRouter({
                 icon: "🐶",
                 title: "烧录或合并固件",
                 display: true,
-                portShow: true,
               },
             },
             {
@@ -57,7 +54,6 @@ const router = createRouter({
                 icon: "🐱",
                 title: "分区表",
                 display: true,
-                portShow: false,
               },
             },
             {
@@ -68,7 +64,6 @@ const router = createRouter({
                 icon: "🐳",
                 title: "BLE",
                 display: true,
-                portShow: false,
               },
             },
             {
@@ -79,7 +74,6 @@ const router = createRouter({
                 icon: "🐰",
                 title: "固件管理",
                 display: true,
-                portShow: true,
               },
             },
             {
@@ -90,7 +84,6 @@ const router = createRouter({
                 icon: "🐻",
                 title: "文件系统",
                 display: false,
-                portShow: false,
               },
             },
           ],
@@ -102,7 +95,6 @@ const router = createRouter({
             icon: "⚙️",
             title: "设置",
             display: true,
-            portShow: false,
           },
           component: () => import("@/views/setting/index.vue"),
         },
@@ -113,7 +105,6 @@ const router = createRouter({
             icon: "📙",
             title: "帮助",
             display: true,
-            portShow: false,
           },
           component: () => import("@/views/help/index.vue"),
         },

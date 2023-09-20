@@ -1,11 +1,14 @@
 <template>
-  <a-button
-    style="margin-right: 5px"
-    v-for="item in list"
-    @click="click(item.cmd)"
-    >{{ item.name }}</a-button
-  >
-  <a-button style="margin-right: 5px" @click="readFlash()">读取固件</a-button>
+  <div style="padding: 10px">
+    <SerialPortSelect />
+    <a-button
+      style="margin-right: 5px"
+      v-for="item in list"
+      @click="click(item.cmd)"
+      >{{ item.name }}</a-button
+    >
+    <a-button style="margin-right: 5px" @click="readFlash()">读取固件</a-button>
+  </div>
 </template>
 <script setup lang="ts">
 import { ref } from "vue";

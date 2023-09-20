@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div style="padding: 10px">
     <a-row :gutter="16">
       <a-col :span="11">
         <a-tabs>

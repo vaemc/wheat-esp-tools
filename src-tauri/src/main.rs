@@ -56,7 +56,7 @@ async fn ble_device_scan(window: tauri::Window) {
 
                 let mr = BleDevice {
                     address: device.address.to_string(),
-                    local_name: device.local_name.unwrap_or(String::from("Unknown")),
+                    local_name: device.local_name.unwrap_or(String::from("")),
                     rssi: device.rssi.unwrap(),
                     manufacturer_data: device.manufacturer_data,
                     services: device.services.iter().map(|x| x.to_string()).collect(),

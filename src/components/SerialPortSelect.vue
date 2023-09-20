@@ -4,7 +4,7 @@
     @dropdownVisibleChange="focus"
     @focus="focus"
     @change="change"
-    style="width: 100%"
+    style="width: 100%; margin: 0 0 10px"
     :options="serialPortList"
   ></a-select>
 </template>
