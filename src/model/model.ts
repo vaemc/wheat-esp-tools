@@ -11,3 +11,13 @@ export interface Firmware {
   path: string;
   address: string;
 }
+
+interface BluetoothDevice {
+  address: string;
+  local_name: string;
+  rssi: number;
+  manufacturer_data: any;
+  services: string[];
+  service_data: any;
+  adv: number[];
+}

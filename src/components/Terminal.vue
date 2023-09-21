@@ -11,7 +11,6 @@
 </template>
 <script setup lang="ts">
 import { ref } from "vue";
-import { message } from "ant-design-vue";
 import "xterm/css/xterm.css";
 import "xterm/lib/xterm.js";
 import { Terminal } from "xterm";

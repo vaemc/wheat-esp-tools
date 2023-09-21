@@ -4179,6 +4179,7 @@ dependencies = [
  "anyhow",
  "bincode",
  "btleplug",
+ "futures",
  "regex",
  "serde",
  "serde_json",

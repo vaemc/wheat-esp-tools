@@ -1,18 +1,22 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use btleplug::api::{Central, Manager as _, Peripheral, ScanFilter};
-use btleplug::platform::Manager;
+use btleplug::api::Peripheral;
+use btleplug::api::{bleuuid::BleUuid, Central, CentralEvent, Manager as _, ScanFilter};
+use btleplug::platform::{Adapter, Manager};
+use futures::stream::StreamExt;
 use serialport::available_ports;
 use std::collections::HashMap;
 use std::env;
+use std::error::Error;
 use std::fs;
 use std::path::Path;
 use std::process::Command;
+use std::thread;
 use std::time::Duration;
 use std::time::SystemTime;
 use tauri::Manager as TauriManager;
-use tokio::time;
+use std::sync::mpsc::{self, TryRecvError};
 
 // Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
 
@@ -27,68 +31,6 @@ pub struct BleDevice {
     pub adv: Vec<u8>,
 }
 
-#[tauri::command]
-async fn ble_device_scan(window: tauri::Window) {
-    let manager = Manager::new().await.unwrap();
-    let adapter_list = manager.adapters().await.unwrap();
-    if adapter_list.is_empty() {
-        eprintln!("No Bluetooth adapters found");
-    }
-
-    for adapter in adapter_list.iter() {
-        // println!(
-        //     "Starting scan on {}...",
-        //     adapter.adapter_info().await.unwrap()
-        // );
-
-        adapter.start_scan(ScanFilter::default()).await.unwrap();
-
-        time::sleep(Duration::from_secs(3)).await;
-
-        let peripherals = adapter.peripherals().await.unwrap();
-
-        if !peripherals.is_empty() {
-            for peripheral in peripherals.iter() {
-                let properties = peripheral.properties().await.unwrap();
-                // let is_connected = peripheral.is_connected().await.unwrap();
-
-                let device = properties.unwrap();
-
-                let mr = BleDevice {
-                    address: device.address.to_string(),
-                    local_name: device.local_name.unwrap_or(String::from("")),
-                    rssi: device.rssi.unwrap(),
-                    manufacturer_data: device.manufacturer_data,
-                    services: device.services.iter().map(|x| x.to_string()).collect(),
-                    service_data: device
-                        .service_data
-                        .iter()
-                        .map(|(x, y)| (x.to_string(), y.clone()))
-                        .collect(),
-                    adv: device
-                        .service_data
-                        .iter()
-                        .flat_map(|x| x.1.clone())
-                        .collect(),
-                };
-
-                for service in peripheral.services() {
-                    println!(
-                        "Service UUID {}, primary: {}",
-                        service.uuid, service.primary
-                    );
-                    for characteristic in service.characteristics {
-                        println!("  {:?}", characteristic);
-                    }
-                }
-
-                window
-                    .emit("ble_device_scan_event", serde_json::to_string(&mr).unwrap())
-                    .unwrap();
-            }
-        }
-    }
-}
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
 struct FileInfo {
@@ -97,6 +39,114 @@ struct FileInfo {
     len: u64,
     create_time: u64,
 }
+
+async fn get_central(manager: &Manager) -> Adapter {
+    let adapters = manager.adapters().await.unwrap();
+    adapters.into_iter().nth(0).unwrap()
+}
+
+#[tauri::command]
+async fn start_ble_advertisement_scan(window: tauri::Window) {
+    let (tx, rx) = mpsc::channel();
+
+    let manager = Manager::new().await.unwrap();
+
+    // get the first bluetooth adapter
+    // connect to the adapter
+    let central = get_central(&manager).await;
+
+    // Each adapter has an event stream, we fetch via events(),
+    // simplifying the type, this will return what is essentially a
+    // Future<Result<Stream<Item=CentralEvent>>>.
+    let mut events = central.events().await.unwrap();
+
+    // start scanning for devices
+    central
+        .start_scan(ScanFilter::default())
+        .await
+        .expect("msg");
+
+    let listen = window.listen("stop_ble_advertisement_scan", move |_event| {
+        tx.send(()).unwrap();
+    });
+
+    // Print based on whatever the event receiver outputs. Note that the event
+    // receiver blocks, so in a real program, this should be run in its own
+    // thread (not task, as this library does not yet use async channels).
+    while let Some(event) = events.next().await {
+        match rx.try_recv() {
+            Ok(_) | Err(TryRecvError::Disconnected) => {
+                window.unlisten(listen);
+                break;
+            }
+            Err(TryRecvError::Empty) => {}
+        }
+        match event {
+            CentralEvent::DeviceDiscovered(id) => {
+                // println!("DeviceDiscovered: {:?}", id);
+            }
+            CentralEvent::DeviceConnected(id) => {
+                // println!("DeviceConnected: {:?}", id);
+            }
+            CentralEvent::DeviceDisconnected(id) => {
+                // println!("DeviceDisconnected: {:?}", id);
+            }
+            CentralEvent::ManufacturerDataAdvertisement {
+                id,
+                manufacturer_data,
+            } => {
+                // println!(
+                //     "ManufacturerDataAdvertisement: {:?}, {:?}",
+                //     id, manufacturer_data
+                // );
+
+                let peripheral = central.peripheral(&id).await;
+                match peripheral {
+                    Ok(peripheral) => {
+                        let device = peripheral.properties().await.unwrap().expect("error");
+                        let mr = BleDevice {
+                            address: device.address.to_string(),
+                            local_name: device.local_name.unwrap_or(String::from("")),
+                            rssi: device.rssi.unwrap(),
+                            manufacturer_data: device.manufacturer_data,
+                            services: device.services.iter().map(|x| x.to_string()).collect(),
+                            service_data: device
+                                .service_data
+                                .iter()
+                                .map(|(x, y)| (x.to_string(), y.clone()))
+                                .collect(),
+                            adv: device
+                                .service_data
+                                .iter()
+                                .flat_map(|x| x.1.clone())
+                                .collect(),
+                        };
+
+                        window
+                            .emit(
+                                "ble_advertisement_scan_event",
+                                serde_json::to_string(&mr).unwrap(),
+                            )
+                            .unwrap();
+                    }
+                    Err(_) => {}
+                }
+            }
+            CentralEvent::ServiceDataAdvertisement { id, service_data } => {
+                // println!("ServiceDataAdvertisement: {:?}, {:?}", id, service_data);
+            }
+            CentralEvent::ServicesAdvertisement { id, services } => {
+                let services: Vec<String> =
+                    services.into_iter().map(|s| s.to_short_string()).collect();
+                // println!("ServicesAdvertisement: {:?}, {:?}", id, services);
+            }
+            _ => {}
+        }
+
+        thread::sleep(Duration::from_millis(100));
+    }
+}
+
 
 #[tauri::command]
 fn greet(name: &str) -> String {
@@ -202,7 +252,7 @@ fn main() {
             write_all_text,
             collect_all_paths,
             get_file_info,
-            ble_device_scan
+            start_ble_advertisement_scan
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
