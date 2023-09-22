@@ -20,25 +20,42 @@ import { join } from 'path'; import { join } from 'path';
               </template>
               <a-list-item-meta>
                 <template #title>
-                  {{ item.local_name }}
+                  <span v-copy>{{ item.local_name }}</span>
                 </template>
                 <template #avatar> </template>
                 <template #description>
-                  {{ item.address }}<br />
+                  <span v-copy> {{ item.address }}</span
+                  ><br />
 
                   <a-tag
                     v-if="item.services.length != 0"
                     color="blue"
                     v-for="service in item.services"
+                    v-copy
                     >{{ service }}</a-tag
                   ><br />
                   <div style="margin: 3px 0"></div>
-                  <a-tag v-if="item.adv.length != 0" color="cyan">{{
+                  <a-tag v-if="item.adv.length != 0" color="cyan" v-copy>{{
                     item.adv
                       .map((x: number) => x.toString(16).padStart(2, "0"))
-                      .join("")
+                      .join(" ")
                       .toUpperCase()
                   }}</a-tag>
+                  <a-tag
+                    v-if="Object.keys(item.manufacturer_data).length != 0"
+                    color="cyan"
+                    v-copy
+                    >{{
+                      Object.keys(item.manufacturer_data)
+                        .map((x: any) => {
+                          return item.manufacturer_data[x]
+                            .map((x: number) => x.toString(16).padStart(2, "0"))
+                            .join(" ")
+                            .toUpperCase();
+                        })
+                        .join("")
+                    }}</a-tag
+                  >
                 </template>
               </a-list-item-meta>
             </a-list-item>
@@ -108,7 +125,6 @@ import { join } from 'path'; import { join } from 'path';
 import { ref, reactive } from "vue";
 import { listen } from "@tauri-apps/api/event";
 import { invoke } from "@tauri-apps/api/tauri";
-import { ReloadOutlined } from "@ant-design/icons-vue";
 import { appWindow } from "@tauri-apps/api/window";
 import moment from "moment";
 
@@ -128,8 +144,6 @@ let timer = {} as NodeJS.Timer;
 await listen("ble_advertisement_scan_event", (event: any) => {
   let peripheral = JSON.parse(event.payload);
 
-  console.log(peripheral);
-
   if (!peripheral.local_name.includes(filter.name)) {
     return;
   }
@@ -137,6 +151,7 @@ await listen("ble_advertisement_scan_event", (event: any) => {
   if (!peripheral.address.includes(filter.address)) {
     return;
   }
+  // console.log(peripheral);
 
   if (
     peripheral.services.filter((x: string) => x.includes(filter.uuid)).length ==
@@ -158,6 +173,7 @@ await listen("ble_advertisement_scan_event", (event: any) => {
     data.value.map((item: any) => {
       if (item.address === peripheral.address) {
         item.rssi = peripheral.rssi;
+        item.manufacturer_data = peripheral.manufacturer_data;
         item.time = moment().unix();
       }
     });
