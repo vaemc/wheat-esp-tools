@@ -7,7 +7,7 @@ import { join } from 'path'; import { join } from 'path';
           <template #renderItem="{ item }">
             <a-list-item>
               <template #actions>
-                <span style="color: white"> {{ item.rssi }} dBm</span>
+                <p style="color: white">{{ item.rssi }} dBm</p>
               </template>
               <template #extra>
                 <div style="width: 80px">
@@ -20,28 +20,35 @@ import { join } from 'path'; import { join } from 'path';
               </template>
               <a-list-item-meta>
                 <template #title>
-                  <span v-copy>{{ item.local_name }}</span>
+                  <p v-copy>{{ item.local_name }}</p>
                 </template>
                 <template #avatar> </template>
                 <template #description>
-                  <span v-copy> {{ item.address }}</span
-                  ><br />
+                  <p v-copy>{{ item.address }}</p>
 
                   <a-tag
+                    style="margin-bottom: 3px"
                     v-if="item.services.length != 0"
                     color="blue"
                     v-for="service in item.services"
                     v-copy
                     >{{ service }}</a-tag
-                  ><br />
-                  <div style="margin: 3px 0"></div>
-                  <a-tag v-if="item.adv.length != 0" color="cyan" v-copy>{{
-                    item.adv
-                      .map((x: number) => x.toString(16).padStart(2, "0"))
-                      .join(" ")
-                      .toUpperCase()
-                  }}</a-tag>
+                  >
+
                   <a-tag
+                    style="margin-bottom: 3px"
+                    v-if="item.adv.length != 0"
+                    color="cyan"
+                    v-copy
+                    >{{
+                      item.adv
+                        .map((x: number) => x.toString(16).padStart(2, "0"))
+                        .join(" ")
+                        .toUpperCase()
+                    }}</a-tag
+                  >
+                  <a-tag
+                    style="margin-bottom: 3px"
                     v-if="Object.keys(item.manufacturer_data).length != 0"
                     color="cyan"
                     v-copy
@@ -73,7 +80,7 @@ import { join } from 'path'; import { join } from 'path';
           block
           >{{ scanBtnText }}</a-button
         >
-        <a-card size="small" title="过滤">
+        <a-card size="small" title="过滤" style="margin-bottom: 5px">
           <a-input
             style="margin-bottom: 5px"
             v-model:value="filter.name"
@@ -107,7 +114,7 @@ import { join } from 'path'; import { join } from 'path';
             v-model:value="filter.rssi"
             :min="0"
             :max="100"
-            tooltipPlacement="left"
+            tooltipPlacement="bottom"
             :tipFormatter="
               (x:number) => {
                 return '-' + x;
@@ -117,6 +124,9 @@ import { join } from 'path'; import { join } from 'path';
 
           <a-button type="primary" @click="reset" block>重置</a-button>
         </a-card>
+        <!-- <a-card size="small" >
+
+        </a-card> -->
       </div>
     </a-col>
   </a-row>
@@ -126,8 +136,8 @@ import { ref, reactive } from "vue";
 import { listen } from "@tauri-apps/api/event";
 import { invoke } from "@tauri-apps/api/tauri";
 import { appWindow } from "@tauri-apps/api/window";
+import { PlusSquareOutlined } from "@ant-design/icons-vue";
 import moment from "moment";
-
 const data = ref([] as any);
 const scanBtnText = ref("开始扫描");
 const scanState = ref(false);
@@ -143,7 +153,7 @@ let timer = {} as NodeJS.Timer;
 
 await listen("ble_advertisement_scan_event", (event: any) => {
   let peripheral = JSON.parse(event.payload);
-
+  console.log(peripheral);
   if (!peripheral.local_name.includes(filter.name)) {
     return;
   }
@@ -151,7 +161,6 @@ await listen("ble_advertisement_scan_event", (event: any) => {
   if (!peripheral.address.includes(filter.address)) {
     return;
   }
-  // console.log(peripheral);
 
   if (
     peripheral.services.filter((x: string) => x.includes(filter.uuid)).length ==

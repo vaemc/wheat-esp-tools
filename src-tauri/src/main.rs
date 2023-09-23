@@ -143,7 +143,7 @@ async fn start_ble_advertisement_scan(window: tauri::Window) {
             _ => {}
         }
 
-        thread::sleep(Duration::from_millis(100));
+        // thread::sleep(Duration::from_millis(100));
     }
 }
 
