@@ -93,13 +93,13 @@
   </div>
 </template>
 <script setup lang="ts">
-import { ref } from "vue";
+import Upload from "@/components/Upload.vue";
+import cli, { execute } from "@/utils/cli";
 import { getCurrentDir, writeAllText } from "@/utils/common";
+import { useElementVisibility } from "@vueuse/core";
 import Papa from "papaparse";
 import prettyBytes from "pretty-bytes";
-import Upload from "@/components/Upload.vue";
-import { useElementVisibility } from "@vueuse/core";
-import cli, { execute } from "@/utils/cli";
+import { ref } from "vue";
 const target = ref(null);
 const destroyDrop = useElementVisibility(target);
 

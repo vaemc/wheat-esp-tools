@@ -56,15 +56,15 @@
   </div>
 </template>
 <script setup lang="ts">
-import { ref } from "vue";
-import {
-  getFirmwareList,
-  getCurrentDir,
-  openFileInExplorer,
-  removeFile,
-} from "@/utils/common";
 import SPIMode from "@/components/SPIMode.vue";
 import cli, { execute } from "@/utils/cli";
+import {
+getCurrentDir,
+getFirmwareList,
+openFileInExplorer,
+removeFile,
+} from "@/utils/common";
+import { ref } from "vue";
 const selectedBaud = ref("1152000");
 const selectedMode = ref("keep");
 const eraseChecked = ref(false);

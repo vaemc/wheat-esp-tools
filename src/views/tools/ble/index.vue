@@ -132,12 +132,11 @@ import { join } from 'path'; import { join } from 'path';
   </a-row>
 </template>
 <script setup lang="ts">
-import { ref, reactive } from "vue";
 import { listen } from "@tauri-apps/api/event";
 import { invoke } from "@tauri-apps/api/tauri";
 import { appWindow } from "@tauri-apps/api/window";
-import { PlusSquareOutlined } from "@ant-design/icons-vue";
 import moment from "moment";
+import { reactive, ref } from "vue";
 const data = ref([] as any);
 const scanBtnText = ref("开始扫描");
 const scanState = ref(false);
