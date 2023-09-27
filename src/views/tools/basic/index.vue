@@ -11,11 +11,11 @@
   </div>
 </template>
 <script setup lang="ts">
-import { ref } from "vue";
-import { getCurrentDir, openFileInExplorer } from "@/utils/common";
 import SerialPortSelect from "@/components/SerialPortSelect.vue";
 import cli, { execute } from "@/utils/cli";
+import { getCurrentDir, openFileInExplorer } from "@/utils/common";
 import moment from "moment";
+import { ref } from "vue";
 const currentDir = await getCurrentDir();
 const click = async (item: string[]) => {
   const port = localStorage.getItem("port") as string;

@@ -8,8 +8,8 @@
   </div>
 </template>
 <script setup lang="ts">
-import { ref } from "vue";
 import SerialPortSelect from "@/components/SerialPortSelect.vue";
+import { ref } from "vue";
 import FirmwareListTool from "./components/FirmwareList.vue";
 import HistoryPathTool from "./components/HistoryPath.vue";
 const activeKey = ref("1");

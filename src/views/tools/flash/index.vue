@@ -109,25 +109,25 @@
   </div>
 </template>
 <script setup lang="ts">
-import { ref } from "vue";
-import cli, { execute } from "@/utils/cli";
-import { Firmware, FileInfo } from "@/model/model";
-import { message } from "ant-design-vue";
-import Upload from "@/components/Upload.vue";
-import SerialPortSelect from "@/components/SerialPortSelect.vue";
-import {
-  getChipTypeList,
-  openFileInExplorer,
-  getCurrentDir,
-  getFlasherArgs,
-  getFileInfo,
-  collectAllPaths,
-} from "@/utils/common";
 import SPIMode from "@/components/SPIMode.vue";
+import SerialPortSelect from "@/components/SerialPortSelect.vue";
+import Upload from "@/components/Upload.vue";
 import db from "@/db/db";
+import { Firmware } from "@/model/model";
+import cli, { execute } from "@/utils/cli";
+import {
+collectAllPaths,
+getChipTypeList,
+getCurrentDir,
+getFileInfo,
+getFlasherArgs,
+openFileInExplorer,
+} from "@/utils/common";
+import { useElementVisibility } from "@vueuse/core";
+import { message } from "ant-design-vue";
 import moment from "moment";
 import prettyBytes from "pretty-bytes";
-import { useElementVisibility } from "@vueuse/core";
+import { ref } from "vue";
 const target = ref(null);
 const destroyDrop = useElementVisibility(target);
 

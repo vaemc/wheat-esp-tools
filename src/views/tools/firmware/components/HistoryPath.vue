@@ -64,11 +64,11 @@
   </div>
 </template>
 <script setup lang="ts">
-import db from "@/db/db";
-import { ref } from "vue";
-import { openFileInExplorer, getFlasherArgs } from "@/utils/common";
 import SPIMode from "@/components/SPIMode.vue";
+import db from "@/db/db";
 import cli, { execute } from "@/utils/cli";
+import { getFlasherArgs, openFileInExplorer } from "@/utils/common";
+import { ref } from "vue";
 const selectedBaud = ref("1152000");
 const selectedMode = ref("keep");
 const pathList = ref((await db.getAll("paths")).map((item) => item.path));
