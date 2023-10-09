@@ -18,15 +18,16 @@
             <a-textarea
               placeholder="CSV内容"
               v-model:value="beforePartition"
-              :rows="18"
+              :rows="15"
               allow-clear
             />
           </a-tab-pane>
-          <a-tab-pane key="2" tab="二进制文件转换">
+          <a-tab-pane key="2" tab="文件">
             <div ref="target">
               <Upload
                 v-if="destroyDrop"
-                title="选择或者拖拽分区表bin文件到此"
+                title="选择或者拖拽文件到此"
+                subtitle="分区表csv或分区表bin文件"
                 :isDirectory="false"
                 :isMultiple="false"
                 @open="uploadHandle"
@@ -37,9 +38,6 @@
         </a-tabs>
       </a-col>
       <a-col :span="13">
-        <a-tag color="success" v-if="partitionSize.kb != ''"
-          >分区表大小: {{ partitionSize.kb }} {{ partitionSize.byte }} B
-        </a-tag>
         <a-tabs>
           <a-tab-pane key="1" tab="表格">
             <a-table
@@ -87,6 +85,11 @@
               placeholder=""
               :rows="12"
           /></a-tab-pane>
+          <template #rightExtra>
+            <a-tag color="success" v-if="partitionSize.kb != ''"
+              >分区表大小: {{ partitionSize.kb }} {{ partitionSize.byte }} B
+            </a-tag>
+          </template>
         </a-tabs>
       </a-col>
     </a-row>
