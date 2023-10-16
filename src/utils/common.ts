@@ -82,6 +82,10 @@ export async function openFileInExplorer(path: string) {
   invoke("open_file_in_explorer", { path: path });
 }
 
+export async function openDirectoryInExplorer(path: string) {
+  invoke("open_directory_in_explorer", { path: path });
+}
+
 export async function getFileInfo(path: string) {
   const info = (await invoke("get_file_info", { path: path })) as any;
   return {

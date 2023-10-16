@@ -12,11 +12,11 @@ use std::error::Error;
 use std::fs;
 use std::path::Path;
 use std::process::Command;
+use std::sync::mpsc::{self, TryRecvError};
 use std::thread;
 use std::time::Duration;
 use std::time::SystemTime;
 use tauri::Manager as TauriManager;
-use std::sync::mpsc::{self, TryRecvError};
 
 // Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
 
@@ -30,7 +30,6 @@ pub struct BleDevice {
     pub service_data: HashMap<String, Vec<u8>>,
     pub adv: Vec<u8>,
 }
-
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
 struct FileInfo {
@@ -147,7 +146,6 @@ async fn start_ble_advertisement_scan(window: tauri::Window) {
     }
 }
 
-
 #[tauri::command]
 fn greet(name: &str) -> String {
     format!("Hello, {}! You've been greeted from Rust!", name)
@@ -176,7 +174,12 @@ fn open_file_in_explorer(path: &str) {
         .arg("/select,")
         .arg(file_path)
         .status()
-        .expect("failed to execute command");
+        .unwrap();
+}
+
+#[tauri::command]
+fn open_directory_in_explorer(path: &str) {
+    Command::new("explorer").arg(path).spawn().unwrap();
 }
 
 #[tauri::command]
@@ -249,6 +252,7 @@ fn main() {
             get_serial_port_list,
             get_current_dir,
             open_file_in_explorer,
+            open_directory_in_explorer,
             write_all_text,
             collect_all_paths,
             get_file_info,

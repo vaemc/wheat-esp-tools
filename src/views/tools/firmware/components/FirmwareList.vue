@@ -1,6 +1,9 @@
 <template>
   <div style="margin: 5px">
-    <a href="#" @click="openFileInExplorer(currentDir + ' \\firmware')"
+    <a
+      v-if="pathList.length == 0"
+      href="#"
+      @click="openDirectoryInExplorer(currentDir + ' \\firmware')"
       >打开文件夹</a
     >
     <a-input-search
@@ -47,7 +50,17 @@
               </template>
               <a @click="flash(item)">烧录</a>
             </a-popover>
-
+            <a-tooltip>
+              <template #title>在资源管理器中打开</template>
+              <a
+                @click="
+                  () => {
+                    openFileInExplorer(item);
+                  }
+                "
+                >打开</a
+              >
+            </a-tooltip>
             <a @click="remove(item)">删除</a> </template
           >{{ item.substring(item.lastIndexOf("\\") + 1) }}</a-list-item
         >
@@ -59,10 +72,11 @@
 import SPIMode from "@/components/SPIMode.vue";
 import cli, { execute } from "@/utils/cli";
 import {
-getCurrentDir,
-getFirmwareList,
-openFileInExplorer,
-removeFile,
+  getCurrentDir,
+  getFirmwareList,
+  openFileInExplorer,
+  openDirectoryInExplorer,
+  removeFile,
 } from "@/utils/common";
 import { ref } from "vue";
 const selectedBaud = ref("1152000");

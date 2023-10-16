@@ -94,7 +94,7 @@ const router = createRouter({
           meta: {
             icon: "⚙️",
             title: "设置",
-            display: true,
+            display: false,
           },
           component: () => import("@/views/setting/index.vue"),
         },
@@ -104,7 +104,7 @@ const router = createRouter({
           meta: {
             icon: "📙",
             title: "帮助",
-            display: true,
+            display: false,
           },
           component: () => import("@/views/help/index.vue"),
         },
