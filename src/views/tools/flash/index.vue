@@ -47,7 +47,7 @@
       <Upload
         v-if="destroyDrop"
         title="选择或者拖拽多个bin文件到此"
-        subtitle="工具可以自动解析结尾使用下划线加烧录地址的固件,如 'ESP32_0x222.bin'"
+        subtitle="工具可以自动解析结尾使用下划线加地址的固件,如 'ESP32_0x222.bin'"
         @open="uploadHandle"
         @drop="uploadHandle"
         :isDirectory="false"
@@ -154,7 +154,7 @@ const columns = ref([
     ellipsis: true,
   },
   {
-    title: "烧录地址",
+    title: "固件地址",
     dataIndex: "address",
     key: "address",
     width: 100,
@@ -253,7 +253,7 @@ const handle = (fun: Function) => {
   }
 
   if (firmwareList.value.filter((x) => x.address == "").length > 0) {
-    message.warning("烧录地址未填写");
+    message.warning("固件地址未填写");
     return;
   }
 

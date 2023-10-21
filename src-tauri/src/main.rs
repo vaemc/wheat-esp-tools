@@ -154,17 +154,16 @@ fn greet(name: &str) -> String {
 #[tauri::command]
 fn get_serial_port_list() -> Vec<String> {
     let port_info_list = available_ports().unwrap();
-    let port_list: Vec<String> = port_info_list
+    port_info_list
         .iter()
         .map(|x| x.port_name.to_string())
-        .collect();
-    return port_list;
+        .collect()
 }
 
 #[tauri::command]
 fn get_current_dir() -> String {
     let path = env::current_dir().unwrap();
-    return path.display().to_string();
+   path.display().to_string()
 }
 
 #[tauri::command]
