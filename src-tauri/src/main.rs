@@ -8,13 +8,10 @@ use futures::stream::StreamExt;
 use serialport::available_ports;
 use std::collections::HashMap;
 use std::env;
-use std::error::Error;
 use std::fs;
 use std::path::Path;
 use std::process::Command;
 use std::sync::mpsc::{self, TryRecvError};
-use std::thread;
-use std::time::Duration;
 use std::time::SystemTime;
 use tauri::Manager as TauriManager;
 
@@ -198,11 +195,6 @@ fn get_file_info(path: &str) -> FileInfo {
 }
 
 #[tauri::command]
-fn write_all_text(path: &str, text: &str) {
-    fs::write(path, text).unwrap();
-}
-
-#[tauri::command]
 fn collect_all_paths(path: &str, level: u32) -> Vec<String> {
     let mut paths: Vec<String> = Vec::new();
 
@@ -252,7 +244,6 @@ fn main() {
             get_current_dir,
             open_file_in_explorer,
             open_directory_in_explorer,
-            write_all_text,
             collect_all_paths,
             get_file_info,
             start_ble_advertisement_scan

@@ -1,6 +1,7 @@
 import { invoke } from "@tauri-apps/api/tauri";
 import {
   readTextFile,
+  writeTextFile,
   readDir,
   removeFile as rf,
   FileEntry,
@@ -30,7 +31,7 @@ export async function getCurrentDir() {
 }
 
 export async function writeAllText(path: string, text: string) {
-  return await invoke("write_all_text", { path: path, text: text });
+  return await writeTextFile(path,text);
 }
 
 export async function getChipTypeList() {
