@@ -37,9 +37,7 @@
         "open": true,
         "scope": [
           { "name": "bin/esptool", "args": true, "sidecar": true },
-          { "name": "bin/gen_esp32part", "args": true, "sidecar": true },
-          { "name": "bin/mklittlefs", "args": true, "sidecar": true },
-          { "name": "bin/mkspiffs", "args": true, "sidecar": true }
+          { "name": "bin/gen_esp32part", "args": true, "sidecar": true }
         ]
       },
       "protocol": {
@@ -58,9 +56,7 @@
       },
       "externalBin": [
         "bin/esptool",
-        "bin/gen_esp32part",
-        "bin/mklittlefs",
-        "bin/mkspiffs"
+        "bin/gen_esp32part"
       ],
       "active": true,
       "icon": [

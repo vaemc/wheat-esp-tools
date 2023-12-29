@@ -40,10 +40,7 @@
       </a-menu>
     </a-layout-sider>
     <a-layout>
-      <!-- <div v-if="portShow" style="margin: 10px">
-        <SerialPortSelect />
-      </div> -->
-      <a-layout-content :style="{  minHeight: '280px' }">
+      <a-layout-content :style="{ minHeight: '280px' }">
         <router-view v-slot="{ Component }">
           <keep-alive>
             <component :is="Component" />
@@ -60,19 +57,25 @@ import Terminal from "@/components/Terminal.vue";
 import SerialPortSelect from "@/components/SerialPortSelect.vue";
 import { ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
+import { useEventBus } from "@vueuse/core";
+const syncSerialPortBus = useEventBus<string>("syncSerialPort");
+const syncFirmwareBus = useEventBus<string>("syncFirmwareBus");
+const selectedKeys = ref([useRoute().name]);
 const router = useRouter();
-const portShow = ref(false);
 const routerList = ref(router.options.routes[0].children);
 const openKeys = ref(["tools"]);
+
 const onCollapse = (collapsed: boolean, type: string) => {
   console.log(collapsed, type);
 };
+
 const onBreakpoint = (broken: boolean) => {
   console.log(broken);
 };
-const selectedKeys = ref([useRoute().name]);
+
 const to = (data: any) => {
+  syncSerialPortBus.emit();
+  syncFirmwareBus.emit();
   router.push(data.path);
-  portShow.value = data.meta?.portShow;
 };
 </script>

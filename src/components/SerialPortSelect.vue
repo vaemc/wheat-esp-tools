@@ -11,8 +11,15 @@
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
 import { getSerialPortList } from "@/utils/common";
+import { useEventBus } from "@vueuse/core";
 const selectedSerialPort = ref();
 const serialPortList = ref([] as any);
+const bus = useEventBus<string>("syncSerialPort");
+bus.on(listener);
+
+function listener(event: string) {
+  refreshList(true);
+}
 
 const refreshList = async (showDefaultPort = false) => {
   let list = (await getSerialPortList()).map((item: string) => {
@@ -24,6 +31,8 @@ const refreshList = async (showDefaultPort = false) => {
   serialPortList.value = list;
   if (list.length > 0 && showDefaultPort) {
     const localStoragePort = localStorage.getItem("port") as string;
+    console.log(localStoragePort != null);
+
     if (localStoragePort != null) {
       if (list.find((x) => x.value === localStoragePort) != null) {
         selectedSerialPort.value = localStoragePort;

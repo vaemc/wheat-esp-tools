@@ -64,22 +64,28 @@
   </div>
 </template>
 <script setup lang="ts">
+import { ref } from "vue";
 import SPIMode from "@/components/SPIMode.vue";
 import db from "@/db/db";
 import cli, { execute } from "@/utils/cli";
 import { getFlasherArgs, openFileInExplorer } from "@/utils/common";
-import { ref } from "vue";
+import { useEventBus } from "@vueuse/core";
 const selectedBaud = ref("1152000");
 const selectedMode = ref("keep");
 const pathList = ref((await db.getAll("paths")).map((item) => item.path));
 const eraseChecked = ref(false);
+const bus = useEventBus<string>("syncSerialPort");
+bus.on(listener);
+
+async function listener(event: string) {
+  pathList.value = (await db.getAll("paths")).map((item) => item.path);
+}
+
 async function flash(path: string) {
   const port = localStorage.getItem("port") as string;
-
   const flasherArgs = await getFlasherArgs(path);
   console.log(flasherArgs);
   const folderPath = path.substring(0, path.lastIndexOf("\\"));
-
   let cmd = [
     "-p",
     port,
@@ -109,7 +115,6 @@ async function flash(path: string) {
     cmd.push("--erase-all");
   }
   execute("esptool", cmd);
-
   const resultPromise = new Promise((resolve, reject) => {
     cli.on("stdout", (data) => {
       console.log(data);

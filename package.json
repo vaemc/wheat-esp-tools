@@ -13,7 +13,7 @@
     "@tauri-apps/api": "^1.4.0",
     "@types/byte-size": "^8.1.0",
     "@types/papaparse": "^5.3.8",
-    "@vueuse/core": "^10.3.0",
+    "@vueuse/core": "^10.7.1",
     "ant-design-vue": "^4.0.3",
     "idb": "^7.1.1",
     "kleur": "^4.1.5",
