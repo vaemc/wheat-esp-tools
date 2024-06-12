@@ -74,6 +74,8 @@ import {
   openFileInExplorer,
 } from "@/utils/common";
 import { useEventBus } from "@vueuse/core";
+import {  Firmware } from "@/model/model";
+
 const selectedBaud = ref("1152000");
 const selectedMode = ref("keep");
 const pathList = ref((await db.getAll("paths")).map((item) => item.path));
@@ -88,7 +90,7 @@ async function listener(event: string) {
 async function flash(path: string) {
   const port = localStorage.getItem("port") as string;
   const filename = path.replace(/^.*[\\/]/, "");
-  let config={};
+  let config={flashFiles:[] as Firmware[]};
   switch (filename) {
     case "flasher_args.json":
       config = await getIDFArgsConfig(path);
