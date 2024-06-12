@@ -68,7 +68,11 @@ import { ref } from "vue";
 import SPIMode from "@/components/SPIMode.vue";
 import db from "@/db/db";
 import cli, { execute } from "@/utils/cli";
-import { getFlasherArgs, openFileInExplorer } from "@/utils/common";
+import {
+  getIDFArgsConfig,
+  getPlatformIOArgsConfig,
+  openFileInExplorer,
+} from "@/utils/common";
 import { useEventBus } from "@vueuse/core";
 const selectedBaud = ref("1152000");
 const selectedMode = ref("keep");
@@ -83,9 +87,16 @@ async function listener(event: string) {
 
 async function flash(path: string) {
   const port = localStorage.getItem("port") as string;
-  const flasherArgs = await getFlasherArgs(path);
-  console.log(flasherArgs);
-  const folderPath = path.substring(0, path.lastIndexOf("\\"));
+  const filename = path.replace(/^.*[\\/]/, "");
+  let config={};
+  switch (filename) {
+    case "flasher_args.json":
+      config = await getIDFArgsConfig(path);
+      break;
+    case "idedata.json":
+      config = await getPlatformIOArgsConfig(path);
+      break;
+  }
   let cmd = [
     "-p",
     port,
@@ -96,24 +107,20 @@ async function flash(path: string) {
     "write_flash",
     "--flash_mode",
     selectedMode.value,
-    ...(
-      await Promise.all(
-        Object.keys(flasherArgs.flashFiles).map(async (item) => {
-          const fullPath =
-            folderPath +
-            "\\" +
-            flasherArgs.flashFiles[item].replace(/\//g, "\\");
-          return {
-            path: fullPath,
-            address: item,
-          };
-        })
-      )
-    ).flatMap((x) => [x.address, x.path]),
+    ...config!.flashFiles
+      .map((item) => {
+        return {
+          path: item.path,
+          address: item.address,
+        };
+      })
+      .flatMap((x) => [x.address, x.path]),
   ];
   if (eraseChecked.value) {
     cmd.push("--erase-all");
   }
+  console.log(cmd);
+
   execute("esptool", cmd);
   const resultPromise = new Promise((resolve, reject) => {
     cli.on("stdout", (data) => {

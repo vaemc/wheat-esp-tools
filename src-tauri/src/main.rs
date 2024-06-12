@@ -30,6 +30,7 @@ pub struct BleDevice {
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
 struct FileInfo {
+    name:String,
     is_dir: bool,
     is_file: bool,
     len: u64,
@@ -182,6 +183,7 @@ fn open_directory_in_explorer(path: &str) {
 fn get_file_info(path: &str) -> FileInfo {
     let metadata = fs::metadata(path).unwrap();
     FileInfo {
+        name:Path::new(path).file_name().unwrap().to_str().unwrap().to_string(),
         is_dir: metadata.is_dir(),
         is_file: metadata.is_file(),
         len: metadata.len(),

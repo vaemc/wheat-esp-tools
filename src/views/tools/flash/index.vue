@@ -116,12 +116,12 @@ import db from "@/db/db";
 import { Firmware } from "@/model/model";
 import cli, { execute } from "@/utils/cli";
 import {
-collectAllPaths,
-getChipTypeList,
-getCurrentDir,
-getFileInfo,
-getFlasherArgs,
-openFileInExplorer,
+  getChipTypeList,
+  getCurrentDir,
+  getFileInfo,
+  getIDFArgsConfig,
+  getPlatformIOArgsConfig,
+  openFileInExplorer,
 } from "@/utils/common";
 import { useElementVisibility } from "@vueuse/core";
 import { message } from "ant-design-vue";
@@ -323,67 +323,48 @@ const chipTypeList = ref(
   })
 );
 
-const uploadHandle = async (path: string | string[]) => {
-  const fillPaths = await Promise.all(
-    (path as string[]).map(async (item) => {
-      const info = await getFileInfo(item);
-      return { path: item, isFile: info.isFile, size: info.len };
-    })
-  );
-
-  let flasherArgsJsonFilePath;
-  if (fillPaths.length == 1 && !fillPaths[0].isFile) {
-    flasherArgsJsonFilePath = (
-      (await collectAllPaths(fillPaths[0].path, 0)) as string[]
-    ).find((x) => x.substring(x.lastIndexOf("\\") + 1) == "flasher_args.json");
-  } else {
-    flasherArgsJsonFilePath = fillPaths
-      .filter((x) => x.isFile)
-      .find(
-        (x) =>
-          x.path.substring(x.path.lastIndexOf("\\") + 1) == "flasher_args.json"
-      )?.path;
-  }
-
+const uploadHandle = async (paths: string | string[]) => {
+  const filename = paths[0].replace(/^.*[\\/]/, "");
   if (
-    flasherArgsJsonFilePath !== null &&
-    flasherArgsJsonFilePath !== undefined
+    (paths.length == 1 && filename === "flasher_args.json") ||
+    filename === "idedata.json"
   ) {
-    const flasherArgs = await getFlasherArgs(flasherArgsJsonFilePath);
-    const folderPath = flasherArgsJsonFilePath.substring(
-      0,
-      flasherArgsJsonFilePath.lastIndexOf("\\")
-    );
+    let config;
+    switch (filename) {
+      case "flasher_args.json":
+        config = await getIDFArgsConfig(paths[0]);
+        firmwareList.value = config.flashFiles;
+        selectedChipType.value = config.chip;
+        db.add("paths", { path: paths[0] });
+        break;
+      case "idedata.json":
+        config = await getPlatformIOArgsConfig(paths[0]);
+        firmwareList.value = config.flashFiles;
+        selectedChipType.value = config.chip;
+        db.add("paths", { path: paths[0] });
+        break;
+    }
+    firmwareList.value.forEach(async (item) => {
+      const fileInfo = await getFileInfo(item.path);
+      item.size = prettyBytes(fileInfo.len);
+    });
+  } else {
     await Promise.all(
-      Object.keys(flasherArgs.flashFiles).map(async (item) => {
-        const fullPath =
-          folderPath + "\\" + flasherArgs.flashFiles[item].replace(/\//g, "\\");
-        firmwareList.value.push({
-          size: prettyBytes((await getFileInfo(fullPath)).len),
-          check: true,
-          path: fullPath,
-          address: item,
-        });
+      (paths as string[]).map(async (item) => {
+        const fileInfo = await getFileInfo(item);
+        if (fileInfo.isFile) {
+          let regex = /0x[\da-f]+/gi;
+          let address = item.match(regex);
+          firmwareList.value.push({
+            size: prettyBytes(fileInfo.len),
+            check: true,
+            path: item,
+            address: address == null ? "" : address[0],
+          });
+        }
       })
     );
-    db.add("paths", { path: flasherArgsJsonFilePath });
-
-    selectedChipType.value = flasherArgs.chip.toUpperCase();
-  } else {
-    let regex = /0x[\da-f]+/gi;
-    fillPaths
-      .filter((x) => x.isFile)
-      .map((item) => {
-        let address = item.path.match(regex);
-        firmwareList.value.push({
-          size: prettyBytes(item.size),
-          check: true,
-          path: item.path,
-          address: address == null ? "" : address[0],
-        });
-      });
   }
-
   if (firmwareList.value.length > 0) {
     flashCheckOption.value.selectAll = true;
   }

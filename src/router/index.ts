@@ -75,17 +75,7 @@ const router = createRouter({
                 title: "固件管理",
                 display: true,
               },
-            },
-            {
-              path: "/tools/fs",
-              name: "fs",
-              component: () => import("@/views/tools/fs/index.vue"),
-              meta: {
-                icon: "🐻",
-                title: "文件系统",
-                display: false,
-              },
-            },
+            }
           ],
         },
         {

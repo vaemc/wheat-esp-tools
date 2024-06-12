@@ -41,12 +41,12 @@
     </a-layout-sider>
     <a-layout>
       <a-layout-content :style="{ minHeight: '280px' }">
-        <router-view v-slot="{ Component }">
+        <!-- <router-view v-slot="{ Component }">
           <keep-alive>
             <component :is="Component" />
           </keep-alive>
-        </router-view>
-        <!-- <router-view /> -->
+        </router-view> -->
+        <router-view />
       </a-layout-content>
       <Terminal />
     </a-layout>

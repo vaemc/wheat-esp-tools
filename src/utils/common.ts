@@ -7,7 +7,8 @@ import {
   FileEntry,
 } from "@tauri-apps/api/fs";
 import { save } from "@tauri-apps/api/dialog";
-import { FileInfo } from "@/model/model";
+import { FileInfo, Firmware } from "@/model/model";
+import prettyBytes from "pretty-bytes";
 
 export async function saveFileDialog() {
   const filePath = await save({
@@ -31,7 +32,7 @@ export async function getCurrentDir() {
 }
 
 export async function writeAllText(path: string, text: string) {
-  return await writeTextFile(path,text);
+  return await writeTextFile(path, text);
 }
 
 export async function getChipTypeList() {
@@ -68,15 +69,56 @@ export async function getFlasherArgs2(path: string) {
   };
 }
 
-export async function getFlasherArgs(path: string) {
-  let flasherArgs = JSON.parse(await readTextFile(path));
-  console.log(flasherArgs);
-
-  return {
-    appName: flasherArgs.app.file.split(".")[0],
-    chip: flasherArgs.extra_esptool_args.chip,
-    flashFiles: flasherArgs.flash_files,
+export async function getIDFArgsConfig(path: string) {
+  let config = JSON.parse(await readTextFile(path));
+  const folderPath = path.substring(0, path.lastIndexOf("\\"));
+  let list = {
+    appName: config.app.file.split(".")[0],
+    chip: config.extra_esptool_args.chip.toUpperCase(),
+    flashFiles: [] as Firmware[],
   };
+
+  Object.keys(config.flash_files).map(async (item) => {
+    const fullPath =
+      folderPath + "\\" + config.flash_files[item].replace(/\//g, "\\");
+    list.flashFiles.push({
+      check: true,
+      path: fullPath,
+      address: item,
+    });
+  });
+
+  return list;
+}
+
+export async function getPlatformIOArgsConfig(path: string) {
+  let config = JSON.parse(await readTextFile(path));
+  const folderPath = path.substring(0, path.lastIndexOf("\\"));
+  const regex = /ARDUINO_VARIANT=\\"(.*?)\\"/;
+  let match = JSON.stringify(config.defines).match(regex)!;
+  let list = {
+    appName: config.env_name,
+    chip: match[1].toUpperCase(),
+    flashFiles: [] as Firmware[],
+  };
+
+  list.flashFiles.push({
+    check: true,
+    path: `${folderPath}\\firmware.bin`,
+    address: config.extra.application_offset,
+  });
+
+  await Promise.all(
+    config.extra.flash_images.map(async (item: any) => {
+      list.flashFiles.push({
+        check: true,
+        path: item.path,
+        address: item.offset,
+      });
+    })
+  );
+
+  return list;
 }
 
 export async function openFileInExplorer(path: string) {
@@ -90,15 +132,12 @@ export async function openDirectoryInExplorer(path: string) {
 export async function getFileInfo(path: string) {
   const info = (await invoke("get_file_info", { path: path })) as any;
   return {
+    name: info.name,
     isFile: info.is_file,
     isDir: info.is_dir,
     len: info.len,
     createTime: info.create_time,
   } as FileInfo;
-}
-
-export async function collectAllPaths(path: string, level: number) {
-  return await invoke("collect_all_paths", { path: path, level: level });
 }
 
 export async function removeFile(path: string) {

@@ -1,4 +1,5 @@
 export interface FileInfo {
+  name: string;
   isDir: boolean;
   isFile: boolean;
   len: number;
@@ -6,7 +7,7 @@ export interface FileInfo {
 }
 
 export interface Firmware {
-  size: string;
+  size?: string;
   check: boolean;
   path: string;
   address: string;
