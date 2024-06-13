@@ -34,29 +34,31 @@
                     ]"
                 /></a-tooltip>
                 <a-tooltip>
-                  <template #title>烧录前是否先擦除固件</template>
+                  <template #title>{{
+                    $t("firmware.eraseFlashInfo")
+                  }}</template>
                   <a-checkbox
                     v-model:checked="eraseChecked"
                     style="margin-left: 5px"
-                    >擦除固件</a-checkbox
+                    >{{ $t("firmware.eraseFlash") }}</a-checkbox
                   ></a-tooltip
                 >
               </template>
-              <a @click="flash(item)">烧录</a>
+              <a @click="flash(item)">{{ $t("firmware.flash") }}</a>
             </a-popover>
 
             <a-tooltip>
-              <template #title>在资源管理器中打开</template>
+              <template #title>{{ $t("firmware.openInExplorer") }}</template>
               <a
                 @click="
                   () => {
                     openFileInExplorer(item);
                   }
                 "
-                >打开</a
+                >{{ $t("firmware.open") }}</a
               >
             </a-tooltip>
-            <a @click="remove(item)">删除</a> </template
+            <a @click="remove(item)">{{ $t("firmware.remove") }}</a> </template
           >{{ item }}</a-list-item
         >
       </template>
@@ -74,7 +76,7 @@ import {
   openFileInExplorer,
 } from "@/utils/common";
 import { useEventBus } from "@vueuse/core";
-import {  Firmware } from "@/model/model";
+import { Firmware } from "@/model/model";
 
 const selectedBaud = ref("1152000");
 const selectedMode = ref("keep");
@@ -90,7 +92,7 @@ async function listener(event: string) {
 async function flash(path: string) {
   const port = localStorage.getItem("port") as string;
   const filename = path.replace(/^.*[\\/]/, "");
-  let config={flashFiles:[] as Firmware[]};
+  let config = { flashFiles: [] as Firmware[] };
   switch (filename) {
     case "flasher_args.json":
       config = await getIDFArgsConfig(path);

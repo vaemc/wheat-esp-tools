@@ -7,15 +7,19 @@
       @click="click(item.cmd)"
       >{{ item.name }}</a-button
     >
-    <a-button style="margin-right: 5px" @click="readFlash()">读取固件</a-button>
+    <a-button style="margin-right: 5px" @click="readFlash()">{{
+      $t("general.readFirmware")
+    }}</a-button>
   </div>
 </template>
 <script setup lang="ts">
+import { ref } from "vue";
 import SerialPortSelect from "@/components/SerialPortSelect.vue";
 import cli, { execute } from "@/utils/cli";
 import { getCurrentDir, openFileInExplorer } from "@/utils/common";
 import moment from "moment";
-import { ref } from "vue";
+import i18n from "@/locales/i18n";
+
 const currentDir = await getCurrentDir();
 const click = async (item: string[]) => {
   const port = localStorage.getItem("port") as string;
@@ -70,8 +74,14 @@ const readFlash = async () => {
 };
 
 const list = ref([
-  { name: "擦除固件", cmd: ["-p", "${port}", "erase_flash"] },
-  { name: "获取flash大小", cmd: ["-p", "${port}", "flash_id"] },
+  {
+    name: i18n.global.t("general.eraseFlash"),
+    cmd: ["-p", "${port}", "erase_flash"],
+  },
+  {
+    name: i18n.global.t("general.flashSize"),
+    cmd: ["-p", "${port}", "flash_id"],
+  },
 ]);
 
 function getRandomColor() {
