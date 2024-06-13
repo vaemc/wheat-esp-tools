@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from "vue-router";
-import Layout from "../views/layout/index.vue";
+import Layout from "@/views/layout/index.vue";
+import i18n from "@/locales/i18n";
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -13,7 +14,7 @@ const router = createRouter({
           name: "tools",
           meta: {
             icon: "🛠️",
-            title: "工具列表",
+            title: i18n.global.t("menu.toolList"),
           },
           children: [
             {
@@ -22,7 +23,7 @@ const router = createRouter({
               component: () => import("@/views/home/index.vue"),
               meta: {
                 icon: "🐯",
-                title: "首页",
+                title: i18n.global.t("menu.home"),
                 display: false,
               },
             },
@@ -32,7 +33,7 @@ const router = createRouter({
               component: () => import("@/views/tools/basic/index.vue"),
               meta: {
                 icon: "🐼",
-                title: "基本",
+                title: i18n.global.t("menu.general"),
                 display: true,
               },
             },
@@ -42,7 +43,7 @@ const router = createRouter({
               component: () => import("@/views/tools/flash/index.vue"),
               meta: {
                 icon: "🐶",
-                title: "烧录或合并固件",
+                title: i18n.global.t("menu.flash"),
                 display: true,
               },
             },
@@ -52,7 +53,7 @@ const router = createRouter({
               component: () => import("@/views/tools/partition/index.vue"),
               meta: {
                 icon: "🐱",
-                title: "分区表",
+                title: i18n.global.t("menu.partitionTable"),
                 display: true,
               },
             },
@@ -72,10 +73,10 @@ const router = createRouter({
               component: () => import("@/views/tools/firmware/index.vue"),
               meta: {
                 icon: "🐰",
-                title: "固件管理",
+                title: i18n.global.t("menu.firmware"),
                 display: true,
               },
-            }
+            },
           ],
         },
         {

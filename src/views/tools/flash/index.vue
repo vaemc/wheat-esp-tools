@@ -109,6 +109,7 @@
   </div>
 </template>
 <script setup lang="ts">
+import { ref } from "vue";
 import SPIMode from "@/components/SPIMode.vue";
 import SerialPortSelect from "@/components/SerialPortSelect.vue";
 import Upload from "@/components/Upload.vue";
@@ -127,7 +128,6 @@ import { useElementVisibility } from "@vueuse/core";
 import { message } from "ant-design-vue";
 import moment from "moment";
 import prettyBytes from "pretty-bytes";
-import { ref } from "vue";
 const target = ref(null);
 const destroyDrop = useElementVisibility(target);
 

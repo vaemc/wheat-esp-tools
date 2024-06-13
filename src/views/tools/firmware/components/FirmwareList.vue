@@ -22,7 +22,7 @@
       <template #renderItem="{ item }">
         <a-list-item
           ><template #actions>
-            <a-popover placement="topLeft" title="烧录选项">
+            <a-popover placement="topLeft" :title="$t('firmware.burnOption')">
               <template #content>
                 <SPIMode v-model="selectedMode" /><br />
                 <div style="margin-bottom: 3px"></div>
@@ -40,28 +40,28 @@
                     ]"
                 /></a-tooltip>
                 <a-tooltip>
-                  <template #title>烧录前是否先擦除固件</template>
+                  <template #title>{{ $t("firmware.eraseFlashInfo") }}</template>
                   <a-checkbox
                     v-model:checked="eraseChecked"
                     style="margin-left: 5px"
-                    >擦除固件</a-checkbox
+                    >{{ $t("firmware.eraseFlash") }}</a-checkbox
                   ></a-tooltip
                 >
               </template>
-              <a @click="flash(item)">烧录</a>
+              <a @click="flash(item)">{{ $t("firmware.flash") }}</a>
             </a-popover>
             <a-tooltip>
-              <template #title>在资源管理器中打开</template>
+              <template #title>{{ $t("firmware.openInExplorer") }}</template>
               <a
                 @click="
                   () => {
                     openFileInExplorer(item);
                   }
                 "
-                >打开</a
+                >{{$t("firmware.open") }}</a
               >
             </a-tooltip>
-            <a @click="remove(item)">删除</a> </template
+            <a @click="remove(item)">{{$t("firmware.remove") }}</a> </template
           >{{ item.substring(item.lastIndexOf("\\") + 1) }}</a-list-item
         >
       </template>
@@ -69,6 +69,7 @@
   </div>
 </template>
 <script setup lang="ts">
+import { ref } from "vue";
 import SPIMode from "@/components/SPIMode.vue";
 import cli, { execute } from "@/utils/cli";
 import {
@@ -78,7 +79,6 @@ import {
   openDirectoryInExplorer,
   removeFile,
 } from "@/utils/common";
-import { ref } from "vue";
 const selectedBaud = ref("1152000");
 const selectedMode = ref("keep");
 const eraseChecked = ref(false);

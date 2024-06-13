@@ -23,6 +23,7 @@
     "pretty-bytes": "^6.1.1",
     "vue": "^3.2.45",
     "vue-clipboard3": "^2.0.0",
+    "vue-i18n": "^9.13.1",
     "vue-router": "^4.2.3",
     "xterm": "^5.1.0",
     "xterm-addon-fit": "^0.7.0"
