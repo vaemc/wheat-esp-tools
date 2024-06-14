@@ -13,10 +13,14 @@
         "
         >{{ title }}</span
       >
-      <span
+      <!-- <span
         style="display: block; font-size: 14px; color: gray; align-self: center"
         >{{ subtitle }}
-      </span>
+      </span> -->
+      <div style="align-self: center; color: gray" v-html="subtitle">
+       
+      </div>
+     
     </div>
   </div>
 </template>
