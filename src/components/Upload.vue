@@ -7,7 +7,7 @@
       <span
         style="
           display: block;
-          font-size: 16px;
+          font-size: 18px;
           color: white;
           align-self: center;
         "
@@ -84,7 +84,7 @@ onBeforeUnmount(() => {
 <style>
 .dropBox {
   width: 100%;
-  height: 120px;
+  height: 130px;
   border: 1px dashed #434343;
   display: flex;
   flex-direction: column;
@@ -95,7 +95,7 @@ onBeforeUnmount(() => {
 
 .dropBox:hover {
   width: 100%;
-  height: 120px;
+  height: 130px;
   border: 1px dashed #177ddc;
   cursor: pointer;
   transition: all ease 1s;

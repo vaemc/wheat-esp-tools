@@ -4,7 +4,7 @@
       v-if="pathList.length == 0"
       href="#"
       @click="openDirectoryInExplorer(currentDir + ' \\firmware')"
-      >打开文件夹</a
+      >{{ $t("firmware.openTheFolder") }}</a
     >
     <a-input-search
       style="margin: 5px 0"
@@ -22,12 +22,12 @@
       <template #renderItem="{ item }">
         <a-list-item
           ><template #actions>
-            <a-popover placement="topLeft" :title="$t('firmware.burnOption')">
+            <a-popover placement="topLeft" :title="$t('firmware.flashOption')">
               <template #content>
                 <SPIMode v-model="selectedMode" /><br />
                 <div style="margin-bottom: 3px"></div>
                 <a-tooltip>
-                  <template #title>烧录波特率</template>
+                  <template #title>{{$t('firmware.baudRate')}}</template>
                   <a-segmented
                     v-model:value="selectedBaud"
                     :options="[
@@ -40,7 +40,9 @@
                     ]"
                 /></a-tooltip>
                 <a-tooltip>
-                  <template #title>{{ $t("firmware.eraseFlashInfo") }}</template>
+                  <template #title>{{
+                    $t("firmware.eraseFlashInfo")
+                  }}</template>
                   <a-checkbox
                     v-model:checked="eraseChecked"
                     style="margin-left: 5px"
@@ -58,10 +60,10 @@
                     openFileInExplorer(item);
                   }
                 "
-                >{{$t("firmware.open") }}</a
+                >{{ $t("firmware.open") }}</a
               >
             </a-tooltip>
-            <a @click="remove(item)">{{$t("firmware.remove") }}</a> </template
+            <a @click="remove(item)">{{ $t("firmware.remove") }}</a> </template
           >{{ item.substring(item.lastIndexOf("\\") + 1) }}</a-list-item
         >
       </template>

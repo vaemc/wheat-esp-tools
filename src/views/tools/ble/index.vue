@@ -1,4 +1,3 @@
-import { join } from 'path'; import { join } from 'path';
 <template>
   <a-row>
     <a-col :span="16">
@@ -80,11 +79,11 @@ import { join } from 'path'; import { join } from 'path';
           block
           >{{ scanBtnText }}</a-button
         >
-        <a-card size="small" title="过滤" style="margin-bottom: 5px">
+        <a-card size="small" :title="$t('ble.filter')" style="margin-bottom: 5px">
           <a-input
             style="margin-bottom: 5px"
             v-model:value="filter.name"
-            addon-before="名称"
+            :addon-before="$t('ble.name')"
           />
           <a-input
             style="margin-bottom: 5px"
@@ -94,7 +93,7 @@ import { join } from 'path'; import { join } from 'path';
           <a-input
             style="margin-bottom: 5px"
             v-model:value="filter.adv"
-            addon-before="广播包"
+            :addon-before="$t('ble.advertising')"
           />
           <a-input
             style="margin-bottom: 5px"
@@ -122,7 +121,9 @@ import { join } from 'path'; import { join } from 'path';
             "
           />
 
-          <a-button type="primary" @click="reset" block>重置</a-button>
+          <a-button type="primary" @click="reset" block>{{
+            i18n.global.t("ble.reset")
+          }}</a-button>
         </a-card>
         <!-- <a-card size="small" >
 
@@ -132,13 +133,14 @@ import { join } from 'path'; import { join } from 'path';
   </a-row>
 </template>
 <script setup lang="ts">
+import { reactive, ref } from "vue";
 import { listen } from "@tauri-apps/api/event";
 import { invoke } from "@tauri-apps/api/tauri";
 import { appWindow } from "@tauri-apps/api/window";
 import moment from "moment";
-import { reactive, ref } from "vue";
+import i18n from "@/locales/i18n";
 const data = ref([] as any);
-const scanBtnText = ref("开始扫描");
+const scanBtnText = ref(i18n.global.t("ble.startScanning"));
 const scanState = ref(false);
 const filter = reactive({
   name: "",
@@ -198,13 +200,13 @@ const reset = () => {
 
 const scan = async () => {
   if (scanState.value) {
-    scanBtnText.value = "开始扫描";
+    scanBtnText.value = i18n.global.t("ble.startScanning");
     scanState.value = false;
     appWindow.emit("stop_ble_advertisement_scan", {});
     clearInterval(timer);
   } else {
     data.value = [];
-    scanBtnText.value = "停止扫描";
+    scanBtnText.value = i18n.global.t("ble.stopScanning");
     scanState.value = true;
     timer = setInterval(() => {
       data.value = data.value.filter(

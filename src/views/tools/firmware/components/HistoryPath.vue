@@ -16,12 +16,12 @@
       <template #renderItem="{ item }">
         <a-list-item
           ><template #actions>
-            <a-popover placement="topLeft" title="烧录选项">
+            <a-popover placement="topLeft" :title="$t('firmware.flashOption')">
               <template #content>
                 <SPIMode v-model="selectedMode" /><br />
                 <div style="margin-bottom: 3px"></div>
                 <a-tooltip>
-                  <template #title>烧录波特率</template>
+                  <template #title>{{$t('firmware.baudRate')}}</template>
                   <a-segmented
                     v-model:value="selectedBaud"
                     :options="[

@@ -3,7 +3,7 @@
     <a-row :gutter="16">
       <a-col :span="11">
         <a-tabs>
-          <a-tab-pane key="1" tab="偏移地址计算">
+          <a-tab-pane key="1" :tab="$t('partition.offsetCalculation')">
             <div style="margin-bottom: 5px">
               <a-select
                 v-model:value="flashSize"
@@ -11,23 +11,23 @@
                 :options="flashSizeOptions"
               >
               </a-select>
-              <a-button type="primary" style="margin-left: 5px" @click="ok"
-                >计算</a-button
-              >
+              <a-button type="primary" style="margin-left: 5px" @click="ok">{{
+                $t("partition.calculate")
+              }}</a-button>
             </div>
             <a-textarea
-              placeholder="CSV内容"
+              :placeholder="$t('partition.csvContent')"
               v-model:value="beforePartition"
               :rows="15"
               allow-clear
             />
           </a-tab-pane>
-          <a-tab-pane key="2" tab="文件">
+          <a-tab-pane key="2" :tab="$t('partition.file')">
             <div ref="target">
               <Upload
                 v-if="destroyDrop"
-                title="选择或者拖拽文件到此"
-                subtitle="分区表csv或分区表bin文件"
+                :title="$t('partition.dropTitle')"
+                :subtitle="$t('partition.dropSubtitle')"
                 :isDirectory="false"
                 :isMultiple="false"
                 @open="uploadHandle"
@@ -39,7 +39,7 @@
       </a-col>
       <a-col :span="13">
         <a-tabs>
-          <a-tab-pane key="1" tab="表格">
+          <a-tab-pane key="1" :tab="$t('partition.table')">
             <a-table
               :bordered="true"
               :pagination="false"
@@ -79,7 +79,7 @@
                 },
               ]"
           /></a-tab-pane>
-          <a-tab-pane key="2" tab="文本"
+          <a-tab-pane key="2" :tab="$t('partition.text')"
             ><a-textarea
               v-model:value="afterPartition"
               placeholder=""
@@ -87,7 +87,8 @@
           /></a-tab-pane>
           <template #rightExtra>
             <a-tag color="success" v-if="partitionSize.kb != ''"
-              >分区表大小: {{ partitionSize.kb }} {{ partitionSize.byte }} B
+              >{{ i18n.global.t("partition.partitionTableSize") }}:
+              {{ partitionSize.kb }} {{ partitionSize.byte }} B
             </a-tag>
           </template>
         </a-tabs>
@@ -103,6 +104,8 @@ import { useElementVisibility } from "@vueuse/core";
 import Papa from "papaparse";
 import prettyBytes from "pretty-bytes";
 import { ref } from "vue";
+import i18n from "@/locales/i18n";
+
 const target = ref(null);
 const destroyDrop = useElementVisibility(target);
 
@@ -112,7 +115,7 @@ const partitionSize = ref({ kb: "", byte: "" });
 const dataSource = ref();
 const flashSize = ref();
 const flashSizeOptions = ref([
-  { value: "NONE", label: "不限制FLASH大小" },
+  { value: "NONE", label: i18n.global.t("partition.unlimited") },
   { value: "1MB", label: "1MB" },
   { value: "2MB", label: "2MB" },
   { value: "4MB", label: "4MB" },
