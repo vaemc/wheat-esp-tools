@@ -1,7 +1,7 @@
 import { createI18n } from "vue-i18n";
 
 const messages = {
-  cn: {
+  zh: {
     menu: {
       toolList: "工具列表",
       home: "首页",
@@ -61,7 +61,7 @@ const messages = {
       eraseFlash: "擦除",
       eraseFlashInfo: "烧录前先擦除Flash",
       openInExplorer: "在资源管理器中打开",
-      burnOption: "烧录选项",
+      flashOption: "烧录选项",
       openTheFolder: "打开文件夹",
       baudRate: "烧录波特率",
     },
@@ -148,11 +148,17 @@ const messages = {
     },
   },
 };
+
+let language = localStorage.getItem("language");
+if (language == null) {
+  language = "zh";
+}
+
 const i18n = createI18n({
   warnHtmlMessage: false,
   legacy: false,
   globalInjection: true,
-  locale: "cn",
+  locale: language as "zh" | "en",
   messages,
 });
 

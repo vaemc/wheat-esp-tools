@@ -54,7 +54,6 @@
 </template>
 <script setup lang="ts">
 import Terminal from "@/components/Terminal.vue";
-import SerialPortSelect from "@/components/SerialPortSelect.vue";
 import { ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useEventBus } from "@vueuse/core";

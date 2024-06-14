@@ -1,6 +1,13 @@
 <template>
   <div style="padding: 10px">
     <SerialPortSelect />
+    <a-switch
+      v-model:checked="languageSelect"
+      @change="languageChange"
+      checked-children="中文"
+      un-checked-children="English"
+      style="margin-right: 5px"
+    />
     <a-button
       style="margin-right: 5px"
       v-for="item in list"
@@ -13,12 +20,30 @@
   </div>
 </template>
 <script setup lang="ts">
-import { ref } from "vue";
+import { ref, onMounted } from "vue";
 import SerialPortSelect from "@/components/SerialPortSelect.vue";
 import cli, { execute } from "@/utils/cli";
 import { getCurrentDir, openFileInExplorer } from "@/utils/common";
 import moment from "moment";
 import i18n from "@/locales/i18n";
+const languageSelect = ref(true);
+const languageChange = (value: boolean) => {
+  if (value) {
+    i18n.global.locale.value = "zh";
+    localStorage.setItem("language", "zh");
+    window.location.reload();
+  } else {
+    i18n.global.locale.value = "en";
+    localStorage.setItem("language", "en");
+    window.location.reload();
+  }
+};
+onMounted(() => {
+  const language = localStorage.getItem("language");
+  console.log(language);
+
+  languageSelect.value = language === "zh" || language == null ? true : false;
+});
 
 const currentDir = await getCurrentDir();
 const click = async (item: string[]) => {

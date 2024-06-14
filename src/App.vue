@@ -11,12 +11,15 @@
   </a-config-provider>
 </template>
 <script setup lang="ts">
+import { ref, onMounted } from "vue";
 import { theme } from "ant-design-vue";
 import zhCN from "ant-design-vue/es/locale/zh_CN";
-import dayjs from "dayjs";
-import "dayjs/locale/zh-cn";
+import enUS from "ant-design-vue/es/locale/en_US";
 
-dayjs.locale("zh-cn");
+let language = localStorage.getItem("language");
+if (language == null) {
+  language = "zh";
+}
 
-const locale = zhCN;
+const locale = language === "zh" ? zhCN : enUS;
 </script>

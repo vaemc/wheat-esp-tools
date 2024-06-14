@@ -3,11 +3,10 @@ import router from "./router";
 import App from "./App.vue";
 import Antd from "ant-design-vue";
 import useClipboard from "vue-clipboard3";
-import i18n from './locales/i18n'
+import i18n from "./locales/i18n";
 const { toClipboard } = useClipboard();
 import "./assets/css/style.css";
 const app = createApp(App);
-
 
 
 app.directive("copy", (el, binding) => {

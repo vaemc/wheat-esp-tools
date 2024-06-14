@@ -31,8 +31,6 @@ const refreshList = async (showDefaultPort = false) => {
   serialPortList.value = list;
   if (list.length > 0 && showDefaultPort) {
     const localStoragePort = localStorage.getItem("port") as string;
-    console.log(localStoragePort != null);
-
     if (localStoragePort != null) {
       if (list.find((x) => x.value === localStoragePort) != null) {
         selectedSerialPort.value = localStoragePort;
