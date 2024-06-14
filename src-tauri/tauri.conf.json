@@ -16,6 +16,7 @@
         "all": true
       },
       "all": false,
+      "process": { "relaunch": true },
       "fs": { "all": true, "scope": ["**"] },
       "path": { "all": true },
       "os": {
@@ -54,10 +55,7 @@
           "type": "embedBootstrapper"
         }
       },
-      "externalBin": [
-        "bin/esptool",
-        "bin/gen_esp32part"
-      ],
+      "externalBin": ["bin/esptool", "bin/gen_esp32part"],
       "active": true,
       "icon": [
         "icons/32x32.png",

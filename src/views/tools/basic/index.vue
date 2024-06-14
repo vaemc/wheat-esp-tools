@@ -26,16 +26,18 @@ import cli, { execute } from "@/utils/cli";
 import { getCurrentDir, openFileInExplorer } from "@/utils/common";
 import moment from "moment";
 import i18n from "@/locales/i18n";
+import { relaunch } from "@tauri-apps/api/process";
+
 const languageSelect = ref(true);
-const languageChange = (value: boolean) => {
+const languageChange = async (value: boolean) => {
   if (value) {
     i18n.global.locale.value = "zh";
     localStorage.setItem("language", "zh");
-    window.location.reload();
+    await relaunch();
   } else {
     i18n.global.locale.value = "en";
     localStorage.setItem("language", "en");
-    window.location.reload();
+    await relaunch();
   }
 };
 onMounted(() => {

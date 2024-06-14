@@ -103,7 +103,7 @@ onBeforeUnmount(() => {
 
 .dropBoxHover {
   width: 100%;
-  height: 120px;
+  height: 130px;
   border: 1px dashed #177ddc;
   display: flex;
   flex-direction: column;

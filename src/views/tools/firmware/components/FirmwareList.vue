@@ -27,7 +27,7 @@
                 <SPIMode v-model="selectedMode" /><br />
                 <div style="margin-bottom: 3px"></div>
                 <a-tooltip>
-                  <template #title>{{$t('firmware.baudRate')}}</template>
+                  <template #title>{{ $t("firmware.baudRate") }}</template>
                   <a-segmented
                     v-model:value="selectedBaud"
                     :options="[
@@ -74,6 +74,7 @@
 import { ref } from "vue";
 import SPIMode from "@/components/SPIMode.vue";
 import cli, { execute } from "@/utils/cli";
+import { useEventBus } from "@vueuse/core";
 import {
   getCurrentDir,
   getFirmwareList,
@@ -86,7 +87,11 @@ const selectedMode = ref("keep");
 const eraseChecked = ref(false);
 const pathList = ref(await getFirmwareList());
 const currentDir = await getCurrentDir();
-
+const bus = useEventBus<string>("syncFirmwareList");
+bus.on(listener);
+async function listener(event: string) {
+  pathList.value = await getFirmwareList();
+}
 async function flash(path: string) {
   const port = localStorage.getItem("port") as string;
 
