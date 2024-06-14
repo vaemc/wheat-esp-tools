@@ -6,21 +6,7 @@ import useClipboard from "vue-clipboard3";
 import i18n from './locales/i18n'
 const { toClipboard } = useClipboard();
 import "./assets/css/style.css";
-
 const app = createApp(App);
-
-const message = {
-  cn: {
-    message: {
-      hello: "你好",
-    },
-  },
-  en: {
-    message: {
-      hello: "hello",
-    },
-  },
-};
 
 
 

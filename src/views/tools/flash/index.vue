@@ -12,12 +12,12 @@
       </a-col>
       <a-col :span="8">
         <a-tooltip>
-          <template #title>烧录波特率</template>
+          <template #title>{{ $t("flash.baudRate") }}</template>
           <a-auto-complete
             style="width: 90%"
             v-model:value="selectedBaud"
             size="small"
-            placeholder="烧录波特率"
+            :placeholder="$t('flash.baudRate')"
             :options="[
               { value: '115200' },
               { value: '230400' },
@@ -30,11 +30,11 @@
       </a-col>
       <a-col :span="8">
         <a-tooltip>
-          <template #title>仅合并固件时需要选择</template>
+          <template #title>{{ $t("flash.mergeInfo") }}</template>
           <a-select
             style="width: 90%"
             size="small"
-            placeholder="芯片类型"
+            :placeholder="$t('flash.chipType')"
             v-model:value="selectedChipType"
             :options="chipTypeList"
           >
@@ -46,8 +46,8 @@
     <div ref="target">
       <Upload
         v-if="destroyDrop"
-        title="选择或者拖拽多个bin文件到此"
-        subtitle="工具可以自动解析结尾使用下划线加地址的固件,如 'ESP32_0x222.bin'"
+        :title="$t('flash.dropTitle')"
+        :subtitle="$t('flash.dropSubtitle')"
         @open="uploadHandle"
         @drop="uploadHandle"
         :isDirectory="false"
@@ -83,26 +83,26 @@
           <a-input :bordered="false" v-model:value="record.address" />
         </template>
         <template v-if="column.key === 'action'">
-          <a @click="flashFirmwareBtn(record)">烧录</a> |
-          <a @click="removeFirmwareBtn(record)">删除</a>
+          <a @click="flashFirmwareBtn(record)">{{ $t("flash.flash") }}</a> |
+          <a @click="removeFirmwareBtn(record)">{{ $t("flash.remove") }}</a>
         </template>
       </template>
     </a-table>
     <a-tooltip>
-      <template #title>烧录前是否先擦除固件</template>
-      <a-checkbox v-model:checked="eraseChecked"
-        >擦除固件</a-checkbox
-      ></a-tooltip
+      <template #title>{{ $t("flash.eraseFlashInfo") }}</template>
+      <a-checkbox v-model:checked="eraseChecked">{{
+        $t("flash.eraseFlash")
+      }}</a-checkbox></a-tooltip
     >
     <a-row :gutter="16">
       <a-col :span="12">
-        <a-button type="primary" @click="handle(flash)" block
-          >烧录</a-button
-        ></a-col
+        <a-button type="primary" @click="handle(flash)" block>{{
+          $t("flash.flash")
+        }}</a-button></a-col
       >
       <a-col :span="12"
         ><a-button type="primary" @click="handle(merge)" block>
-          合并
+          {{ $t("flash.merge") }}
         </a-button></a-col
       >
     </a-row>
@@ -116,6 +116,8 @@ import Upload from "@/components/Upload.vue";
 import db from "@/db/db";
 import { Firmware } from "@/model/model";
 import cli, { execute } from "@/utils/cli";
+import i18n from "@/locales/i18n";
+
 import {
   getChipTypeList,
   getCurrentDir,
@@ -142,33 +144,33 @@ const firmwareList = ref([] as Firmware[]);
 const currentDir = await getCurrentDir();
 const columns = ref([
   {
-    title: "烧录",
+    title: i18n.global.t("flash.flash"),
     dataIndex: "check",
     key: "check",
     width: 35,
   },
   {
-    title: "路径",
+    title: i18n.global.t("flash.path"),
     dataIndex: "path",
     key: "path",
     ellipsis: true,
   },
   {
-    title: "固件地址",
+    title: i18n.global.t("flash.address"),
     dataIndex: "address",
     key: "address",
     width: 100,
   },
   {
-    title: "大小",
+    title: i18n.global.t("flash.size"),
     dataIndex: "size",
     key: "size",
     width: 80,
   },
   {
-    title: "操作",
+    title: i18n.global.t("flash.action"),
     key: "action",
-    width: 90,
+    width: 110,
   },
 ]);
 
@@ -207,7 +209,7 @@ const flash = async () => {
 
 const merge = async () => {
   if (selectedChipType.value == undefined) {
-    message.warning("请选择芯片类型");
+    message.warning(i18n.global.t("flash.dialog.selectedChipType"));
     return;
   }
 
@@ -243,22 +245,22 @@ const merge = async () => {
 
 const handle = (fun: Function) => {
   if (firmwareList.value.length == 0) {
-    message.warning("请添加固件");
+    message.warning(i18n.global.t("flash.dialog.addFirmware"));
     return;
   }
 
   if (firmwareList.value.filter((x) => x.check).length == 0) {
-    message.warning("请最少勾选一个固件");
+    message.warning(i18n.global.t("flash.dialog.selecOneFirmware"));
     return;
   }
 
   if (firmwareList.value.filter((x) => x.address == "").length > 0) {
-    message.warning("固件地址未填写");
+    message.warning(i18n.global.t("flash.dialog.inputAddress"));
     return;
   }
 
   if (firmwareList.value.filter((x) => x.path == "").length > 0) {
-    message.warning("固件路径未填写");
+    message.warning(i18n.global.t("flash.dialog.inputPath"));
     return;
   }
 
