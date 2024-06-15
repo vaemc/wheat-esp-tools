@@ -51,10 +51,10 @@
 import Terminal from "@/components/Terminal.vue";
 import { ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
-const selectedKeys = ref([useRoute().name]);
 const router = useRouter();
 const routerList = ref(router.options.routes[0].children);
 const openKeys = ref(["tools"]);
+const selectedKeys = ref([useRoute().name]);
 
 const onCollapse = (collapsed: boolean, type: string) => {
   console.log(collapsed, type);

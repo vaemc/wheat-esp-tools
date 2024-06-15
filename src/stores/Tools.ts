@@ -2,10 +2,11 @@ import { ref, computed } from "vue";
 import { defineStore } from "pinia";
 import { Firmware } from "@/model/model";
 
-export const useFirmwareListStore = defineStore("FirmwareList", {
+export const useToolsStore = defineStore("tools", {
   state: () => {
     return {
-      firmwareList: ref([] as Firmware[]),
+      firmwareList: [] as Firmware[],
+      selectedChipType: "",
     };
   },
   persist: true,

@@ -45,7 +45,6 @@
 
     <div ref="target">
       <Upload
-        v-if="destroyDrop"
         :title="$t('flash.dropTitle')"
         :subtitle="$t('flash.dropSubtitle')"
         @open="uploadHandle"
@@ -126,21 +125,18 @@ import {
   getPlatformIOArgsConfig,
   openFileInExplorer,
 } from "@/utils/common";
-import { useElementVisibility } from "@vueuse/core";
 import { message } from "ant-design-vue";
 import moment from "moment";
 import prettyBytes from "pretty-bytes";
 import { storeToRefs } from "pinia";
-import { useFirmwareListStore } from "@/stores/FirmwareList";
-const store = useFirmwareListStore();
-const { firmwareList } = storeToRefs(store);
+import { useToolsStore } from "@/stores/Tools";
+const store = useToolsStore();
+const { firmwareList, selectedChipType } = storeToRefs(store);
 
 const target = ref(null);
-const destroyDrop = useElementVisibility(target);
 
 const flashCheckOption = ref({ indeterminate: false, selectAll: false });
 
-const selectedChipType = ref();
 const selectedMode = ref("keep");
 const selectedBaud = ref("1152000");
 

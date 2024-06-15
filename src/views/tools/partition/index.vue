@@ -100,14 +100,12 @@
 import Upload from "@/components/Upload.vue";
 import cli, { execute } from "@/utils/cli";
 import { getCurrentDir, writeAllText } from "@/utils/common";
-import { useElementVisibility } from "@vueuse/core";
 import Papa from "papaparse";
 import prettyBytes from "pretty-bytes";
 import { ref } from "vue";
 import i18n from "@/locales/i18n";
 
 const target = ref(null);
-const destroyDrop = useElementVisibility(target);
 
 const beforePartition = ref();
 const afterPartition = ref();

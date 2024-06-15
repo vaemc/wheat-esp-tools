@@ -16,7 +16,6 @@
       <template #renderItem="{ item }">
         <a-list-item
           ><template #actions>
-           
             <a @click="flash(item)">{{ $t("firmware.flash") }}</a>
             <a-tooltip>
               <template #title>{{ $t("firmware.openInExplorer") }}</template>
@@ -38,7 +37,6 @@
 </template>
 <script setup lang="ts">
 import { ref } from "vue";
-import SPIMode from "@/components/SPIMode.vue";
 import db from "@/db/db";
 import {
   getFileInfo,
@@ -47,30 +45,27 @@ import {
   openFileInExplorer,
 } from "@/utils/common";
 import { storeToRefs } from "pinia";
-import { useFirmwareListStore } from "@/stores/FirmwareList";
 import prettyBytes from "pretty-bytes";
-import {  useRouter } from "vue-router";
+import { useToolsStore } from "@/stores/Tools";
+import { useRouter } from "vue-router";
+const store = useToolsStore();
 const router = useRouter();
-const store = useFirmwareListStore();
 const pathList = ref((await db.getAll("paths")).map((item) => item.path));
-
 
 async function flash(path: string) {
   const filename = path.replace(/^.*[\\/]/, "");
-  const { firmwareList } = storeToRefs(store);
+  const { firmwareList, selectedChipType } = storeToRefs(store);
   let config;
   switch (filename) {
     case "flasher_args.json":
       config = await getIDFArgsConfig(path);
       firmwareList.value = config.flashFiles;
-      // selectedChipType.value = config.chip;
-      db.add("paths", { path: path });
+      selectedChipType.value = config.chip;
       break;
     case "idedata.json":
       config = await getPlatformIOArgsConfig(path);
       firmwareList.value = config.flashFiles;
-      // selectedChipType.value = config.chip;
-      db.add("paths", { path: path });
+      selectedChipType.value = config.chip;
       break;
   }
   firmwareList.value.forEach(async (item) => {
