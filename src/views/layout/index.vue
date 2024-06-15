@@ -41,12 +41,7 @@
     </a-layout-sider>
     <a-layout>
       <a-layout-content :style="{ minHeight: '280px' }">
-        <router-view v-slot="{ Component }">
-          <keep-alive>
-            <component :is="Component" />
-          </keep-alive>
-        </router-view>
-        <!-- <router-view /> -->
+        <router-view />
       </a-layout-content>
       <Terminal />
     </a-layout>
@@ -56,9 +51,6 @@
 import Terminal from "@/components/Terminal.vue";
 import { ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import { useEventBus } from "@vueuse/core";
-const syncSerialPortBus = useEventBus<string>("syncSerialPort");
-const syncFirmwareListBus = useEventBus<string>("syncFirmwareList");
 const selectedKeys = ref([useRoute().name]);
 const router = useRouter();
 const routerList = ref(router.options.routes[0].children);
@@ -73,8 +65,6 @@ const onBreakpoint = (broken: boolean) => {
 };
 
 const to = (data: any) => {
-  syncSerialPortBus.emit();
-  syncFirmwareListBus.emit();
   router.push(data.path);
 };
 </script>

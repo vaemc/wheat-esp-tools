@@ -94,11 +94,12 @@ export async function getIDFArgsConfig(path: string) {
 export async function getPlatformIOArgsConfig(path: string) {
   let config = JSON.parse(await readTextFile(path));
   const folderPath = path.substring(0, path.lastIndexOf("\\"));
-  const regex = /ARDUINO_VARIANT=\\"(.*?)\\"/;
-  let match = JSON.stringify(config.defines).match(regex)!;
+  // const regex = /ARDUINO_VARIANT=\\"(.*?)\\"/;
+  // let match = JSON.stringify(config.defines).match(regex)!;
   let list = {
     appName: config.env_name,
-    chip: match[1].toUpperCase(),
+    // chip: match[1].toUpperCase(),
+    chip: "",
     flashFiles: [] as Firmware[],
   };
 

@@ -11,12 +11,8 @@
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
 import { getSerialPortList } from "@/utils/common";
-import { useEventBus } from "@vueuse/core";
 const selectedSerialPort = ref();
 const serialPortList = ref([] as any);
-const bus = useEventBus<string>("syncSerialPort");
-bus.on(listener);
-
 function listener(event: string) {
   refreshList(true);
 }

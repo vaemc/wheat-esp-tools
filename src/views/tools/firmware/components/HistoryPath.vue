@@ -16,37 +16,8 @@
       <template #renderItem="{ item }">
         <a-list-item
           ><template #actions>
-            <a-popover placement="topLeft" :title="$t('firmware.flashOption')">
-              <template #content>
-                <SPIMode v-model="selectedMode" /><br />
-                <div style="margin-bottom: 3px"></div>
-                <a-tooltip>
-                  <template #title>{{$t('firmware.baudRate')}}</template>
-                  <a-segmented
-                    v-model:value="selectedBaud"
-                    :options="[
-                      '115200',
-                      '230400',
-                      '460800',
-                      '921600',
-                      '1152000',
-                      '1500000',
-                    ]"
-                /></a-tooltip>
-                <a-tooltip>
-                  <template #title>{{
-                    $t("firmware.eraseFlashInfo")
-                  }}</template>
-                  <a-checkbox
-                    v-model:checked="eraseChecked"
-                    style="margin-left: 5px"
-                    >{{ $t("firmware.eraseFlash") }}</a-checkbox
-                  ></a-tooltip
-                >
-              </template>
-              <a @click="flash(item)">{{ $t("firmware.flash") }}</a>
-            </a-popover>
-
+           
+            <a @click="flash(item)">{{ $t("firmware.flash") }}</a>
             <a-tooltip>
               <template #title>{{ $t("firmware.openInExplorer") }}</template>
               <a
@@ -69,73 +40,45 @@
 import { ref } from "vue";
 import SPIMode from "@/components/SPIMode.vue";
 import db from "@/db/db";
-import cli, { execute } from "@/utils/cli";
 import {
+  getFileInfo,
   getIDFArgsConfig,
   getPlatformIOArgsConfig,
   openFileInExplorer,
 } from "@/utils/common";
-import { useEventBus } from "@vueuse/core";
-import { Firmware } from "@/model/model";
-
-const selectedBaud = ref("1152000");
-const selectedMode = ref("keep");
+import { storeToRefs } from "pinia";
+import { useFirmwareListStore } from "@/stores/FirmwareList";
+import prettyBytes from "pretty-bytes";
+import {  useRouter } from "vue-router";
+const router = useRouter();
+const store = useFirmwareListStore();
 const pathList = ref((await db.getAll("paths")).map((item) => item.path));
-const eraseChecked = ref(false);
-const bus = useEventBus<string>("syncSerialPort");
-bus.on(listener);
 
-async function listener(event: string) {
-  pathList.value = (await db.getAll("paths")).map((item) => item.path);
-}
 
 async function flash(path: string) {
-  const port = localStorage.getItem("port") as string;
   const filename = path.replace(/^.*[\\/]/, "");
-  let config = { flashFiles: [] as Firmware[] };
+  const { firmwareList } = storeToRefs(store);
+  let config;
   switch (filename) {
     case "flasher_args.json":
       config = await getIDFArgsConfig(path);
+      firmwareList.value = config.flashFiles;
+      // selectedChipType.value = config.chip;
+      db.add("paths", { path: path });
       break;
     case "idedata.json":
       config = await getPlatformIOArgsConfig(path);
+      firmwareList.value = config.flashFiles;
+      // selectedChipType.value = config.chip;
+      db.add("paths", { path: path });
       break;
   }
-  let cmd = [
-    "-p",
-    port,
-    "-b",
-    selectedBaud.value,
-    "--before=default_reset",
-    "--after=hard_reset",
-    "write_flash",
-    "--flash_mode",
-    selectedMode.value,
-    ...config!.flashFiles
-      .map((item) => {
-        return {
-          path: item.path,
-          address: item.address,
-        };
-      })
-      .flatMap((x) => [x.address, x.path]),
-  ];
-  if (eraseChecked.value) {
-    cmd.push("--erase-all");
-  }
-  console.log(cmd);
-
-  execute("esptool", cmd);
-  const resultPromise = new Promise((resolve, reject) => {
-    cli.on("stdout", (data) => {
-      console.log(data);
-    });
-    cli.on("close", (data) => {
-      console.log(data);
-      cli.all.clear();
-    });
+  firmwareList.value.forEach(async (item) => {
+    const fileInfo = await getFileInfo(item.path);
+    item.size = prettyBytes(fileInfo.len);
   });
-  const result = await resultPromise;
+
+  router.push("/tools/flash");
 }
 
 const remove = async (path: string) => {

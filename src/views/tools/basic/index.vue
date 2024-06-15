@@ -33,11 +33,11 @@ const languageChange = async (value: boolean) => {
   if (value) {
     i18n.global.locale.value = "zh";
     localStorage.setItem("language", "zh");
-    await relaunch();
+    location.reload();
   } else {
     i18n.global.locale.value = "en";
     localStorage.setItem("language", "en");
-    await relaunch();
+    location.reload();
   }
 };
 onMounted(() => {

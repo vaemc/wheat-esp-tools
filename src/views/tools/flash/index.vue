@@ -109,7 +109,7 @@
   </div>
 </template>
 <script setup lang="ts">
-import { ref } from "vue";
+import { ref, onMounted, watch } from "vue";
 import SPIMode from "@/components/SPIMode.vue";
 import SerialPortSelect from "@/components/SerialPortSelect.vue";
 import Upload from "@/components/Upload.vue";
@@ -130,6 +130,11 @@ import { useElementVisibility } from "@vueuse/core";
 import { message } from "ant-design-vue";
 import moment from "moment";
 import prettyBytes from "pretty-bytes";
+import { storeToRefs } from "pinia";
+import { useFirmwareListStore } from "@/stores/FirmwareList";
+const store = useFirmwareListStore();
+const { firmwareList } = storeToRefs(store);
+
 const target = ref(null);
 const destroyDrop = useElementVisibility(target);
 
@@ -140,7 +145,7 @@ const selectedMode = ref("keep");
 const selectedBaud = ref("1152000");
 
 const eraseChecked = ref(false);
-const firmwareList = ref([] as Firmware[]);
+// const firmwareList = ref([] as Firmware[]);
 const currentDir = await getCurrentDir();
 const columns = ref([
   {
@@ -174,6 +179,15 @@ const columns = ref([
   },
 ]);
 
+if (firmwareList.value.length > 0) {
+  flashCheckOption.value.selectAll = true;
+}
+
+watch(firmwareList, async (newQuestion, oldQuestion) => {
+  if (firmwareList.value.length > 0) {
+    flashCheckOption.value.selectAll = true;
+  }
+});
 const flash = async () => {
   const port = localStorage.getItem("port") as string;
   let cmd = [
