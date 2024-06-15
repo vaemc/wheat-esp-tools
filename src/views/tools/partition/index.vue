@@ -25,7 +25,6 @@
           <a-tab-pane key="2" :tab="$t('partition.file')">
             <div ref="target">
               <Upload
-                v-if="destroyDrop"
                 :title="$t('partition.dropTitle')"
                 :subtitle="$t('partition.dropSubtitle')"
                 :isDirectory="false"

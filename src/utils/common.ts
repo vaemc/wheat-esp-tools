@@ -51,24 +51,6 @@ export async function getFirmwareList() {
   });
 }
 
-export async function getFlasherArgs2(path: string) {
-  let flasherArgs = JSON.parse(
-    await readTextFile(`${path}\\flasher_args.json`)
-  );
-  const flattenedList = [
-    ...(Object.keys(flasherArgs.flash_files) as string[]).map((item) => {
-      return [item, `${path}\\${flasherArgs.flash_files[item]}`];
-    }),
-  ].reduce((accumulator: any, currentValue: any) => {
-    return accumulator.concat(currentValue);
-  }, []);
-  return {
-    appName: flasherArgs.app.file.split(".")[0],
-    chip: flasherArgs.extra_esptool_args.chip,
-    flashArgs: flattenedList,
-  };
-}
-
 export async function getIDFArgsConfig(path: string) {
   let config = JSON.parse(await readTextFile(path));
   const folderPath = path.substring(0, path.lastIndexOf("\\"));

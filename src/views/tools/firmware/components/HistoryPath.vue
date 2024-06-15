@@ -46,7 +46,7 @@ import {
 } from "@/utils/common";
 import { storeToRefs } from "pinia";
 import prettyBytes from "pretty-bytes";
-import { useToolsStore } from "@/stores/Tools";
+import { useToolsStore } from "@/stores/Tool";
 import { useRouter } from "vue-router";
 const store = useToolsStore();
 const router = useRouter();

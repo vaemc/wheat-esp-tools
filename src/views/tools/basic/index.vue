@@ -26,7 +26,6 @@ import cli, { execute } from "@/utils/cli";
 import { getCurrentDir, openFileInExplorer } from "@/utils/common";
 import moment from "moment";
 import i18n from "@/locales/i18n";
-import { relaunch } from "@tauri-apps/api/process";
 
 const languageSelect = ref(true);
 const languageChange = async (value: boolean) => {
@@ -110,19 +109,4 @@ const list = ref([
     cmd: ["-p", "${port}", "flash_id"],
   },
 ]);
-
-function getRandomColor() {
-  const colorList = [
-    "pink",
-    "red",
-    "orange",
-    "green",
-    "cyan",
-    "blue",
-    "purple",
-  ];
-
-  const randomIndex = Math.floor(Math.random() * colorList.length);
-  return colorList[randomIndex];
-}
 </script>

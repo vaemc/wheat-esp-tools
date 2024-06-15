@@ -108,7 +108,7 @@
   </div>
 </template>
 <script setup lang="ts">
-import { ref, onMounted, watch } from "vue";
+import { ref, watch } from "vue";
 import SPIMode from "@/components/SPIMode.vue";
 import SerialPortSelect from "@/components/SerialPortSelect.vue";
 import Upload from "@/components/Upload.vue";
@@ -129,19 +129,14 @@ import { message } from "ant-design-vue";
 import moment from "moment";
 import prettyBytes from "pretty-bytes";
 import { storeToRefs } from "pinia";
-import { useToolsStore } from "@/stores/Tools";
+import { useToolsStore } from "@/stores/Tool";
 const store = useToolsStore();
 const { firmwareList, selectedChipType } = storeToRefs(store);
-
 const target = ref(null);
-
 const flashCheckOption = ref({ indeterminate: false, selectAll: false });
-
 const selectedMode = ref("keep");
 const selectedBaud = ref("1152000");
-
 const eraseChecked = ref(false);
-// const firmwareList = ref([] as Firmware[]);
 const currentDir = await getCurrentDir();
 const columns = ref([
   {

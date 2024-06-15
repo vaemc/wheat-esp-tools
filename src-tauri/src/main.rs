@@ -196,32 +196,6 @@ fn get_file_info(path: &str) -> FileInfo {
     }
 }
 
-#[tauri::command]
-fn collect_all_paths(path: &str, level: u32) -> Vec<String> {
-    let mut paths: Vec<String> = Vec::new();
-
-    if level >= 2 {
-        return paths;
-    }
-
-    if let Ok(entries) = fs::read_dir(path) {
-        for entry in entries {
-            if let Ok(entry) = entry {
-                let path = entry.path();
-                let path_str = path.to_str().unwrap().to_owned();
-                paths.push(path_str.clone());
-
-                if path.is_dir() {
-                    let sub_paths = collect_all_paths(path.to_str().unwrap(), level + 1);
-                    paths.extend(sub_paths);
-                }
-            }
-        }
-    }
-
-    paths
-}
-
 fn main() {
     for item in ["firmware", "partitions"].iter() {
         if !Path::new(item).exists() {
@@ -246,7 +220,6 @@ fn main() {
             get_current_dir,
             open_file_in_explorer,
             open_directory_in_explorer,
-            collect_all_paths,
             get_file_info,
             start_ble_advertisement_scan
         ])

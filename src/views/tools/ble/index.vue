@@ -125,9 +125,6 @@
             i18n.global.t("ble.reset")
           }}</a-button>
         </a-card>
-        <!-- <a-card size="small" >
-
-        </a-card> -->
       </div>
     </a-col>
   </a-row>
