@@ -1,9 +1,7 @@
 <template>
   <div>
     <div :class="dropBoxClass" @click="handle">
-      <inbox-outlined
-        style="font-size: 40px; color: #08c; align-self: center"
-      ></inbox-outlined>
+      <InboxOutlined style="font-size: 40px; color: #08c; align-self: center" />
       <span
         style="
           display: block;
@@ -13,20 +11,14 @@
         "
         >{{ title }}</span
       >
-      <!-- <span
-        style="display: block; font-size: 14px; color: gray; align-self: center"
-        >{{ subtitle }}
-      </span> -->
-      <div style="align-self: center; color: gray" v-html="subtitle">
-       
-      </div>
-     
+      <div style="align-self: center; color: gray" v-html="subtitle"></div>
     </div>
   </div>
 </template>
 <script setup lang="ts">
 import { ref, onBeforeUnmount } from "vue";
 import { InboxOutlined } from "@ant-design/icons-vue";
+
 import { listen } from "@tauri-apps/api/event";
 import { open } from "@tauri-apps/api/dialog";
 import { useVModels } from "@vueuse/core";

@@ -13,9 +13,6 @@ import { ref, onMounted } from "vue";
 import { getSerialPortList } from "@/utils/common";
 const selectedSerialPort = ref();
 const serialPortList = ref([] as any);
-function listener(event: string) {
-  refreshList(true);
-}
 
 const refreshList = async (showDefaultPort = false) => {
   let list = (await getSerialPortList()).map((item: string) => {

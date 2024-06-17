@@ -46,15 +46,15 @@ import {
 } from "@/utils/common";
 import { storeToRefs } from "pinia";
 import prettyBytes from "pretty-bytes";
-import { useToolsStore } from "@/stores/Tool";
 import { useRouter } from "vue-router";
+import { useToolsStore } from "@/stores/tool";
 const store = useToolsStore();
 const router = useRouter();
 const pathList = ref((await db.getAll("paths")).map((item) => item.path));
 
 async function flash(path: string) {
   const filename = path.replace(/^.*[\\/]/, "");
-  const { firmwareList, selectedChipType } = storeToRefs(store);
+  const { firmwareList, selectedChipType, selectedKeys } = storeToRefs(store);
   let config;
   switch (filename) {
     case "flasher_args.json":
@@ -74,6 +74,7 @@ async function flash(path: string) {
   });
 
   router.push("/tools/flash");
+  selectedKeys.value = ["flash"];
 }
 
 const remove = async (path: string) => {

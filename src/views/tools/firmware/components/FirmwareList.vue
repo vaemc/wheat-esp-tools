@@ -86,9 +86,7 @@ const selectedMode = ref("keep");
 const eraseChecked = ref(false);
 const pathList = ref(await getFirmwareList());
 const currentDir = await getCurrentDir();
-async function listener(event: string) {
-  pathList.value = await getFirmwareList();
-}
+
 async function flash(path: string) {
   const port = localStorage.getItem("port") as string;
 

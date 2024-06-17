@@ -129,7 +129,7 @@ import { message } from "ant-design-vue";
 import moment from "moment";
 import prettyBytes from "pretty-bytes";
 import { storeToRefs } from "pinia";
-import { useToolsStore } from "@/stores/Tool";
+import { useToolsStore } from "@/stores/tool";
 const store = useToolsStore();
 const { firmwareList, selectedChipType } = storeToRefs(store);
 const target = ref(null);
@@ -209,7 +209,7 @@ const flash = async () => {
       cli.all.clear();
     });
   });
-  const result = await resultPromise;
+  await resultPromise;
 };
 
 const merge = async () => {
@@ -245,7 +245,7 @@ const merge = async () => {
       cli.all.clear();
     });
   });
-  const result = await resultPromise;
+  await resultPromise;
 };
 
 const handle = (fun: Function) => {
@@ -321,7 +321,7 @@ const flashFirmwareBtn = async (item: Firmware) => {
       cli.all.clear();
     });
   });
-  const result = await resultPromise;
+  await resultPromise;
 };
 
 const chipTypeList = ref(

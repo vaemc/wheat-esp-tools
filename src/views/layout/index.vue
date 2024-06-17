@@ -50,12 +50,16 @@
 <script setup lang="ts">
 import Terminal from "@/components/Terminal.vue";
 import { ref } from "vue";
-import { useRoute, useRouter } from "vue-router";
+import { useRoute, useRouter,RouteRecordRaw } from "vue-router";
+import { storeToRefs } from "pinia";
+import { useToolsStore } from "@/stores/tool";
+const store = useToolsStore();
+const { selectedKeys } = storeToRefs(store);
+
 const router = useRouter();
 const routerList = ref(router.options.routes[0].children);
 const openKeys = ref(["tools"]);
-const selectedKeys = ref([useRoute().name]);
-
+selectedKeys.value = [useRoute().name];
 const onCollapse = (collapsed: boolean, type: string) => {
   console.log(collapsed, type);
 };
@@ -64,7 +68,7 @@ const onBreakpoint = (broken: boolean) => {
   console.log(broken);
 };
 
-const to = (data: any) => {
+const to = (data: RouteRecordRaw) => {
   router.push(data.path);
 };
 </script>
