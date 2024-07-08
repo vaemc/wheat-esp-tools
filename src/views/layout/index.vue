@@ -52,7 +52,7 @@ import Terminal from "@/components/Terminal.vue";
 import { ref } from "vue";
 import { useRoute, useRouter,RouteRecordRaw } from "vue-router";
 import { storeToRefs } from "pinia";
-import { useToolsStore } from "@/stores/tool";
+import { useToolsStore } from "@/stores/Tool";
 const store = useToolsStore();
 const { selectedKeys } = storeToRefs(store);
 
