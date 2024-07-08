@@ -47,7 +47,7 @@ import {
 import { storeToRefs } from "pinia";
 import prettyBytes from "pretty-bytes";
 import { useRouter } from "vue-router";
-import { useToolsStore } from "@/stores/tool";
+import { useToolsStore } from "@/stores/Tool";
 const store = useToolsStore();
 const router = useRouter();
 const pathList = ref((await db.getAll("paths")).map((item) => item.path));

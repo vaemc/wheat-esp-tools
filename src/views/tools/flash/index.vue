@@ -129,7 +129,7 @@ import { message } from "ant-design-vue";
 import moment from "moment";
 import prettyBytes from "pretty-bytes";
 import { storeToRefs } from "pinia";
-import { useToolsStore } from "@/stores/tool";
+import { useToolsStore } from "@/stores/Tool";
 const store = useToolsStore();
 const { firmwareList, selectedChipType } = storeToRefs(store);
 const target = ref(null);
