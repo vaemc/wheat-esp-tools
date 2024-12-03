@@ -102,11 +102,11 @@ const readFlash = async () => {
 const list = ref([
   {
     name: i18n.global.t("general.eraseFlash"),
-    cmd: ["-p", "${port}", "erase_flash"],
+    cmd: ["-p", "${port}", "-b", "115200", "erase_flash"],
   },
   {
     name: i18n.global.t("general.flashSize"),
-    cmd: ["-p", "${port}", "flash_id"],
+    cmd: ["-p", "${port}", "-b", "115200", "flash_id"],
   },
 ]);
 </script>
