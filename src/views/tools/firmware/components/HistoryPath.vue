@@ -5,12 +5,9 @@
       <template #renderItem="{ item }">
         <a-list-item>
           <a-list-item-meta :description="item">
-
             <template #title v-if="item.match(/[^\\/]+$/)[0] == 'flasher_args.json'">
               <a @click="openFileInExplorer(item)">{{ pathFindName(item) }}</a>
             </template>
-
-
           </a-list-item-meta>
           <template #actions>
             <a @click="flash(item)">{{ $t("firmware.flash") }}</a>
