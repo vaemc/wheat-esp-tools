@@ -1,36 +1,24 @@
 <template>
   <div style="margin: 5px">
-    <a-input-search
-      style="margin: 5px 0"
-      placeholder=""
-      enter-button
-      allow-clear
-      @search="onSearch"
-    />
-    <a-list
-      size="small"
-      :pagination="{ pageSize: 10, size: 'small' }"
-      bordered
-      :data-source="pathList"
-    >
+    <a-input-search style="margin: 5px 0" placeholder="" enter-button allow-clear @search="onSearch" />
+    <a-list size="small" :pagination="{ pageSize: 10, size: 'small' }" bordered :data-source="pathList">
       <template #renderItem="{ item }">
-        <a-list-item
-          ><template #actions>
+        <a-list-item>
+          <a-list-item-meta :description="item">
+
+            <template #title v-if="item.match(/[^\\/]+$/)[0] == 'flasher_args.json'">
+              <a @click="openFileInExplorer(item)">{{ pathFindName(item) }}</a>
+            </template>
+
+
+          </a-list-item-meta>
+          <template #actions>
             <a @click="flash(item)">{{ $t("firmware.flash") }}</a>
             <a-tooltip>
               <template #title>{{ $t("firmware.openInExplorer") }}</template>
-              <a
-                @click="
-                  () => {
-                    openFileInExplorer(item);
-                  }
-                "
-                >{{ $t("firmware.open") }}</a
-              >
+              <a @click="openFileInExplorer(item)">{{ $t("firmware.open") }}</a>
             </a-tooltip>
-            <a @click="remove(item)">{{ $t("firmware.remove") }}</a> </template
-          >{{ item }}</a-list-item
-        >
+            <a @click="remove(item)">{{ $t("firmware.remove") }}</a> </template></a-list-item>
       </template>
     </a-list>
   </div>
@@ -91,4 +79,14 @@ const onSearch = async (text: string) => {
       .filter((x) => x.toLowerCase().includes(text.toLowerCase()));
   }
 };
+
+const pathFindName = (path: string) => {
+  const pathParts = path
+    .replace(/\\/g, '/')
+    .split('/')
+    .filter(Boolean);
+  const thirdLast = pathParts.length >= 3 ? pathParts[pathParts.length - 3] : '';
+  return thirdLast
+}
+
 </script>
