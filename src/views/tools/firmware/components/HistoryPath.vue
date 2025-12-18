@@ -1,7 +1,7 @@
 <template>
   <div style="margin: 5px">
     <a-input-search style="margin: 5px 0" placeholder="" enter-button allow-clear @search="onSearch" />
-    <a-list size="small" :pagination="{ pageSize: 10, size: 'small' }" bordered :data-source="pathList">
+    <a-list size="small" :pagination="{ pageSize: 5, size: 'small' }" bordered :data-source="pathList">
       <template #renderItem="{ item }">
         <a-list-item>
           <a-list-item-meta :description="item">
