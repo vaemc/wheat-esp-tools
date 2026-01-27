@@ -75,7 +75,6 @@
         <template v-if="column.key === 'check'">
           <a-checkbox
             v-model:checked="record.check"
-            @change="flashCheckSingleChange"
           ></a-checkbox>
         </template>
         <template v-if="column.key === 'address'">
@@ -174,11 +173,32 @@ if (firmwareList.value.length > 0) {
   flashCheckOption.value.selectAll = true;
 }
 
-watch(firmwareList, async (newQuestion, oldQuestion) => {
-  if (firmwareList.value.length > 0) {
-    flashCheckOption.value.selectAll = true;
-  }
-});
+watch(
+  () => firmwareList.value.map((i) => i.check), 
+  (checks) => {
+    const checkedCount = checks.filter(Boolean).length;
+    const total = checks.length;
+
+    if (total === 0) {
+      flashCheckOption.value.selectAll = false;
+      flashCheckOption.value.indeterminate = false;
+      return;
+    }
+
+    if (checkedCount === total) {
+      flashCheckOption.value.selectAll = true;
+      flashCheckOption.value.indeterminate = false;
+    } else if (checkedCount === 0) {
+      flashCheckOption.value.selectAll = false;
+      flashCheckOption.value.indeterminate = false;
+    } else {
+      flashCheckOption.value.selectAll = false;
+      flashCheckOption.value.indeterminate = true;
+    }
+  },
+  { immediate: true }, 
+);
+
 const flash = async () => {
   const port = localStorage.getItem("port") as string;
   let cmd = [
@@ -274,7 +294,7 @@ const handle = (fun: Function) => {
 
 const removeFirmwareBtn = (item: Firmware) => {
   firmwareList.value = firmwareList.value.filter(
-    (x: Firmware) => x.path != item.path
+    (x: Firmware) => x.path != item.path,
   );
 
   if (firmwareList.value.filter((x) => x.check).length == 0) {
@@ -327,7 +347,7 @@ const flashFirmwareBtn = async (item: Firmware) => {
 const chipTypeList = ref(
   (await getChipTypeList()).map((item: string) => {
     return { label: item, value: item };
-  })
+  }),
 );
 
 const uploadHandle = async (paths: string | string[]) => {
@@ -355,6 +375,10 @@ const uploadHandle = async (paths: string | string[]) => {
       const fileInfo = await getFileInfo(item.path);
       item.size = prettyBytes(fileInfo.len);
     });
+
+    if (firmwareList.value.length > 0) {
+      flashCheckOption.value.selectAll = true;
+    }
   } else {
     await Promise.all(
       (paths as string[]).map(async (item) => {
@@ -369,29 +393,8 @@ const uploadHandle = async (paths: string | string[]) => {
             address: address == null ? "" : address[0],
           });
         }
-      })
+      }),
     );
-  }
-  if (firmwareList.value.length > 0) {
-    flashCheckOption.value.selectAll = true;
-  }
-};
-
-const flashCheckSingleChange = () => {
-  if (
-    firmwareList.value.filter((x) => x.check).length ==
-    firmwareList.value.length
-  ) {
-    flashCheckOption.value.selectAll = true;
-    flashCheckOption.value.indeterminate = false;
-  } else {
-    flashCheckOption.value.selectAll = false;
-    flashCheckOption.value.indeterminate = true;
-  }
-
-  if (firmwareList.value.filter((x) => x.check).length == 0) {
-    flashCheckOption.value.indeterminate = false;
-    flashCheckOption.value.selectAll = false;
   }
 };
 

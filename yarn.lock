@@ -524,10 +524,10 @@
   dependencies:
     vue-demi ">=0.14.8"
 
-ant-design-vue@^4.0.3:
-  version "4.2.3"
-  resolved "https://registry.npmjs.org/ant-design-vue/-/ant-design-vue-4.2.3.tgz"
-  integrity sha512-kqGyWvZtFlSInFP93Ow6wS8LzEsxxUgpI+ZY5jQQkuX8WAcqdwXCA7IcHMpECW6JB89DZMo2Bw85jUg2SjlgQA==
+ant-design-vue@^4.2.6:
+  version "4.2.6"
+  resolved "https://registry.yarnpkg.com/ant-design-vue/-/ant-design-vue-4.2.6.tgz#e4ce6944457cd1cd61d8b3fe52793ab58b94e337"
+  integrity sha512-t7eX13Yj3i9+i5g9lqFyYneoIb3OzTvQjq9Tts1i+eiOd3Eva/6GagxBSXM1fOCjqemIu0FYVE1ByZ/38epR3Q==
   dependencies:
     "@ant-design/colors" "^6.0.0"
     "@ant-design/icons-vue" "^7.0.0"

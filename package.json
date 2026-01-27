@@ -14,7 +14,7 @@
     "@types/byte-size": "^8.1.0",
     "@types/papaparse": "^5.3.8",
     "@vueuse/core": "^10.7.1",
-    "ant-design-vue": "^4.0.3",
+    "ant-design-vue": "^4.2.6",
     "idb": "^7.1.1",
     "kleur": "^4.1.5",
     "mitt": "^3.0.0",
