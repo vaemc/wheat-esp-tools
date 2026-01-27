@@ -49,8 +49,6 @@ const handleSingleLogLine = (logLine: string) => {
   const flashReg = /Detected flash size:\s*([\d]+MB)/;
   const psramReg = /PSRAM\s*([\d]+MB)/;
 
-  // 逐行匹配，匹配成功则更新响应式数据（已获取到值则不再覆盖，优化性能）
-  // 匹配 MAC 地址
   const macMatch = macReg.exec(logLine);
   if (macMatch) {
     deviceInfo.value.mac = macMatch[1];
@@ -115,7 +113,7 @@ const focus = () => {
 
 const change = (data: string) => {
   localStorage.setItem("port", data);
-  
+
   deviceInfo.value = {
     chipType: "",
     mac: "",
