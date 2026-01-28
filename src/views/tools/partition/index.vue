@@ -85,9 +85,9 @@
               :rows="12"
           /></a-tab-pane>
           <template #rightExtra>
-            <a-tag color="success" v-if="partitionSize.kb != ''"
+            <a-tag color="success" v-if="partitionSize != ''"
               >{{ i18n.global.t("partition.partitionTableSize") }}:
-              {{ partitionSize.kb }} {{ partitionSize.byte }} B
+              {{ partitionSize }}
             </a-tag>
           </template>
         </a-tabs>
@@ -108,7 +108,7 @@ const target = ref(null);
 
 const beforePartition = ref();
 const afterPartition = ref();
-const partitionSize = ref({ kb: "", byte: "" });
+const partitionSize = ref("");
 const dataSource = ref();
 const flashSize = ref();
 const flashSizeOptions = ref([
@@ -125,7 +125,7 @@ flashSize.value = flashSizeOptions.value[0].value;
 async function partitionTableConvert(
   input: string,
   flashSize: string,
-  isBin: boolean
+  isBin: boolean,
 ) {
   let currentDir = await getCurrentDir();
   if (!isBin) {
@@ -160,14 +160,36 @@ async function partitionTableConvert(
   return result;
 }
 
+function sumSizesToMB(parts: any, digits = 3): string {
+  const totalBytes = parts.reduce(
+    (sum: number, p: any) => sum + parseSizeToBytes(p.Size),
+    0,
+  );
+  const mb = totalBytes / (1024 * 1024); // 1 MiB = 1024*1024 bytes
+  return `${mb.toFixed(digits)}M`;
+}
+
+function parseSizeToBytes(size: string): number {
+  const s = size.trim().toUpperCase(); // e.g. "200K", "4M"
+  const m = s.match(/^(\d+(?:\.\d+)?)\s*([KM])B?$/);
+  if (!m) throw new Error(`Unsupported Size format: ${size}`);
+
+  const value = Number(m[1]);
+  const unit = m[2]; // K or M
+  if (unit === "K") return value * 1024;
+  if (unit === "M") return value * 1024 * 1024;
+
+  throw new Error(`Unsupported unit: ${unit}`);
+}
+
 const convert = async (input: string, isBin: boolean) => {
-  partitionSize.value = { kb: "", byte: "" };
+  partitionSize.value = "";
   afterPartition.value = "";
   dataSource.value = [];
   afterPartition.value = await partitionTableConvert(
     input,
     flashSize.value,
-    isBin
+    isBin,
   );
 
   let partitionTable = Papa.parse(afterPartition.value, {
@@ -177,16 +199,7 @@ const convert = async (input: string, isBin: boolean) => {
 
   dataSource.value = partitionTable;
 
-  let last = partitionTable.at(-1) as any;
-
-  partitionSize.value = {
-    kb: prettyBytes(
-      parseInt(last.Offset) + parseInt(last.Size.slice(0, -1)) * 1024
-    ),
-    byte: String(
-      parseInt(last.Offset) + parseInt(last.Size.slice(0, -1)) * 1024
-    ),
-  };
+  partitionSize.value = sumSizesToMB(partitionTable);
 };
 
 const uploadHandle = async (path: string | string[]) => {
