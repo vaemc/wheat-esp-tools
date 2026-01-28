@@ -79,18 +79,18 @@ async fn start_ble_advertisement_scan(window: tauri::Window) {
             Err(TryRecvError::Empty) => {}
         }
         match event {
-            CentralEvent::DeviceDiscovered(id) => {
+            CentralEvent::DeviceDiscovered(_id) => {
                 // println!("DeviceDiscovered: {:?}", id);
             }
-            CentralEvent::DeviceConnected(id) => {
+            CentralEvent::DeviceConnected(_id) => {
                 // println!("DeviceConnected: {:?}", id);
             }
-            CentralEvent::DeviceDisconnected(id) => {
+            CentralEvent::DeviceDisconnected(_id) => {
                 // println!("DeviceDisconnected: {:?}", id);
             }
             CentralEvent::ManufacturerDataAdvertisement {
                 id,
-                manufacturer_data,
+                manufacturer_data:_,
             } => {
                 // println!(
                 //     "ManufacturerDataAdvertisement: {:?}, {:?}",
@@ -129,11 +129,11 @@ async fn start_ble_advertisement_scan(window: tauri::Window) {
                     Err(_) => {}
                 }
             }
-            CentralEvent::ServiceDataAdvertisement { id, service_data } => {
+            CentralEvent::ServiceDataAdvertisement { id:_, service_data:_ } => {
                 // println!("ServiceDataAdvertisement: {:?}, {:?}", id, service_data);
             }
-            CentralEvent::ServicesAdvertisement { id, services } => {
-                let services: Vec<String> =
+            CentralEvent::ServicesAdvertisement { id:_, services } => {
+                let _services: Vec<String> =
                     services.into_iter().map(|s| s.to_short_string()).collect();
                 // println!("ServicesAdvertisement: {:?}, {:?}", id, services);
             }
