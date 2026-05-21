@@ -53,7 +53,7 @@ const readFlash = async () => {
     port,
     "-b",
     "460800",
-    "read_flash",
+    "read-flash",
     "0",
     "ALL",
     savePath,

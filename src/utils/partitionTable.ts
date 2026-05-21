@@ -5,8 +5,8 @@ const DATA_TYPE = 0x01;
 const BOOTLOADER_TYPE = 0x02;
 const PARTITION_TABLE_TYPE = 0x03;
 
-const PARTITION_TABLE_SIZE = 0x1000;
-const DEFAULT_OFFSET_PART_TABLE = 0x8000;
+export const PARTITION_TABLE_SIZE = 0x1000;
+export const DEFAULT_OFFSET_PART_TABLE = 0x8000;
 
 const TYPES: Record<string, number> = {
   app: APP_TYPE,

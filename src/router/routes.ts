@@ -73,6 +73,17 @@ export const layoutChildren: RouteRecordRaw[] = [
     },
   },
   {
+    path: "tools/nvs",
+    name: "nvs",
+    component: () => import("@/views/tools/nvs/index.vue"),
+    meta: {
+      icon: "🗄️",
+      titleKey: "menu.nvs",
+      menu: true,
+      menuOrder: 6,
+    },
+  },
+  {
     path: "setting",
     name: "setting",
     component: () => import("@/views/setting/index.vue"),

@@ -13,6 +13,8 @@ use std::path::Path;
 use std::process::Command;
 use std::sync::mpsc::{self, TryRecvError};
 use std::time::SystemTime;
+use esp_nvs_partition_tool::partition::{DataValue, EntryContent, NvsEntry};
+use esp_nvs_partition_tool::NvsPartition;
 use tauri::Manager as TauriManager;
 
 // Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
@@ -26,6 +28,54 @@ pub struct BleDevice {
     pub services: Vec<String>,
     pub service_data: HashMap<String, Vec<u8>>,
     pub adv: Vec<u8>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
+struct NvsKeyValue {
+    namespace: String,
+    key: String,
+    value_type: String,
+    value: String,
+}
+
+fn format_nvs_value(value: &DataValue) -> String {
+    match value {
+        DataValue::Binary(bytes) => {
+            if bytes.iter().all(|b| b.is_ascii_graphic() || *b == b' ') {
+                String::from_utf8_lossy(bytes).into_owned()
+            } else {
+                format!("0x{}", bytes.iter().map(|b| format!("{b:02x}")).collect::<String>())
+            }
+        }
+        other => other.to_string(),
+    }
+}
+
+fn entry_to_row(entry: &NvsEntry) -> Option<NvsKeyValue> {
+    if entry.namespace.is_empty() || entry.key.is_empty() {
+        return None;
+    }
+    match &entry.content {
+        EntryContent::Data(value) => Some(NvsKeyValue {
+            namespace: entry.namespace.clone(),
+            key: entry.key.clone(),
+            value_type: value.encoding_str().to_string(),
+            value: format_nvs_value(value),
+        }),
+        EntryContent::File { .. } => None,
+    }
+}
+
+#[tauri::command]
+fn parse_nvs_partition(path: &str) -> Result<Vec<NvsKeyValue>, String> {
+    let bytes = fs::read(path).map_err(|e| format!("读取文件失败: {e}"))?;
+    let partition =
+        NvsPartition::try_from_bytes(bytes).map_err(|e| format!("解析 NVS 分区失败: {e}"))?;
+    Ok(partition
+        .entries
+        .iter()
+        .filter_map(entry_to_row)
+        .collect())
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
@@ -197,7 +247,7 @@ fn get_file_info(path: &str) -> FileInfo {
 }
 
 fn main() {
-    for item in ["firmware", "partitions"].iter() {
+    for item in ["firmware", "partitions", "nvs"].iter() {
         if !Path::new(item).exists() {
             fs::create_dir(item).unwrap();
         }
@@ -221,6 +271,7 @@ fn main() {
             open_file_in_explorer,
             open_directory_in_explorer,
             get_file_info,
+            parse_nvs_partition,
             start_ble_advertisement_scan
         ])
         .run(tauri::generate_context!())
