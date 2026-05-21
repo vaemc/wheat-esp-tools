@@ -3,41 +3,25 @@
     <a-layout-sider
       style="height: 100vh"
       collapsed-width="0"
-      @collapse="onCollapse"
-      @breakpoint="onBreakpoint"
     >
-      <a-menu
-        :open-keys="openKeys"
-        v-model:selectedKeys="selectedKeys"
-        theme="dark"
-        mode="inline"
-      >
-        <div v-for="subMenu in routerList">
-          <a-sub-menu
-            v-if="subMenu.hasOwnProperty('children')"
-            :key="subMenu.name"
-          >
-            <template #title>
-              <span>{{ subMenu.meta?.icon }}{{ subMenu.meta?.title }} </span>
-            </template>
-            <div v-for="menu in subMenu.children">
-              <a-menu-item
-                v-if="menu.meta?.display"
-                @click="to(menu)"
-                :key="menu.name"
-                >{{ menu.meta?.icon }}{{ menu.meta?.title }}
-              </a-menu-item>
-            </div>
-          </a-sub-menu>
-          <a-menu-item
-            @click="to(subMenu)"
-            v-if="!subMenu.hasOwnProperty('children') && subMenu.meta?.display"
-            :key="subMenu.name"
-          >
-            <span>{{ subMenu.meta?.icon }}{{ subMenu.meta?.title }}</span>
+      <div class="sider-inner">
+        <a-menu
+          v-model:selectedKeys="selectedKeys"
+          theme="dark"
+          mode="inline"
+          @click="onMenuClick"
+        >
+          <a-menu-item v-for="item in menuRoutes" :key="item.name">
+            <span class="menu-item-content">
+              <span class="menu-icon" aria-hidden="true">{{ item.icon }}</span>
+              <span class="menu-title">{{ t(item.titleKey) }}</span>
+            </span>
           </a-menu-item>
+        </a-menu>
+        <div class="sider-footer">
+          <LanguageSwitch />
         </div>
-      </a-menu>
+      </div>
     </a-layout-sider>
     <a-layout>
       <a-layout-content :style="{ minHeight: '280px' }">
@@ -49,26 +33,56 @@
 </template>
 <script setup lang="ts">
 import Terminal from "@/components/Terminal.vue";
-import { ref } from "vue";
-import { useRoute, useRouter,RouteRecordRaw } from "vue-router";
+import LanguageSwitch from "@/components/LanguageSwitch.vue";
+import { computed, watch } from "vue";
+import { useRoute, useRouter } from "vue-router";
+import { useI18n } from "vue-i18n";
 import { storeToRefs } from "pinia";
 import { useToolsStore } from "@/stores/Tool";
+import { getMenuItems } from "@/router/menu";
+import type { MenuProps } from "ant-design-vue";
+
+const router = useRouter();
+const route = useRoute();
+const { t } = useI18n();
 const store = useToolsStore();
 const { selectedKeys } = storeToRefs(store);
 
-const router = useRouter();
-const routerList = ref(router.options.routes[0].children);
-const openKeys = ref(["tools"]);
-selectedKeys.value = [useRoute().name];
-const onCollapse = (collapsed: boolean, type: string) => {
-  console.log(collapsed, type);
-};
+const menuRoutes = computed(() => getMenuItems(router));
 
-const onBreakpoint = (broken: boolean) => {
-  console.log(broken);
-};
+watch(
+  () => route.name,
+  (name) => {
+    if (name) {
+      selectedKeys.value = [name];
+    }
+  },
+  { immediate: true }
+);
 
-const to = (data: RouteRecordRaw) => {
-  router.push(data.path);
+const onMenuClick: MenuProps["onClick"] = ({ key }) => {
+  router.push({ name: String(key) });
 };
 </script>
+<style scoped>
+.sider-inner {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+.sider-footer {
+  margin-top: auto;
+  padding: 12px 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+.menu-item-content {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.menu-icon {
+  font-size: 16px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+</style>
