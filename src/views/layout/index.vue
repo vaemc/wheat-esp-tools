@@ -1,11 +1,13 @@
 <template>
-  <a-layout>
+  <a-layout class="app-root">
     <a-layout-sider
-      style="height: 100vh"
+      class="app-sider"
+      :width="200"
       collapsed-width="0"
     >
       <div class="sider-inner">
         <a-menu
+          class="sider-menu"
           v-model:selectedKeys="selectedKeys"
           theme="dark"
           mode="inline"
@@ -28,9 +30,13 @@
         <DeviceTopBar />
       </a-layout-header>
       <a-layout-content class="app-main-content">
-        <router-view />
+        <div class="app-main-scroll">
+          <router-view />
+        </div>
       </a-layout-content>
-      <Terminal />
+      <footer class="app-terminal">
+        <Terminal />
+      </footer>
     </a-layout>
   </a-layout>
 </template>
@@ -69,39 +75,91 @@ const onMenuClick: MenuProps["onClick"] = ({ key }) => {
 };
 </script>
 <style scoped>
+.app-root {
+  height: 100vh;
+  overflow: hidden;
+}
+
+.app-root :deep(.app-sider) {
+  height: 100vh;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.app-root :deep(.app-sider .ant-layout-sider-children) {
+  height: 100%;
+  overflow: hidden;
+}
+
 .sider-inner {
   display: flex;
   flex-direction: column;
   height: 100%;
+  overflow: hidden;
 }
+
+.sider-menu {
+  flex: 1;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  border-inline-end: none !important;
+}
+
 .sider-footer {
-  margin-top: auto;
+  flex-shrink: 0;
   padding: 12px 16px;
   border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
+
 .menu-item-content {
   display: inline-flex;
   align-items: center;
   gap: 8px;
 }
+
 .menu-icon {
   font-size: 16px;
   line-height: 1;
   flex-shrink: 0;
 }
+
 .main-layout {
-  min-height: 100vh;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  height: 100vh;
+  overflow: hidden;
   background: #141414;
 }
+
 .app-device-header {
+  flex-shrink: 0;
   height: auto;
   line-height: 1.5;
   padding: 0;
   background: transparent;
 }
+
 .app-main-content {
-  min-height: 280px;
+  flex: 1;
+  min-height: 0;
   padding: 0;
+  overflow: hidden;
   background: #141414;
+}
+
+.app-main-scroll {
+  height: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+.app-terminal {
+  flex-shrink: 0;
+  background: #141414;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
 </style>

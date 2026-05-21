@@ -1,11 +1,9 @@
 <template>
   <div v-if="partitions.length" class="partition-charts">
     <div class="chart-box">
-      <div class="chart-title">{{ pieTitle }}</div>
       <v-chart class="chart" :option="pieOption" autoresize />
     </div>
     <div class="chart-box chart-box-wide">
-      <div class="chart-title">{{ barTitle }}</div>
       <v-chart class="chart chart-bar" :option="barOption" autoresize />
     </div>
   </div>
@@ -39,8 +37,6 @@ use([
 
 const props = defineProps<{
   partitions: FlashPartition[];
-  pieTitle: string;
-  barTitle: string;
   emptyText: string;
 }>();
 
@@ -63,11 +59,6 @@ const barOption = computed(() => buildPartitionBarOption(props.partitions));
 }
 .chart-box-wide {
   flex: 1.4;
-}
-.chart-title {
-  margin-bottom: 4px;
-  font-size: 12px;
-  color: rgba(255, 255, 255, 0.55);
 }
 .chart {
   width: 100%;

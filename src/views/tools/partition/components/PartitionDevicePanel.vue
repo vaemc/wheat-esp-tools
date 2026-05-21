@@ -29,8 +29,6 @@
       </header>
       <PartitionCharts
         :partitions="partitions"
-        :pie-title="$t('partition.pieTitle')"
-        :bar-title="$t('partition.barTitle')"
         :empty-text="$t('partition.emptyDeviceCharts')"
       />
     </section>

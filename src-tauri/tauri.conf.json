@@ -55,7 +55,7 @@
           "type": "embedBootstrapper"
         }
       },
-      "externalBin": ["bin/esptool", "bin/gen_esp32part"],
+      "externalBin": ["bin/esptool"],
       "active": true,
       "icon": [
         "icons/32x32.png",

@@ -40,6 +40,17 @@ export const layoutChildren: RouteRecordRaw[] = [
     },
   },
   {
+    path: "tools/nvs",
+    name: "nvs",
+    component: () => import("@/views/tools/nvs/index.vue"),
+    meta: {
+      icon: "🗄️",
+      titleKey: "menu.nvs",
+      menu: true,
+      menuOrder: 5,
+    },
+  },
+  {
     path: "tools/ble",
     name: "ble",
     component: () => import("@/views/tools/ble/index.vue"),
@@ -59,17 +70,6 @@ export const layoutChildren: RouteRecordRaw[] = [
       titleKey: "menu.firmware",
       menu: true,
       menuOrder: 4,
-    },
-  },
-  {
-    path: "tools/nvs",
-    name: "nvs",
-    component: () => import("@/views/tools/nvs/index.vue"),
-    meta: {
-      icon: "🗄️",
-      titleKey: "menu.nvs",
-      menu: true,
-      menuOrder: 5,
     },
   }
 ];
