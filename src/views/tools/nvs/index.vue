@@ -5,14 +5,6 @@
     <section class="panel">
       <header class="panel-head">
         <span class="panel-title">{{ $t("nvs.readOptions") }}</span>
-        <a-button
-          type="link"
-          size="small"
-          :loading="detecting"
-          @click="onDetectPartition"
-        >
-          {{ $t("nvs.detectPartition") }}
-        </a-button>
       </header>
       <p v-if="detectedInfo" class="detected-info">{{ detectedInfo }}</p>
       <p v-else class="panel-hint">{{ $t("nvs.detectHint") }}</p>
@@ -23,7 +15,7 @@
             v-model:value="offset"
             placeholder="0x9000"
             class="mono"
-            :disabled="detecting"
+            :disabled="loading"
           />
         </label>
         <label class="option-field">
@@ -32,7 +24,7 @@
             v-model:value="size"
             placeholder="0x6000"
             class="mono"
-            :disabled="detecting"
+            :disabled="loading"
           />
         </label>
         <label class="option-field">
@@ -43,7 +35,7 @@
       <div class="action-row">
         <a-button
           type="primary"
-          :loading="loading || detecting"
+          :loading="loading"
           @click="onReadDevice"
         >
           {{ $t("nvs.readFromDevice") }}
@@ -80,7 +72,7 @@
   </div>
 </template>
 <script setup lang="ts">
-import { computed, onMounted } from "vue";
+import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 import { message } from "ant-design-vue";
 import SerialPortSelect from "@/components/SerialPortSelect.vue";
@@ -90,14 +82,12 @@ const { t } = useI18n();
 
 const {
   loading,
-  detecting,
   rows,
   keyword,
   offset,
   size,
   baudRate,
   detectedInfo,
-  detectNvsPartitionFromDevice,
   readFromDevice,
   openLocalFile,
 } = useNvsReader();
@@ -142,7 +132,7 @@ const columns = computed(() => [
   { title: t("nvs.colValue"), dataIndex: "value", key: "value", ellipsis: true },
 ]);
 
-function handleDetectError(e: unknown) {
+function handleReadError(e: unknown) {
   if (e instanceof Error && e.message === "NO_PORT") {
     message.warning(t("nvs.noPort"));
   } else if (e instanceof Error && e.message === "NO_NVS") {
@@ -150,33 +140,21 @@ function handleDetectError(e: unknown) {
   } else if (e instanceof Error && e.message === "READ_FAILED") {
     message.error(t("nvs.readFailed"));
   } else {
-    message.error(t("nvs.detectFailed"));
+    message.error(t("nvs.readFailed"));
   }
 }
-
-async function onDetectPartition() {
-  try {
-    await detectNvsPartitionFromDevice();
-    message.success(t("nvs.detectSuccess"));
-  } catch (e) {
-    handleDetectError(e);
-  }
-}
-
-onMounted(() => {
-  if (localStorage.getItem("port")) {
-    detectNvsPartitionFromDevice().catch(() => {});
-  }
-});
 
 async function onReadDevice() {
   try {
     await readFromDevice();
+    if (detectedInfo.value) {
+      message.success(t("nvs.readSuccess", { info: detectedInfo.value }));
+    }
     if (rows.value.length === 0) {
       message.info(t("nvs.emptyParsed"));
     }
   } catch (e) {
-    handleDetectError(e);
+    handleReadError(e);
   }
 }
 

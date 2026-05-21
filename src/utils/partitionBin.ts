@@ -74,6 +74,21 @@ export function formatHexForEsptool(value: number): string {
   return `0x${value.toString(16)}`;
 }
 
+/** 解析 0x / K / M 等为字节数 */
+export function parseSizeParam(value: string): number {
+  const v = value.trim().toLowerCase();
+  if (!v) {
+    return 0;
+  }
+  if (v.endsWith("k")) {
+    return parseInt(v.slice(0, -1), v.startsWith("0x") ? 16 : 10) * 1024;
+  }
+  if (v.endsWith("m")) {
+    return parseInt(v.slice(0, -1), v.startsWith("0x") ? 16 : 10) * 1024 * 1024;
+  }
+  return parseInt(v, v.startsWith("0x") ? 16 : 10);
+}
+
 /** 界面展示用（可读性更好的 K/M 简写） */
 export function formatHexDisplay(value: number): string {
   if (value >= 0x100000 && value % 0x100000 === 0) {

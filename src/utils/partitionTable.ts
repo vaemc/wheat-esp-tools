@@ -1,3 +1,11 @@
+import {
+  formatPartitionAddress,
+  partitionSubtypeLabel,
+  partitionTypeLabel,
+  SUBTYPES,
+  TYPES,
+} from "@/utils/partitionTableFormat";
+
 /** ESP-IDF 分区表 CSV 解析与偏移量计算（对齐 gen_esp32part.py 核心逻辑） */
 
 const APP_TYPE = 0x00;
@@ -7,41 +15,6 @@ const PARTITION_TABLE_TYPE = 0x03;
 
 export const PARTITION_TABLE_SIZE = 0x1000;
 export const DEFAULT_OFFSET_PART_TABLE = 0x8000;
-
-const TYPES: Record<string, number> = {
-  app: APP_TYPE,
-  data: DATA_TYPE,
-  bootloader: BOOTLOADER_TYPE,
-  partition_table: PARTITION_TABLE_TYPE,
-};
-
-const SUBTYPES: Record<number, Record<string, number>> = {
-  [BOOTLOADER_TYPE]: { primary: 0x00, ota: 0x01, recovery: 0x02 },
-  [PARTITION_TABLE_TYPE]: { primary: 0x00, ota: 0x01 },
-  [APP_TYPE]: { factory: 0x00, test: 0x20 },
-  [DATA_TYPE]: {
-    ota: 0x00,
-    phy: 0x01,
-    nvs: 0x02,
-    coredump: 0x03,
-    nvs_keys: 0x04,
-    efuse: 0x05,
-    undefined: 0x06,
-    esphttpd: 0x80,
-    fat: 0x81,
-    spiffs: 0x82,
-    littlefs: 0x83,
-    tee_ota: 0x90,
-  },
-};
-
-for (let i = 0; i < 16; i++) {
-  SUBTYPES[APP_TYPE][`ota_${i}`] = 0x10 + i;
-}
-for (let i = 0; i < 2; i++) {
-  SUBTYPES[APP_TYPE][`tee_${i}`] = 0x30 + i;
-}
-
 const ALIGNMENT: Record<number, number> = {
   [APP_TYPE]: 0x10000,
   [DATA_TYPE]: 0x1000,
@@ -143,27 +116,6 @@ function parseOffset(value: string): number | null {
     return null;
   }
   return parseIntField(value);
-}
-
-function lookupName(value: number, keywords: Record<string, number>): string {
-  for (const [name, num] of Object.entries(keywords)) {
-    if (num === value) {
-      return name;
-    }
-  }
-  return `0x${value.toString(16)}`;
-}
-
-function formatAddress(addr: number, allowSuffix: boolean): string {
-  if (allowSuffix) {
-    if (addr % 0x100000 === 0) {
-      return `${addr / 0x100000}M`;
-    }
-    if (addr % 0x400 === 0) {
-      return `${addr / 0x400}K`;
-    }
-  }
-  return `0x${addr.toString(16)}`;
 }
 
 function alignUp(value: number, alignment: number): number {
@@ -280,10 +232,10 @@ interface CsvLineFields {
 function entryToFields(entry: PartitionEntry): CsvLineFields {
   return {
     name: entry.name,
-    type: lookupName(entry.type, TYPES),
-    subtype: lookupName(entry.subtype, SUBTYPES[entry.type] ?? {}),
-    offset: formatAddress(entry.offset!, false),
-    size: formatAddress(entry.size, true),
+    type: partitionTypeLabel(entry.type),
+    subtype: partitionSubtypeLabel(entry.type, entry.subtype),
+    offset: formatPartitionAddress(entry.offset!, false),
+    size: formatPartitionAddress(entry.size, true),
     flags: entry.flags,
   };
 }
@@ -351,10 +303,10 @@ export function buildPartitionTable(
   const rows: PartitionRow[] = entries.map((e) => ({
     key: e.name,
     name: e.name,
-    type: lookupName(e.type, TYPES),
-    subtype: lookupName(e.subtype, SUBTYPES[e.type] ?? {}),
-    offset: formatAddress(e.offset!, false),
-    size: formatAddress(e.size, true),
+    type: partitionTypeLabel(e.type),
+    subtype: partitionSubtypeLabel(e.type, e.subtype),
+    offset: formatPartitionAddress(e.offset!, false),
+    size: formatPartitionAddress(e.size, true),
     flags: e.flags,
   }));
 
