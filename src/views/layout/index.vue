@@ -23,8 +23,11 @@
         </div>
       </div>
     </a-layout-sider>
-    <a-layout>
-      <a-layout-content :style="{ minHeight: '280px' }">
+    <a-layout class="main-layout">
+      <a-layout-header class="app-device-header">
+        <DeviceTopBar />
+      </a-layout-header>
+      <a-layout-content class="app-main-content">
         <router-view />
       </a-layout-content>
       <Terminal />
@@ -33,6 +36,7 @@
 </template>
 <script setup lang="ts">
 import Terminal from "@/components/Terminal.vue";
+import DeviceTopBar from "@/components/DeviceTopBar.vue";
 import LanguageSwitch from "@/components/LanguageSwitch.vue";
 import { computed, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
@@ -84,5 +88,20 @@ const onMenuClick: MenuProps["onClick"] = ({ key }) => {
   font-size: 16px;
   line-height: 1;
   flex-shrink: 0;
+}
+.main-layout {
+  min-height: 100vh;
+  background: #141414;
+}
+.app-device-header {
+  height: auto;
+  line-height: 1.5;
+  padding: 0;
+  background: transparent;
+}
+.app-main-content {
+  min-height: 280px;
+  padding: 0;
+  background: #141414;
 }
 </style>

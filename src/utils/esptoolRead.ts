@@ -1,4 +1,4 @@
-import cli, { execute } from "@/utils/cli";
+import { runEsptoolCollect } from "@/utils/esptoolCli";
 
 /** 执行 esptool read-flash 并等待结束 */
 export async function runEsptoolReadFlash(
@@ -8,18 +8,5 @@ export async function runEsptoolReadFlash(
   size: string,
   savePath: string
 ): Promise<void> {
-  execute("esptool", ["-p", port, "-b", baud, "read-flash", offset, size, savePath]);
-
-  await new Promise<void>((resolve, reject) => {
-    const onClose = () => {
-      cli.all.clear();
-      resolve();
-    };
-    const onError = () => {
-      cli.all.clear();
-      reject(new Error("READ_FAILED"));
-    };
-    cli.on("close", onClose);
-    cli.on("error", onError);
-  });
+  await runEsptoolCollect(port, baud, "read-flash", [offset, size, savePath]);
 }

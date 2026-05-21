@@ -1,7 +1,5 @@
 <template>
   <div class="nvs-page">
-    <SerialPortSelect />
-
     <section class="panel">
       <header class="panel-head">
         <span class="panel-title">{{ $t("nvs.readOptions") }}</span>
@@ -75,7 +73,6 @@
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 import { message } from "ant-design-vue";
-import SerialPortSelect from "@/components/SerialPortSelect.vue";
 import { useNvsReader } from "./composables/useNvsReader";
 
 const { t } = useI18n();

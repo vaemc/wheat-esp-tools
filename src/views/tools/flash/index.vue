@@ -1,47 +1,44 @@
 <template>
-  <div style="padding: 10px">
-    <SerialPortSelect />
-    <a-row
-      style="margin-bottom: 5px"
-      type="flex"
-      justify="space-around"
-      align="middle"
-    >
-      <a-col :span="8">
-        <SPIMode v-model="selectedMode" />
-      </a-col>
-      <a-col :span="8">
-        <a-tooltip>
-          <template #title>{{ $t("flash.baudRate") }}</template>
-          <a-auto-complete
-            style="width: 90%"
-            v-model:value="selectedBaud"
-            size="small"
-            :placeholder="$t('flash.baudRate')"
-            :options="[
-              { value: '115200' },
-              { value: '230400' },
-              { value: '460800' },
-              { value: '921600' },
-              { value: '1152000' },
-              { value: '1500000' },
-            ]"
-        /></a-tooltip>
-      </a-col>
-      <a-col :span="8">
-        <a-tooltip>
-          <template #title>{{ $t("flash.mergeInfo") }}</template>
-          <a-select
-            style="width: 90%"
-            size="small"
-            :placeholder="$t('flash.chipType')"
-            v-model:value="selectedChipType"
-            :options="chipTypeList"
-          >
-          </a-select
-        ></a-tooltip>
-      </a-col>
-    </a-row>
+  <div class="flash-page">
+    <section class="flash-toolbar">
+      <div class="toolbar-options">
+        <div class="toolbar-field toolbar-field--spi">
+          <SPIMode v-model="selectedMode" />
+        </div>
+        <div class="toolbar-field">
+          <a-tooltip>
+            <template #title>{{ $t("flash.baudRate") }}</template>
+            <a-auto-complete
+              v-model:value="selectedBaud"
+              size="small"
+              class="toolbar-input"
+              :placeholder="$t('flash.baudRate')"
+              :options="baudOptions"
+            />
+          </a-tooltip>
+        </div>
+        <div class="toolbar-field">
+          <a-tooltip>
+            <template #title>{{ $t("flash.mergeInfo") }}</template>
+            <a-select
+              v-model:value="selectedChipType"
+              size="small"
+              class="toolbar-input"
+              :placeholder="$t('flash.chipType')"
+              :options="chipTypeList"
+            />
+          </a-tooltip>
+        </div>
+      </div>
+      <div class="toolbar-actions">
+        <a-button danger size="small" @click="eraseFlash">
+          {{ $t("flash.eraseAllFlash") }}
+        </a-button>
+        <a-button size="small" @click="readFlash">
+          {{ $t("flash.readFlash") }}
+        </a-button>
+      </div>
+    </section>
 
     <div ref="target">
       <Upload
@@ -109,7 +106,6 @@
 <script setup lang="ts">
 import { ref, watch } from "vue";
 import SPIMode from "@/components/SPIMode.vue";
-import SerialPortSelect from "@/components/SerialPortSelect.vue";
 import Upload from "@/components/Upload.vue";
 import db from "@/db/db";
 import { Firmware } from "@/model/model";
@@ -129,7 +125,19 @@ import moment from "moment";
 import prettyBytes from "pretty-bytes";
 import { storeToRefs } from "pinia";
 import { useToolsStore } from "@/stores/Tool";
+import { useFlashQuickActions } from "./composables/useFlashQuickActions";
+
 const store = useToolsStore();
+const { eraseFlash, readFlash } = useFlashQuickActions();
+
+const baudOptions = [
+  { value: "115200" },
+  { value: "230400" },
+  { value: "460800" },
+  { value: "921600" },
+  { value: "1152000" },
+  { value: "1500000" },
+];
 const { firmwareList, selectedChipType } = storeToRefs(store);
 const target = ref(null);
 const flashCheckOption = ref({ indeterminate: false, selectAll: false });
@@ -419,3 +427,44 @@ const flashCheckAllChange = () => {
   }
 };
 </script>
+<style scoped>
+.flash-page {
+  padding: 10px;
+}
+.flash-toolbar {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px 16px;
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+}
+.toolbar-options {
+  display: flex;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 12px 16px;
+  flex: 1;
+  min-width: 280px;
+}
+.toolbar-field {
+  min-width: 120px;
+}
+.toolbar-field--spi {
+  min-width: 140px;
+}
+.toolbar-input {
+  width: 100%;
+  min-width: 120px;
+}
+.toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+</style>

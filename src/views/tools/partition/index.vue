@@ -1,7 +1,5 @@
 <template>
   <div class="partition-page">
-    <SerialPortSelect />
-
     <a-tabs v-model:activeKey="activeTab" class="partition-tabs">
       <a-tab-pane key="align" :tab="$t('partition.tabAlign')">
         <PartitionAlignPanel />
@@ -14,7 +12,6 @@
 </template>
 <script setup lang="ts">
 import { ref } from "vue";
-import SerialPortSelect from "@/components/SerialPortSelect.vue";
 import PartitionAlignPanel from "./components/PartitionAlignPanel.vue";
 import PartitionDevicePanel from "./components/PartitionDevicePanel.vue";
 

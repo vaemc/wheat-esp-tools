@@ -5,7 +5,7 @@ import Layout from "@/views/layout/index.vue";
 export const layoutChildren: RouteRecordRaw[] = [
   {
     path: "",
-    redirect: { name: "basic" },
+    redirect: { name: "flash" },
   },
   {
     path: "home",
@@ -18,17 +18,6 @@ export const layoutChildren: RouteRecordRaw[] = [
     },
   },
   {
-    path: "tools/basic",
-    name: "basic",
-    component: () => import("@/views/tools/basic/index.vue"),
-    meta: {
-      icon: "🔌",
-      titleKey: "menu.general",
-      menu: true,
-      menuOrder: 1,
-    },
-  },
-  {
     path: "tools/flash",
     name: "flash",
     component: () => import("@/views/tools/flash/index.vue"),
@@ -36,7 +25,7 @@ export const layoutChildren: RouteRecordRaw[] = [
       icon: "🔥",
       titleKey: "menu.flash",
       menu: true,
-      menuOrder: 2,
+      menuOrder: 1,
     },
   },
   {
@@ -47,7 +36,7 @@ export const layoutChildren: RouteRecordRaw[] = [
       icon: "📋",
       titleKey: "menu.partitionTable",
       menu: true,
-      menuOrder: 3,
+      menuOrder: 2,
     },
   },
   {
@@ -58,7 +47,7 @@ export const layoutChildren: RouteRecordRaw[] = [
       icon: "📡",
       titleKey: "menu.ble",
       menu: true,
-      menuOrder: 4,
+      menuOrder: 3,
     },
   },
   {
@@ -69,7 +58,7 @@ export const layoutChildren: RouteRecordRaw[] = [
       icon: "📦",
       titleKey: "menu.firmware",
       menu: true,
-      menuOrder: 5,
+      menuOrder: 4,
     },
   },
   {
@@ -80,29 +69,9 @@ export const layoutChildren: RouteRecordRaw[] = [
       icon: "🗄️",
       titleKey: "menu.nvs",
       menu: true,
-      menuOrder: 6,
+      menuOrder: 5,
     },
-  },
-  {
-    path: "setting",
-    name: "setting",
-    component: () => import("@/views/setting/index.vue"),
-    meta: {
-      icon: "⚙️",
-      titleKey: "menu.setting",
-      menu: false,
-    },
-  },
-  {
-    path: "help",
-    name: "help",
-    component: () => import("@/views/help/index.vue"),
-    meta: {
-      icon: "📖",
-      titleKey: "menu.help",
-      menu: false,
-    },
-  },
+  }
 ];
 
 export const routes: RouteRecordRaw[] = [

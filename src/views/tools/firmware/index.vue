@@ -1,6 +1,5 @@
 <template>
   <div class="firmware-page">
-    <SerialPortSelect />
     <a-row :gutter="24" class="firmware-panels">
       <a-col :xs="24" :lg="12">
         <HistoryPathsPanel />
@@ -12,7 +11,6 @@
   </div>
 </template>
 <script setup lang="ts">
-import SerialPortSelect from "@/components/SerialPortSelect.vue";
 import HistoryPathsPanel from "./components/HistoryPathsPanel.vue";
 import LocalFirmwarePanel from "./components/LocalFirmwarePanel.vue";
 </script>
