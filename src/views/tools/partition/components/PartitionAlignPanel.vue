@@ -46,13 +46,17 @@
           :scroll="{ y: 420 }"
           :data-source="result?.rows ?? []"
           :columns="columns"
-          :locale="{ emptyText: $t('partition.emptyPreview') }"
-        />
+        >
+          <template #emptyText>
+            <PlaceholderHint :text="$t('partition.emptyPreview')" />
+          </template>
+        </a-table>
       </section>
     </a-col>
   </a-row>
 </template>
 <script setup lang="ts">
+import PlaceholderHint from "@/components/PlaceholderHint.vue";
 import { usePartitionAlign } from "../composables/usePartitionAlign";
 import { usePartitionColumns } from "../composables/usePartitionColumns";
 

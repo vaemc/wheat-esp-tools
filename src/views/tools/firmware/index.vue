@@ -137,4 +137,13 @@ import LocalFirmwarePanel from "./components/LocalFirmwarePanel.vue";
   padding: 0;
   height: auto;
 }
+:deep(.firmware-empty) {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+:deep(.firmware-empty .placeholder-hint) {
+  margin-bottom: 0;
+}
 </style>

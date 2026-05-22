@@ -19,16 +19,15 @@
       class="panel-search"
     />
     <a-spin :spinning="loading">
-      <a-empty
+      <div
         v-if="!loading && filteredItems.length === 0"
-        :description="$t('firmware.emptyLocal')"
+        class="firmware-empty"
       >
-        <template #extra>
-          <a-button type="primary" size="small" @click="openFirmwareDir">
-            {{ $t("firmware.openFolder") }}
-          </a-button>
-        </template>
-      </a-empty>
+        <PlaceholderHint :text="$t('firmware.emptyLocal')" />
+        <a-button type="primary" size="small" @click="openFirmwareDir">
+          {{ $t("firmware.openFolder") }}
+        </a-button>
+      </div>
       <a-list
         v-else
         class="item-list"
@@ -84,6 +83,7 @@
 import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { message } from "ant-design-vue";
+import PlaceholderHint from "@/components/PlaceholderHint.vue";
 import { openDirectoryInExplorer, openFileInExplorer } from "@/utils/common";
 import QuickFlashButton from "./QuickFlashButton.vue";
 import { useFlashOptions } from "@/composables/useFlashOptions";

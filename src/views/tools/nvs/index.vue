@@ -63,9 +63,12 @@
         :data-source="filteredRows"
         :columns="columns"
         :scroll="{ y: 420 }"
-        :locale="{ emptyText: $t('nvs.emptyList') }"
         row-key="rowKey"
-      />
+      >
+        <template #emptyText>
+          <PlaceholderHint :text="$t('nvs.emptyList')" />
+        </template>
+      </a-table>
     </section>
   </div>
 </template>
@@ -73,6 +76,7 @@
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 import { message } from "ant-design-vue";
+import PlaceholderHint from "@/components/PlaceholderHint.vue";
 import { useNvsReader } from "./composables/useNvsReader";
 
 const { t } = useI18n();

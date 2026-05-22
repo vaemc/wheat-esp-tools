@@ -20,3 +20,21 @@ body,
   height: 10px;
   background-color: #141414;
 }
+
+/* 空状态占位提示：无图标、统一字号 */
+.placeholder-hint {
+  margin: 20px 0;
+  padding: 4px 12px;
+  text-align: center;
+  font-size: 13px;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.ant-table-placeholder .placeholder-hint {
+  margin: 16px 0;
+}
+
+.ant-table-placeholder .ant-empty-image {
+  display: none;
+}

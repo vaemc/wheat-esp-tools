@@ -7,7 +7,7 @@
       <v-chart class="chart chart-bar" :option="barOption" autoresize />
     </div>
   </div>
-  <a-empty v-else :description="emptyText" class="charts-empty" />
+  <PlaceholderHint v-else :text="emptyText" />
 </template>
 <script setup lang="ts">
 import { computed } from "vue";
@@ -25,6 +25,7 @@ import {
   buildPartitionBarOption,
   buildPartitionPieOption,
 } from "@/utils/partitionChart";
+import PlaceholderHint from "@/components/PlaceholderHint.vue";
 
 use([
   PieChart,
@@ -66,8 +67,5 @@ const barOption = computed(() => buildPartitionBarOption(props.partitions));
 }
 .chart-bar {
   height: 260px;
-}
-.charts-empty {
-  margin: 24px 0;
 }
 </style>

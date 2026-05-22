@@ -12,9 +12,9 @@
       class="panel-search"
     />
     <a-spin :spinning="loading">
-      <a-empty
+      <PlaceholderHint
         v-if="!loading && filteredItems.length === 0"
-        :description="$t('firmware.emptyHistory')"
+        :text="$t('firmware.emptyHistory')"
       />
       <a-list
         v-else
@@ -72,6 +72,7 @@
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 import { message } from "ant-design-vue";
+import PlaceholderHint from "@/components/PlaceholderHint.vue";
 import { openFileInExplorer } from "@/utils/common";
 import { useHistoryPaths } from "../composables/useHistoryPaths";
 import { useImportToFlash } from "../composables/useImportToFlash";

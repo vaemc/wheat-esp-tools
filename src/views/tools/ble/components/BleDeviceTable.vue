@@ -8,10 +8,12 @@
     :scroll="{ y: tableHeight }"
     :data-source="devices"
     :columns="columns"
-    :locale="{ emptyText: emptyText }"
     :expanded-row-keys="expandedKeys"
     @expand="onExpand"
   >
+    <template #emptyText>
+      <PlaceholderHint :text="emptyText" />
+    </template>
     <template #bodyCell="{ column, record }">
       <template v-if="column.key === 'rssi'">
         <span class="rssi-text" :style="{ color: rssiColor(record.rssi) }">
@@ -93,6 +95,7 @@
 import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import type { BleDeviceRecord } from "../types";
+import PlaceholderHint from "@/components/PlaceholderHint.vue";
 import {
   bytesToHex,
   displayName,

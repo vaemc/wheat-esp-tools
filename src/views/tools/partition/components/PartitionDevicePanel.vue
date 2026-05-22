@@ -55,8 +55,11 @@
         :scroll="{ y: 280 }"
         :data-source="result?.rows ?? []"
         :columns="columns"
-        :locale="{ emptyText: $t('partition.emptyDevicePreview') }"
-      />
+      >
+        <template #emptyText>
+          <PlaceholderHint :text="$t('partition.emptyDevicePreview')" />
+        </template>
+      </a-table>
     </section>
   </div>
 </template>
@@ -65,6 +68,7 @@ import { ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { message } from "ant-design-vue";
 import PartitionCharts from "@/components/PartitionCharts.vue";
+import PlaceholderHint from "@/components/PlaceholderHint.vue";
 import { usePartitionFromDevice } from "../composables/usePartitionFromDevice";
 import { usePartitionColumns } from "../composables/usePartitionColumns";
 
