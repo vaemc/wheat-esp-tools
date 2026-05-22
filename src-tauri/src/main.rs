@@ -2,8 +2,8 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 use btleplug::api::Peripheral;
-use btleplug::api::{bleuuid::BleUuid, Central, CentralEvent, Manager as _, ScanFilter};
-use btleplug::platform::{Adapter, Manager};
+use btleplug::api::{Central, CentralEvent, Manager as _, ScanFilter};
+use btleplug::platform::{Adapter, Manager, PeripheralId};
 use futures::stream::StreamExt;
 use serialport::available_ports;
 use std::collections::HashMap;
@@ -92,6 +92,43 @@ async fn get_central(manager: &Manager) -> Adapter {
     adapters.into_iter().nth(0).unwrap()
 }
 
+async fn emit_ble_device(
+    window: &tauri::Window,
+    central: &Adapter,
+    id: &PeripheralId,
+) {
+    let Ok(peripheral) = central.peripheral(id).await else {
+        return;
+    };
+    let Ok(Some(props)) = peripheral.properties().await else {
+        return;
+    };
+
+    let mr = BleDevice {
+        address: props.address.to_string(),
+        local_name: props.local_name.unwrap_or_default(),
+        rssi: props.rssi.unwrap_or(0),
+        manufacturer_data: props.manufacturer_data,
+        services: props.services.iter().map(|x| x.to_string()).collect(),
+        service_data: props
+            .service_data
+            .iter()
+            .map(|(uuid, data)| (uuid.to_string(), data.clone()))
+            .collect(),
+        adv: props
+            .service_data
+            .values()
+            .flatten()
+            .cloned()
+            .collect(),
+    };
+
+    let _ = window.emit(
+        "ble_advertisement_scan_event",
+        serde_json::to_string(&mr).unwrap(),
+    );
+}
+
 #[tauri::command]
 async fn start_ble_advertisement_scan(window: tauri::Window) {
     let (tx, rx) = mpsc::channel();
@@ -129,64 +166,14 @@ async fn start_ble_advertisement_scan(window: tauri::Window) {
             Err(TryRecvError::Empty) => {}
         }
         match event {
-            CentralEvent::DeviceDiscovered(_id) => {
-                // println!("DeviceDiscovered: {:?}", id);
+            CentralEvent::DeviceDiscovered(id)
+            | CentralEvent::ManufacturerDataAdvertisement { id, .. }
+            | CentralEvent::ServicesAdvertisement { id, .. }
+            | CentralEvent::ServiceDataAdvertisement { id, .. } => {
+                emit_ble_device(&window, &central, &id).await;
             }
-            CentralEvent::DeviceConnected(_id) => {
-                // println!("DeviceConnected: {:?}", id);
-            }
-            CentralEvent::DeviceDisconnected(_id) => {
-                // println!("DeviceDisconnected: {:?}", id);
-            }
-            CentralEvent::ManufacturerDataAdvertisement {
-                id,
-                manufacturer_data:_,
-            } => {
-                // println!(
-                //     "ManufacturerDataAdvertisement: {:?}, {:?}",
-                //     id, manufacturer_data
-                // );
-
-                let peripheral = central.peripheral(&id).await;
-                match peripheral {
-                    Ok(peripheral) => {
-                        let device = peripheral.properties().await.unwrap().expect("error");
-                        let mr = BleDevice {
-                            address: device.address.to_string(),
-                            local_name: device.local_name.unwrap_or(String::from("")),
-                            rssi: device.rssi.unwrap(),
-                            manufacturer_data: device.manufacturer_data,
-                            services: device.services.iter().map(|x| x.to_string()).collect(),
-                            service_data: device
-                                .service_data
-                                .iter()
-                                .map(|(x, y)| (x.to_string(), y.clone()))
-                                .collect(),
-                            adv: device
-                                .service_data
-                                .iter()
-                                .flat_map(|x| x.1.clone())
-                                .collect(),
-                        };
-
-                        window
-                            .emit(
-                                "ble_advertisement_scan_event",
-                                serde_json::to_string(&mr).unwrap(),
-                            )
-                            .unwrap();
-                    }
-                    Err(_) => {}
-                }
-            }
-            CentralEvent::ServiceDataAdvertisement { id:_, service_data:_ } => {
-                // println!("ServiceDataAdvertisement: {:?}, {:?}", id, service_data);
-            }
-            CentralEvent::ServicesAdvertisement { id:_, services } => {
-                let _services: Vec<String> =
-                    services.into_iter().map(|s| s.to_short_string()).collect();
-                // println!("ServicesAdvertisement: {:?}, {:?}", id, services);
-            }
+            CentralEvent::DeviceConnected(_id) => {}
+            CentralEvent::DeviceDisconnected(_id) => {}
             _ => {}
         }
 
@@ -251,11 +238,6 @@ fn main() {
         if !Path::new(item).exists() {
             fs::create_dir(item).unwrap();
         }
-    }
-
-    if !Path::new("chip.list.json").exists() {
-        let data ="[\"ESP32\",\"ESP32C2\",\"ESP32C3\",\"ESP32C6\",\"ESP32S2\",\"ESP32S3\",\"ESP32H2\",\"ESP8266\"]";
-        fs::write("chip.list.json", data).unwrap();
     }
 
     tauri::Builder::default()

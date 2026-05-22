@@ -8,16 +8,6 @@ export const layoutChildren: RouteRecordRaw[] = [
     redirect: { name: "flash" },
   },
   {
-    path: "home",
-    name: "home",
-    component: () => import("@/views/home/index.vue"),
-    meta: {
-      icon: "🏠",
-      titleKey: "menu.home",
-      menu: false,
-    },
-  },
-  {
     path: "tools/flash",
     name: "flash",
     component: () => import("@/views/tools/flash/index.vue"),

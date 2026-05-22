@@ -31,7 +31,7 @@
         </div>
       </div>
       <div class="toolbar-actions">
-        <a-button danger size="small" @click="eraseFlash">
+        <a-button  size="small" @click="eraseFlash">
           {{ $t("flash.eraseAllFlash") }}
         </a-button>
         <a-button size="small" @click="readFlash">
@@ -352,11 +352,16 @@ const flashFirmwareBtn = async (item: Firmware) => {
   await resultPromise;
 };
 
-const chipTypeList = ref(
-  (await getChipTypeList()).map((item: string) => {
-    return { label: item, value: item };
-  }),
-);
+const chipTypeList = ref<{ label: string; value: string }[]>([]);
+
+try {
+  chipTypeList.value = (await getChipTypeList()).map((item: string) => ({
+    label: item,
+    value: item,
+  }));
+} catch {
+  message.error(i18n.global.t("flash.chipListFailed"));
+}
 
 const uploadHandle = async (paths: string | string[]) => {
   const filename = paths[0].replace(/^.*[\\/]/, "");

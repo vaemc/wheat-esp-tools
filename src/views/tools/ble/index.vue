@@ -1,216 +1,113 @@
 <template>
-  <a-row>
-    <a-col :span="16">
-      <div style="height: calc(100vh - 160px); overflow: auto">
-        <a-list size="small" item-layout="horizontal" :data-source="data">
-          <template #renderItem="{ item }">
-            <a-list-item>
-              <template #actions>
-                <p style="color: white">{{ item.rssi }} dBm</p>
-              </template>
-              <template #extra>
-                <div style="width: 80px">
-                  <a-progress
-                    :percent="100 - (moment().unix() - item.time) * 10"
-                    :size="10"
-                    :showInfo="false"
-                  />
-                </div>
-              </template>
-              <a-list-item-meta>
-                <template #title>
-                  <p v-copy>{{ item.local_name }}</p>
-                </template>
-                <template #avatar> </template>
-                <template #description>
-                  <p v-copy>{{ item.address }}</p>
-
-                  <a-tag
-                    style="margin-bottom: 3px"
-                    v-if="item.services.length != 0"
-                    color="blue"
-                    v-for="service in item.services"
-                    v-copy
-                    >{{ service }}</a-tag
-                  >
-
-                  <a-tag
-                    style="margin-bottom: 3px"
-                    v-if="item.adv.length != 0"
-                    color="cyan"
-                    v-copy
-                    >{{
-                      item.adv
-                        .map((x: number) => x.toString(16).padStart(2, "0"))
-                        .join(" ")
-                        .toUpperCase()
-                    }}</a-tag
-                  >
-                  <a-tag
-                    style="margin-bottom: 3px"
-                    v-if="Object.keys(item.manufacturer_data).length != 0"
-                    color="cyan"
-                    v-copy
-                    >{{
-                      Object.keys(item.manufacturer_data)
-                        .map((x: any) => {
-                          return item.manufacturer_data[x]
-                            .map((x: number) => x.toString(16).padStart(2, "0"))
-                            .join(" ")
-                            .toUpperCase();
-                        })
-                        .join("")
-                    }}</a-tag
-                  >
-                </template>
-              </a-list-item-meta>
-            </a-list-item>
-          </template>
-        </a-list>
-      </div></a-col
-    >
-    <a-col :span="8">
-      <div style="margin: 5px">
-        <a-button
-          style="margin-bottom: 5px"
-          type="primary"
-          @click="scan"
-          :danger="scanState"
-          block
-          >{{ scanBtnText }}</a-button
-        >
-        <a-card size="small" :title="$t('ble.filter')" style="margin-bottom: 5px">
-          <a-input
-            style="margin-bottom: 5px"
-            v-model:value="filter.name"
-            :addon-before="$t('ble.name')"
-          />
-          <a-input
-            style="margin-bottom: 5px"
-            v-model:value="filter.address"
-            addon-before="MAC"
-          />
-          <a-input
-            style="margin-bottom: 5px"
-            v-model:value="filter.adv"
-            :addon-before="$t('ble.advertising')"
-          />
-          <a-input
-            style="margin-bottom: 5px"
-            v-model:value="filter.uuid"
-            addon-before="UUID"
-          />
-          <a-input-number
-            prefix="-"
-            addon-before="RSSI"
-            :min="1"
-            :max="100"
-            style="width: 100%"
-            v-model:value="filter.rssi"
-          />
-          <a-slider
-            style="margin-bottom: 5px"
-            v-model:value="filter.rssi"
-            :min="0"
-            :max="100"
-            tooltipPlacement="bottom"
-            :tipFormatter="
-              (x:number) => {
-                return '-' + x;
-              }
-            "
-          />
-
-          <a-button type="primary" @click="reset" block>{{
-            i18n.global.t("ble.reset")
-          }}</a-button>
-        </a-card>
+  <div class="ble-page">
+    <section class="ble-toolbar panel">
+      <a-button
+        type="primary"
+        :danger="scanning"
+        :loading="false"
+        @click="toggleScan"
+      >
+        {{ scanning ? $t("ble.stopScanning") : $t("ble.startScanning") }}
+      </a-button>
+      <a-button :disabled="scanning" @click="clearDevices">
+        {{ $t("ble.clearList") }}
+      </a-button>
+      <div class="stats">
+        <a-tag color="processing" v-if="scanning">{{ $t("ble.scanning") }}</a-tag>
+        <span class="stat-item">
+          {{ $t("ble.deviceCount", { total: stats.total, visible: stats.visible }) }}
+        </span>
+        <span v-if="stats.strongest != null" class="stat-item">
+          {{ $t("ble.strongest") }}: {{ stats.strongest }} dBm
+        </span>
       </div>
-    </a-col>
-  </a-row>
+    </section>
+
+    <a-row :gutter="16" class="ble-body">
+      <a-col :xs="24" :lg="17">
+        <section class="ble-list panel">
+          <BleDeviceTable
+            :devices="filteredDevices"
+            :empty-text="emptyText"
+            :table-height="tableHeight"
+          />
+        </section>
+      </a-col>
+      <a-col :xs="24" :lg="7">
+        <BleFilterPanel :filter="filter" :reset-filter="resetFilter" />
+      </a-col>
+    </a-row>
+  </div>
 </template>
 <script setup lang="ts">
-import { reactive, ref } from "vue";
-import { listen } from "@tauri-apps/api/event";
-import { invoke } from "@tauri-apps/api/tauri";
-import { appWindow } from "@tauri-apps/api/window";
-import moment from "moment";
-import i18n from "@/locales/i18n";
-const data = ref([] as any);
-const scanBtnText = ref(i18n.global.t("ble.startScanning"));
-const scanState = ref(false);
-const filter = reactive({
-  name: "",
-  address: "",
-  adv: "",
-  uuid: "",
-  rssi: 100,
+import { computed, onMounted } from "vue";
+import { useI18n } from "vue-i18n";
+import BleDeviceTable from "./components/BleDeviceTable.vue";
+import BleFilterPanel from "./components/BleFilterPanel.vue";
+import { useBleScanner } from "./composables/useBleScanner";
+
+const { t } = useI18n();
+
+const {
+  scanning,
+  filter,
+  filteredDevices,
+  stats,
+  resetFilter,
+  clearDevices,
+  toggleScan,
+  setupListener,
+} = useBleScanner();
+
+const tableHeight = 480;
+
+const emptyText = computed(() =>
+  scanning.value ? t("ble.emptyScanning") : t("ble.emptyIdle")
+);
+
+onMounted(() => {
+  setupListener();
 });
-
-let timer = {} as NodeJS.Timer;
-
-await listen("ble_advertisement_scan_event", (event: any) => {
-  let peripheral = JSON.parse(event.payload);
-  console.log(peripheral);
-  if (!peripheral.local_name.includes(filter.name)) {
-    return;
-  }
-
-  if (!peripheral.address.includes(filter.address)) {
-    return;
-  }
-
-  if (
-    peripheral.services.filter((x: string) => x.includes(filter.uuid)).length ==
-      0 &&
-    filter.uuid != ""
-  ) {
-    return;
-  }
-
-  if (!(peripheral.rssi >= -filter.rssi)) {
-    return;
-  }
-
-  let ble = data.value.find((x: any) => x.address == peripheral.address);
-  if (ble == undefined) {
-    peripheral.time = moment().unix();
-    data.value.push(peripheral);
-  } else {
-    data.value.map((item: any) => {
-      if (item.address === peripheral.address) {
-        item.rssi = peripheral.rssi;
-        item.manufacturer_data = peripheral.manufacturer_data;
-        item.time = moment().unix();
-      }
-    });
-  }
-});
-
-const reset = () => {
-  filter.name = "";
-  filter.address = "";
-  filter.adv = "";
-  filter.uuid = "";
-  filter.rssi = 100;
-};
-
-const scan = async () => {
-  if (scanState.value) {
-    scanBtnText.value = i18n.global.t("ble.startScanning");
-    scanState.value = false;
-    appWindow.emit("stop_ble_advertisement_scan", {});
-    clearInterval(timer);
-  } else {
-    data.value = [];
-    scanBtnText.value = i18n.global.t("ble.stopScanning");
-    scanState.value = true;
-    timer = setInterval(() => {
-      data.value = data.value.filter(
-        (x: any) => moment().unix() - x.time <= 10
-      );
-    }, 1000);
-    await invoke("start_ble_advertisement_scan", {});
-  }
-};
 </script>
+<style scoped>
+.ble-page {
+  padding: 12px 16px;
+}
+.panel {
+  margin-bottom: 12px;
+}
+.ble-toolbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px 12px;
+  padding: 10px 14px;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+}
+.stats {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-left: auto;
+}
+.stat-item {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.55);
+}
+.ble-list {
+  padding: 0;
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+}
+.ble-list :deep(.ble-table) {
+  padding: 4px 6px;
+}
+.ble-body {
+  margin-top: 0;
+}
+</style>

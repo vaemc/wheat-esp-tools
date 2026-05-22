@@ -14,10 +14,6 @@ const app = createApp(App);
 import "./assets/css/style.css";
 
 
-app.directive("copy", (el, binding) => {
-  el.addEventListener("click", () => {
-    toClipboard(el.textContent);
-  });
-});
+
 
 app.use(router).use(pinia).use(i18n).use(Antd).mount("#app");

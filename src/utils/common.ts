@@ -9,6 +9,11 @@ import {
 import { save } from "@tauri-apps/api/dialog";
 import { FileInfo, Firmware } from "@/model/model";
 import prettyBytes from "pretty-bytes";
+import {
+  isPlausibleChipList,
+  parseChipTypesFromEsptoolOutput,
+  runEsptoolChipListProbe,
+} from "@/utils/esptoolChip";
 
 export async function saveFileDialog() {
   const filePath = await save({
@@ -35,11 +40,26 @@ export async function writeAllText(path: string, text: string) {
   return await writeTextFile(path, text);
 }
 
-export async function getChipTypeList() {
-  let jsonData = JSON.parse(
-    await readTextFile((await getCurrentDir()) + "\\chip.list.json")
-  );
-  return jsonData;
+let cachedChipTypes: string[] | null = null;
+
+/** 通过 esptool --chip q 报错信息解析当前版本支持的芯片（大写，如 ESP32S3） */
+export async function getChipTypeList(): Promise<string[]> {
+  if (cachedChipTypes && isPlausibleChipList(cachedChipTypes)) {
+    return cachedChipTypes;
+  }
+
+  const output = await runEsptoolChipListProbe();
+  const chips = parseChipTypesFromEsptoolOutput(output);
+
+  if (!isPlausibleChipList(chips)) {
+    cachedChipTypes = null;
+    throw new Error(
+      `Failed to parse chip list from esptool (${chips.length} chips)`
+    );
+  }
+
+  cachedChipTypes = chips;
+  return chips;
 }
 
 export async function getFirmwareList() {
