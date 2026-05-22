@@ -4,6 +4,8 @@ const messages = {
   zh: {
     common: {
       language: "语言",
+      copied: "已复制",
+      copyFailed: "复制失败",
     },
     device: {
       selectPort: "选择串口",
@@ -182,6 +184,8 @@ const messages = {
   en: {
     common: {
       language: "Language",
+      copied: "Copied",
+      copyFailed: "Copy failed",
     },
     device: {
       selectPort: "Serial port",

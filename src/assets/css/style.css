@@ -38,3 +38,7 @@ body,
 .ant-table-placeholder .ant-empty-image {
   display: none;
 }
+
+.copyable {
+  cursor: pointer;
+}

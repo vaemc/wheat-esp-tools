@@ -68,6 +68,16 @@
         <template #emptyText>
           <PlaceholderHint :text="$t('nvs.emptyList')" />
         </template>
+        <template #bodyCell="{ column, text }">
+          <span
+            v-if="copyableKeys.has(column.key as string)"
+            v-copy="text"
+            class="nvs-copy-cell"
+            :title="String(text ?? '')"
+          >
+            {{ text }}
+          </span>
+        </template>
       </a-table>
     </section>
   </div>
@@ -114,6 +124,8 @@ const filteredRows = computed(() => {
       r.value.toLowerCase().includes(q)
   );
 });
+
+const copyableKeys = new Set(["namespace", "key", "value_type", "value"]);
 
 const columns = computed(() => [
   {
@@ -232,5 +244,15 @@ async function onOpenFile() {
   margin: 0 0 8px;
   font-size: 12px;
   color: #52c41a;
+}
+.nvs-copy-cell {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.nvs-copy-cell:hover {
+  color: rgba(255, 255, 255, 0.95);
 }
 </style>
