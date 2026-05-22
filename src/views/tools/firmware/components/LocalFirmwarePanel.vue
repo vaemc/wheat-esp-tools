@@ -12,11 +12,6 @@
       </a-button>
     </header>
     <p class="panel-hint">{{ $t("firmware.localHint") }}</p>
-    <FlashOptionsBar
-      v-model:baud-rate="baudRate"
-      v-model:spi-mode="spiMode"
-      v-model:erase-before-flash="eraseBeforeFlash"
-    />
     <a-input-search
       v-model:value="keyword"
       :placeholder="$t('firmware.search')"
@@ -55,14 +50,14 @@
               </template>
             </a-list-item-meta>
             <template #actions>
-              <a-button
-                type="link"
-                size="small"
+              <QuickFlashButton
+                :path="item.path"
                 :loading="flashingPath === item.path"
-                @click="onQuickFlash(item.path)"
-              >
-                {{ $t("firmware.quickFlash") }}
-              </a-button>
+                v-model:baud-rate="baudRate"
+                v-model:spi-mode="spiMode"
+                v-model:erase-before-flash="eraseBeforeFlash"
+                @flash="onQuickFlash"
+              />
               <a-button
                 type="link"
                 size="small"
@@ -90,7 +85,7 @@ import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { message } from "ant-design-vue";
 import { openDirectoryInExplorer, openFileInExplorer } from "@/utils/common";
-import FlashOptionsBar from "./FlashOptionsBar.vue";
+import QuickFlashButton from "./QuickFlashButton.vue";
 import { useFlashOptions } from "@/composables/useFlashOptions";
 import { useLocalFirmware } from "../composables/useLocalFirmware";
 import { useQuickFlash } from "../composables/useQuickFlash";
