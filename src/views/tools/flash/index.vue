@@ -8,71 +8,43 @@
         <div class="toolbar-field">
           <a-tooltip>
             <template #title>{{ $t("flash.baudRate") }}</template>
-            <a-auto-complete
-              v-model:value="selectedBaud"
-              size="small"
-              class="toolbar-input"
-              :placeholder="$t('flash.baudRate')"
-              :options="baudOptions"
-            />
+            <a-auto-complete v-model:value="selectedBaud" class="toolbar-input" :placeholder="$t('flash.baudRate')"
+              :options="baudOptions" />
           </a-tooltip>
         </div>
         <div class="toolbar-field">
           <a-tooltip>
             <template #title>{{ $t("flash.mergeInfo") }}</template>
-            <a-select
-              v-model:value="selectedChipType"
-              size="small"
-              class="toolbar-input"
-              :placeholder="$t('flash.chipType')"
-              :options="chipTypeList"
-            />
+            <a-select v-model:value="selectedChipType" class="toolbar-input" :placeholder="$t('flash.chipType')"
+              :options="chipTypeList" />
           </a-tooltip>
         </div>
       </div>
       <div class="toolbar-actions">
-        <a-button  size="small" @click="eraseFlash">
+        <a-button @click="eraseFlash">
           {{ $t("flash.eraseAllFlash") }}
         </a-button>
-        <a-button size="small" @click="readFlash">
+        <a-button @click="readFlash">
           {{ $t("flash.readFlash") }}
         </a-button>
       </div>
     </section>
 
     <div ref="target">
-      <Upload
-        :title="$t('flash.dropTitle')"
-        :subtitle="$t('flash.dropSubtitle')"
-        @open="uploadHandle"
-        @drop="uploadHandle"
-        :isDirectory="false"
-        :isMultiple="true"
-      />
+      <Upload :title="$t('flash.dropTitle')" :subtitle="$t('flash.dropSubtitle')" @open="uploadHandle"
+        @drop="uploadHandle" :isDirectory="false" :isMultiple="true" />
     </div>
-    <a-table
-      style="margin: 5px 0"
-      :bordered="true"
-      :pagination="false"
-      :dataSource="firmwareList"
-      :columns="columns"
-      size="small"
-      class="scroll"
-    >
+    <a-table style="margin: 5px 0" :bordered="true" :pagination="false" :dataSource="firmwareList" :columns="columns"
+      size="small" class="scroll">
       <template #headerCell="{ column }">
         <template v-if="column.key === 'check'">
-          <a-checkbox
-            v-model:checked="flashCheckOption.selectAll"
-            :indeterminate="flashCheckOption.indeterminate"
-            @change="flashCheckAllChange"
-          ></a-checkbox>
+          <a-checkbox v-model:checked="flashCheckOption.selectAll" :indeterminate="flashCheckOption.indeterminate"
+            @change="flashCheckAllChange"></a-checkbox>
         </template>
       </template>
       <template #bodyCell="{ column, record }">
         <template v-if="column.key === 'check'">
-          <a-checkbox
-            v-model:checked="record.check"
-          ></a-checkbox>
+          <a-checkbox v-model:checked="record.check"></a-checkbox>
         </template>
         <template v-if="column.key === 'address'">
           <a-input :bordered="false" v-model:value="record.address" />
@@ -87,19 +59,15 @@
       <template #title>{{ $t("flash.eraseFlashInfo") }}</template>
       <a-checkbox v-model:checked="eraseChecked">{{
         $t("flash.eraseFlash")
-      }}</a-checkbox></a-tooltip
-    >
+      }}</a-checkbox></a-tooltip>
     <a-row :gutter="16">
       <a-col :span="12">
         <a-button type="primary" @click="handle(flash)" block>{{
           $t("flash.flash")
-        }}</a-button></a-col
-      >
-      <a-col :span="12"
-        ><a-button type="primary" @click="handle(merge)" block>
+        }}</a-button></a-col>
+      <a-col :span="12"><a-button type="primary" @click="handle(merge)" block>
           {{ $t("flash.merge") }}
-        </a-button></a-col
-      >
+        </a-button></a-col>
     </a-row>
   </div>
 </template>
@@ -182,7 +150,7 @@ if (firmwareList.value.length > 0) {
 }
 
 watch(
-  () => firmwareList.value.map((i) => i.check), 
+  () => firmwareList.value.map((i) => i.check),
   (checks) => {
     const checkedCount = checks.filter(Boolean).length;
     const total = checks.length;
@@ -204,7 +172,7 @@ watch(
       flashCheckOption.value.indeterminate = true;
     }
   },
-  { immediate: true }, 
+  { immediate: true },
 );
 
 const flash = async () => {
@@ -246,9 +214,8 @@ const merge = async () => {
     return;
   }
 
-  let filename = `${currentDir}\\firmware\\${
-    selectedChipType.value
-  }-merge-bin-${moment().format("YYYYMMDDHHmmss")}.bin`;
+  let filename = `${currentDir}\\firmware\\${selectedChipType.value
+    }-merge-bin-${moment().format("YYYYMMDDHHmmss")}.bin`;
 
   let cmd = [
     "--chip",
@@ -436,6 +403,7 @@ const flashCheckAllChange = () => {
 .flash-page {
   padding: 10px;
 }
+
 .flash-toolbar {
   display: flex;
   align-items: flex-end;
@@ -448,6 +416,7 @@ const flashCheckAllChange = () => {
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 6px;
 }
+
 .toolbar-options {
   display: flex;
   align-items: flex-end;
@@ -456,16 +425,20 @@ const flashCheckAllChange = () => {
   flex: 1;
   min-width: 280px;
 }
+
 .toolbar-field {
   min-width: 120px;
 }
+
 .toolbar-field--spi {
   min-width: 140px;
 }
+
 .toolbar-input {
   width: 100%;
   min-width: 120px;
 }
+
 .toolbar-actions {
   display: flex;
   align-items: center;
