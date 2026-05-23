@@ -310,7 +310,7 @@ Backups are saved to the app's `nvs/` folder.
 
 The bottom xterm panel shows:
 
-- Real-time stdout from esptool / gen_esp32part
+- Real-time stdout from esptool
 - Progress bar during flash/read operations
 - Timestamped command logs for troubleshooting
 

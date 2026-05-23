@@ -176,14 +176,7 @@ async fn start_ble_advertisement_scan(window: tauri::Window) {
             CentralEvent::DeviceDisconnected(_id) => {}
             _ => {}
         }
-
-        // thread::sleep(Duration::from_millis(100));
     }
-}
-
-#[tauri::command]
-fn greet(name: &str) -> String {
-    format!("Hello, {}! You've been greeted from Rust!", name)
 }
 
 #[tauri::command]
@@ -247,7 +240,6 @@ fn main() {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
-            greet,
             get_serial_port_list,
             get_current_dir,
             open_file_in_explorer,

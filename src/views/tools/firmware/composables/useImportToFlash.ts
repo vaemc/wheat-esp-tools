@@ -12,7 +12,7 @@ export function useImportToFlash() {
   const router = useRouter();
   const store = useToolsStore();
 
-  async function importConfig(path: string): Promise<boolean> {
+  async function applyFlashConfig(path: string): Promise<boolean> {
     const filename = basename(path);
     let config;
 
@@ -34,10 +34,17 @@ export function useImportToFlash() {
       })
     );
 
-    store.selectedKeys = ["flash"];
-    await router.push({ name: "flash" });
     return true;
   }
 
-  return { importConfig };
+  async function importConfig(path: string): Promise<boolean> {
+    const ok = await applyFlashConfig(path);
+    if (ok) {
+      store.selectedKeys = ["flash"];
+      await router.push({ name: "flash" });
+    }
+    return ok;
+  }
+
+  return { applyFlashConfig, importConfig };
 }

@@ -1,11 +1,11 @@
 import { Command } from "@tauri-apps/api/shell";
-import { write, writeln } from "@/bus/terminal";
+import { writeln } from "@/bus/terminal";
 
 import mitt from "mitt";
 const emitter = mitt();
 export default emitter;
 
-export function execute(name:string,cmd: string[]) {
+export function execute(name: string, cmd: string[]) {
   cmd = cmd.filter((x: string) => x != "");
   let command = Command.sidecar(`bin/${name}`, cmd as string[]);
   command.on("close", (data) => {
@@ -22,5 +22,5 @@ export function execute(name:string,cmd: string[]) {
     writeln(line);
     emitter.emit("stderr", line);
   });
-  const child = command.spawn();
+  command.spawn();
 }

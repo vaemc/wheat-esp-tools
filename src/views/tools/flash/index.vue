@@ -8,15 +8,23 @@
         <div class="toolbar-field">
           <a-tooltip>
             <template #title>{{ $t("flash.baudRate") }}</template>
-            <a-auto-complete v-model:value="selectedBaud" class="toolbar-input" :placeholder="$t('flash.baudRate')"
-              :options="baudOptions" />
+            <a-auto-complete
+              v-model:value="selectedBaud"
+              class="toolbar-input"
+              :placeholder="$t('flash.baudRate')"
+              :options="baudOptions"
+            />
           </a-tooltip>
         </div>
         <div class="toolbar-field">
           <a-tooltip>
             <template #title>{{ $t("flash.mergeInfo") }}</template>
-            <a-select v-model:value="selectedChipType" class="toolbar-input" :placeholder="$t('flash.chipType')"
-              :options="chipTypeList" />
+            <a-select
+              v-model:value="selectedChipType"
+              class="toolbar-input"
+              :placeholder="$t('flash.chipType')"
+              :options="chipTypeList"
+            />
           </a-tooltip>
         </div>
       </div>
@@ -30,21 +38,35 @@
       </div>
     </section>
 
-    <div ref="target">
-      <Upload :title="$t('flash.dropTitle')" :subtitle="$t('flash.dropSubtitle')" @open="uploadHandle"
-        @drop="uploadHandle" :isDirectory="false" :isMultiple="true" />
-    </div>
-    <a-table style="margin: 5px 0" :bordered="true" :pagination="false" :dataSource="firmwareList" :columns="columns"
-      size="small" class="scroll">
+    <Upload
+      :title="$t('flash.dropTitle')"
+      :subtitle="$t('flash.dropSubtitle')"
+      @open="uploadHandle"
+      @drop="uploadHandle"
+      :isDirectory="false"
+      :isMultiple="true"
+    />
+    <a-table
+      style="margin: 5px 0"
+      :bordered="true"
+      :pagination="false"
+      :dataSource="firmwareList"
+      :columns="columns"
+      size="small"
+      class="scroll"
+    >
       <template #headerCell="{ column }">
         <template v-if="column.key === 'check'">
-          <a-checkbox v-model:checked="flashCheckOption.selectAll" :indeterminate="flashCheckOption.indeterminate"
-            @change="flashCheckAllChange"></a-checkbox>
+          <a-checkbox
+            v-model:checked="flashCheckOption.selectAll"
+            :indeterminate="flashCheckOption.indeterminate"
+            @change="flashCheckAllChange"
+          />
         </template>
       </template>
       <template #bodyCell="{ column, record }">
         <template v-if="column.key === 'check'">
-          <a-checkbox v-model:checked="record.check"></a-checkbox>
+          <a-checkbox v-model:checked="record.check" />
         </template>
         <template v-if="column.key === 'address'">
           <a-input :bordered="false" v-model:value="record.address" />
@@ -57,17 +79,21 @@
     </a-table>
     <a-tooltip>
       <template #title>{{ $t("flash.eraseFlashInfo") }}</template>
-      <a-checkbox v-model:checked="eraseChecked">{{
-        $t("flash.eraseFlash")
-      }}</a-checkbox></a-tooltip>
+      <a-checkbox v-model:checked="eraseChecked">
+        {{ $t("flash.eraseFlash") }}
+      </a-checkbox>
+    </a-tooltip>
     <a-row :gutter="16">
       <a-col :span="12">
-        <a-button type="primary" @click="handle(flash)" block>{{
-          $t("flash.flash")
-        }}</a-button></a-col>
-      <a-col :span="12"><a-button type="primary" @click="handle(merge)" block>
+        <a-button type="primary" @click="handle(flash)" block>
+          {{ $t("flash.flash") }}
+        </a-button>
+      </a-col>
+      <a-col :span="12">
+        <a-button type="primary" @click="handle(merge)" block>
           {{ $t("flash.merge") }}
-        </a-button></a-col>
+        </a-button>
+      </a-col>
     </a-row>
   </div>
 </template>
@@ -75,44 +101,38 @@
 import { ref, watch } from "vue";
 import SPIMode from "@/components/SPIMode.vue";
 import Upload from "@/components/Upload.vue";
-import db from "@/db/db";
 import { Firmware } from "@/model/model";
-import cli, { execute } from "@/utils/cli";
 import i18n from "@/locales/i18n";
-
 import {
   getChipTypeList,
   getCurrentDir,
   getFileInfo,
-  getIDFArgsConfig,
-  getPlatformIOArgsConfig,
   openFileInExplorer,
 } from "@/utils/common";
+import { runEsptool, runEsptoolWithStdout } from "@/utils/esptoolCli";
+import { toBaudSelectOptions } from "@/composables/useFlashOptions";
 import { message } from "ant-design-vue";
 import moment from "moment";
 import prettyBytes from "pretty-bytes";
 import { storeToRefs } from "pinia";
 import { useToolsStore } from "@/stores/Tool";
+import { useHistoryStore } from "@/stores/history";
+import { useImportToFlash } from "@/views/tools/firmware/composables/useImportToFlash";
 import { useFlashQuickActions } from "./composables/useFlashQuickActions";
 
 const store = useToolsStore();
+const historyStore = useHistoryStore();
 const { eraseFlash, readFlash } = useFlashQuickActions();
+const { applyFlashConfig } = useImportToFlash();
 
-const baudOptions = [
-  { value: "115200" },
-  { value: "230400" },
-  { value: "460800" },
-  { value: "921600" },
-  { value: "1152000" },
-  { value: "1500000" },
-];
+const baudOptions = toBaudSelectOptions();
 const { firmwareList, selectedChipType } = storeToRefs(store);
-const target = ref(null);
 const flashCheckOption = ref({ indeterminate: false, selectAll: false });
 const selectedMode = ref("keep");
 const selectedBaud = ref("1152000");
 const eraseChecked = ref(false);
 const currentDir = await getCurrentDir();
+
 const columns = ref([
   {
     title: i18n.global.t("flash.flash"),
@@ -172,14 +192,22 @@ watch(
       flashCheckOption.value.indeterminate = true;
     }
   },
-  { immediate: true },
+  { immediate: true }
 );
 
-const flash = async () => {
-  const port = localStorage.getItem("port") as string;
-  let cmd = [
+function getPort(): string | null {
+  const port = localStorage.getItem("port");
+  if (!port) {
+    message.warning(i18n.global.t("flash.noPort"));
+    return null;
+  }
+  return port;
+}
+
+function buildWriteFlashArgs(extra: string[]): string[] {
+  return [
     "-p",
-    port,
+    getPort()!,
     "-b",
     selectedBaud.value,
     "--before=default_reset",
@@ -187,25 +215,27 @@ const flash = async () => {
     "write_flash",
     "--flash_mode",
     selectedMode.value,
-    ...firmwareList.value
-      .filter((x) => x.check)
-      .flatMap((x) => [x.address, x.path]),
+    ...extra,
   ];
-  if (eraseChecked.value) {
-    cmd.push("--erase-all");
-  }
-  execute("esptool", cmd);
+}
 
-  const resultPromise = new Promise((resolve, reject) => {
-    cli.on("stdout", (data) => {
-      console.log(data);
-    });
-    cli.on("close", (data) => {
-      console.log(data);
-      cli.all.clear();
-    });
-  });
-  await resultPromise;
+const flash = async () => {
+  const port = getPort();
+  if (!port) {
+    return;
+  }
+
+  const args = buildWriteFlashArgs(
+    firmwareList.value
+      .filter((x) => x.check)
+      .flatMap((x) => [x.address, x.path])
+  );
+
+  if (eraseChecked.value) {
+    args.push("--erase-all");
+  }
+
+  await runEsptool(args);
 };
 
 const merge = async () => {
@@ -214,36 +244,28 @@ const merge = async () => {
     return;
   }
 
-  let filename = `${currentDir}\\firmware\\${selectedChipType.value
-    }-merge-bin-${moment().format("YYYYMMDDHHmmss")}.bin`;
+  const filename = `${currentDir}\\firmware\\${selectedChipType.value}-merge-bin-${moment().format("YYYYMMDDHHmmss")}.bin`;
 
-  let cmd = [
-    "--chip",
-    selectedChipType.value,
-    "merge_bin",
-    "-o",
-    filename,
-    ...firmwareList.value
-      .filter((x) => x.check)
-      .flatMap((x) => [x.address, x.path]),
-  ];
-  execute("esptool", cmd);
-
-  const resultPromise = new Promise((resolve, reject) => {
-    cli.on("stdout", (data) => {
-      if (String(data).includes("ready to flash to offset 0x0")) {
+  await runEsptoolWithStdout(
+    [
+      "--chip",
+      selectedChipType.value,
+      "merge_bin",
+      "-o",
+      filename,
+      ...firmwareList.value
+        .filter((x) => x.check)
+        .flatMap((x) => [x.address, x.path]),
+    ],
+    (line) => {
+      if (line.includes("ready to flash to offset 0x0")) {
         openFileInExplorer(filename);
       }
-    });
-    cli.on("close", (data) => {
-      console.log(data);
-      cli.all.clear();
-    });
-  });
-  await resultPromise;
+    }
+  );
 };
 
-const handle = (fun: Function) => {
+const handle = (action: () => void | Promise<void>) => {
   if (firmwareList.value.length == 0) {
     message.warning(i18n.global.t("flash.dialog.addFirmware"));
     return;
@@ -254,69 +276,42 @@ const handle = (fun: Function) => {
     return;
   }
 
-  if (firmwareList.value.filter((x) => x.address == "").length > 0) {
+  if (firmwareList.value.some((x) => x.address == "")) {
     message.warning(i18n.global.t("flash.dialog.inputAddress"));
     return;
   }
 
-  if (firmwareList.value.filter((x) => x.path == "").length > 0) {
+  if (firmwareList.value.some((x) => x.path == "")) {
     message.warning(i18n.global.t("flash.dialog.inputPath"));
     return;
   }
 
-  fun();
+  void action();
 };
 
 const removeFirmwareBtn = (item: Firmware) => {
   firmwareList.value = firmwareList.value.filter(
-    (x: Firmware) => x.path != item.path,
+    (x: Firmware) => x.path != item.path
   );
 
-  if (firmwareList.value.filter((x) => x.check).length == 0) {
+  const checkedCount = firmwareList.value.filter((x) => x.check).length;
+  const total = firmwareList.value.length;
+
+  if (checkedCount === 0 || total === 0) {
     flashCheckOption.value.indeterminate = false;
     flashCheckOption.value.selectAll = false;
-  }
-
-  if (
-    firmwareList.value.filter((x) => x.check).length ==
-    firmwareList.value.length
-  ) {
+  } else if (checkedCount === total) {
     flashCheckOption.value.selectAll = true;
-    flashCheckOption.value.indeterminate = false;
-  }
-
-  if (firmwareList.value.length == 0) {
-    flashCheckOption.value.selectAll = false;
     flashCheckOption.value.indeterminate = false;
   }
 };
 
 const flashFirmwareBtn = async (item: Firmware) => {
-  const port = localStorage.getItem("port") as string;
-  let cmd = [
-    "-p",
-    port,
-    "-b",
-    selectedBaud.value,
-    "--before=default_reset",
-    "--after=hard_reset",
-    "write_flash",
-    "--flash_mode",
-    selectedMode.value,
-    item.address,
-    item.path,
-  ];
-  execute("esptool", cmd);
-  const resultPromise = new Promise((resolve, reject) => {
-    cli.on("stdout", (data) => {
-      console.log(data);
-    });
-    cli.on("close", (data) => {
-      console.log(data);
-      cli.all.clear();
-    });
-  });
-  await resultPromise;
+  if (!getPort()) {
+    return;
+  }
+
+  await runEsptool(buildWriteFlashArgs([item.address, item.path]));
 };
 
 const chipTypeList = ref<{ label: string; value: string }[]>([]);
@@ -331,72 +326,54 @@ try {
 }
 
 const uploadHandle = async (paths: string | string[]) => {
-  const filename = paths[0].replace(/^.*[\\/]/, "");
-  if (
-    (paths.length == 1 && filename === "flasher_args.json") ||
-    filename === "idedata.json"
-  ) {
-    let config;
-    switch (filename) {
-      case "flasher_args.json":
-        config = await getIDFArgsConfig(paths[0]);
-        firmwareList.value = config.flashFiles;
-        selectedChipType.value = config.chip;
-        db.add("paths", { path: paths[0] });
-        break;
-      case "idedata.json":
-        config = await getPlatformIOArgsConfig(paths[0]);
-        firmwareList.value = config.flashFiles;
-        selectedChipType.value = config.chip;
-        db.add("paths", { path: paths[0] });
-        break;
-    }
-    firmwareList.value.forEach(async (item) => {
-      const fileInfo = await getFileInfo(item.path);
-      item.size = prettyBytes(fileInfo.len);
-    });
+  const pathList = Array.isArray(paths) ? paths : [paths];
+  const filename = pathList[0].replace(/^.*[\\/]/, "");
 
-    if (firmwareList.value.length > 0) {
+  if (
+    pathList.length === 1 &&
+    (filename === "flasher_args.json" || filename === "idedata.json")
+  ) {
+    const ok = await applyFlashConfig(pathList[0]);
+    if (ok) {
+      historyStore.addPath(pathList[0]);
       flashCheckOption.value.selectAll = true;
     }
-  } else {
-    await Promise.all(
-      (paths as string[]).map(async (item) => {
-        const fileInfo = await getFileInfo(item);
-        if (fileInfo.isFile) {
-          let regex = /0x[\da-f]+/gi;
-          let address = item.match(regex);
-          firmwareList.value.push({
-            size: prettyBytes(fileInfo.len),
-            check: true,
-            path: item,
-            address: address == null ? "" : address[0],
-          });
-        }
-      }),
-    );
+    return;
   }
+
+  await Promise.all(
+    pathList.map(async (item) => {
+      const fileInfo = await getFileInfo(item);
+      if (!fileInfo.isFile) {
+        return;
+      }
+
+      const address = item.match(/0x[\da-f]+/gi);
+      firmwareList.value.push({
+        size: prettyBytes(fileInfo.len),
+        check: true,
+        path: item,
+        address: address?.[0] ?? "",
+      });
+    })
+  );
 };
 
 const flashCheckAllChange = () => {
-  if (firmwareList.value.length != 0) {
-    if (
-      firmwareList.value.filter((x) => x.check).length !=
-      firmwareList.value.length
-    ) {
-      flashCheckOption.value.indeterminate = false;
-      firmwareList.value.map((item) => {
-        return (item.check = true);
-      });
-      flashCheckOption.value.selectAll = true;
-    } else {
-      firmwareList.value.map((item) => {
-        return (item.check = false);
-      });
-    }
-  } else {
+  if (firmwareList.value.length === 0) {
     flashCheckOption.value.selectAll = false;
+    return;
   }
+
+  const allChecked =
+    firmwareList.value.filter((x) => x.check).length ===
+    firmwareList.value.length;
+
+  firmwareList.value.forEach((item) => {
+    item.check = !allChecked;
+  });
+  flashCheckOption.value.selectAll = !allChecked;
+  flashCheckOption.value.indeterminate = false;
 };
 </script>
 <style scoped>

@@ -37,8 +37,7 @@
         "sidecar": true,
         "open": true,
         "scope": [
-          { "name": "bin/esptool", "args": true, "sidecar": true },
-          { "name": "bin/gen_esp32part", "args": true, "sidecar": true }
+          { "name": "bin/esptool", "args": true, "sidecar": true }
         ]
       },
       "protocol": {

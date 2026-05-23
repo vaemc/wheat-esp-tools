@@ -1,32 +1,16 @@
 import { invoke } from "@tauri-apps/api/tauri";
 import {
   readTextFile,
-  writeTextFile,
   readDir,
   removeFile as rf,
   FileEntry,
 } from "@tauri-apps/api/fs";
-import { save } from "@tauri-apps/api/dialog";
 import { FileInfo, Firmware } from "@/model/model";
-import prettyBytes from "pretty-bytes";
 import {
   isPlausibleChipList,
   parseChipTypesFromEsptoolOutput,
   runEsptoolChipListProbe,
 } from "@/utils/esptoolChip";
-
-export async function saveFileDialog() {
-  const filePath = await save({
-    filters: [
-      {
-        name: "Bin",
-        extensions: ["bin"],
-      },
-    ],
-  });
-
-  return filePath;
-}
 
 export async function getSerialPortList() {
   return (await invoke("get_serial_port_list")) as string[];
@@ -34,10 +18,6 @@ export async function getSerialPortList() {
 
 export async function getCurrentDir() {
   return await invoke("get_current_dir");
-}
-
-export async function writeAllText(path: string, text: string) {
-  return await writeTextFile(path, text);
 }
 
 let cachedChipTypes: string[] | null = null;
@@ -80,7 +60,7 @@ export async function getIDFArgsConfig(path: string) {
     flashFiles: [] as Firmware[],
   };
 
-  Object.keys(config.flash_files).map(async (item) => {
+  for (const item of Object.keys(config.flash_files)) {
     const fullPath =
       folderPath + "\\" + config.flash_files[item].replace(/\//g, "\\");
     list.flashFiles.push({
@@ -88,7 +68,7 @@ export async function getIDFArgsConfig(path: string) {
       path: fullPath,
       address: item,
     });
-  });
+  }
 
   return list;
 }
@@ -96,11 +76,8 @@ export async function getIDFArgsConfig(path: string) {
 export async function getPlatformIOArgsConfig(path: string) {
   let config = JSON.parse(await readTextFile(path));
   const folderPath = path.substring(0, path.lastIndexOf("\\"));
-  // const regex = /ARDUINO_VARIANT=\\"(.*?)\\"/;
-  // let match = JSON.stringify(config.defines).match(regex)!;
   let list = {
     appName: config.env_name,
-    // chip: match[1].toUpperCase(),
     chip: "",
     flashFiles: [] as Firmware[],
   };

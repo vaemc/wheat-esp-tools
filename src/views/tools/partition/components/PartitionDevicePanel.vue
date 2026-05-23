@@ -69,14 +69,11 @@ import PartitionCharts from "@/components/PartitionCharts.vue";
 import PlaceholderHint from "@/components/PlaceholderHint.vue";
 import { usePartitionFromDevice } from "../composables/usePartitionFromDevice";
 import { usePartitionColumns } from "../composables/usePartitionColumns";
+import { READ_BAUD_RATE_OPTIONS, toBaudSelectOptions } from "@/composables/useFlashOptions";
 
 const { t } = useI18n();
 const baudRate = ref("460800");
-const baudOptions = ["115200", "230400", "460800", "921600"].map((v) => ({
-  label: v,
-  value: v,
-}));
-
+const baudOptions = toBaudSelectOptions(READ_BAUD_RATE_OPTIONS);
 const { loading, partitions, result, readFromDevice } = usePartitionFromDevice();
 const { columns } = usePartitionColumns();
 

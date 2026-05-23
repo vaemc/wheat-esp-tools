@@ -310,7 +310,7 @@ factory,  app,  factory, , 1M,
 
 应用底部集成 xterm 终端，用于：
 
-- 实时显示 esptool / gen_esp32part 命令的标准输出
+- 实时显示 esptool 命令的标准输出
 - 烧录/读取时显示进度条
 - 带时间戳的命令日志，便于排查问题
 

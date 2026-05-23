@@ -32,8 +32,6 @@ const props = defineProps({
 const emit = defineEmits<{
   (e: "open", path: string | string[]): void;
   (e: "drop", path: string | string[]): void;
-  (e: "dropHoverDrop", {}): void;
-  (e: "dropCancelled", {}): void;
 }>();
 const { title, subtitle, isDirectory, isMultiple } = useVModels(props, emit);
 const dropBoxClass = ref("dropBox");
@@ -56,14 +54,12 @@ const drop = await listen("tauri://file-drop", (event: any) => {
   }
 });
 
-const dropHover = await listen("tauri://file-drop-hover", (event: any) => {
+const dropHover = await listen("tauri://file-drop-hover", () => {
   dropBoxClass.value = "dropBoxHover";
-  emit("dropHoverDrop", "ok");
 });
 
 const dropCancelled = await listen("tauri://file-drop-cancelled", () => {
   dropBoxClass.value = "dropBox";
-  emit("dropCancelled", "ok");
 });
 
 onBeforeUnmount(() => {
@@ -82,7 +78,6 @@ onBeforeUnmount(() => {
   flex-direction: column;
   justify-content: center;
   transition: all ease 0.5s;
-  /* transition: 0.5s ease; */
 }
 
 .dropBox:hover {

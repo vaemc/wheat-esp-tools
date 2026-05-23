@@ -87,6 +87,7 @@ import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 import { message } from "ant-design-vue";
 import PlaceholderHint from "@/components/PlaceholderHint.vue";
+import { READ_BAUD_RATE_OPTIONS, toBaudSelectOptions } from "@/composables/useFlashOptions";
 import { useNvsReader } from "./composables/useNvsReader";
 
 const { t } = useI18n();
@@ -103,10 +104,7 @@ const {
   openLocalFile,
 } = useNvsReader();
 
-const baudOptions = ["115200", "230400", "460800", "921600"].map((v) => ({
-  label: v,
-  value: v,
-}));
+const baudOptions = toBaudSelectOptions(READ_BAUD_RATE_OPTIONS);
 
 const filteredRows = computed(() => {
   const q = keyword.value.trim().toLowerCase();

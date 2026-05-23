@@ -15,11 +15,6 @@ export const useDeviceStore = defineStore("device", {
     loadingInfo: false,
   }),
 
-  getters: {
-    hasPort: (s) => Boolean(s.port),
-    hasDeviceInfo: (s) => Boolean(s.deviceInfo.chipType || s.deviceInfo.mac),
-  },
-
   actions: {
     async refreshPortList() {
       this.loadingPorts = true;

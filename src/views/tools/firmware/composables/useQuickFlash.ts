@@ -1,4 +1,4 @@
-import cli, { execute } from "@/utils/cli";
+import { runEsptool } from "@/utils/esptoolCli";
 import type { useFlashOptions } from "@/composables/useFlashOptions";
 
 type FlashOptions = Pick<
@@ -29,14 +29,7 @@ export function useQuickFlash(options: FlashOptions) {
       cmd.push("--erase-all");
     }
 
-    execute("esptool", cmd);
-
-    await new Promise<void>((resolve) => {
-      cli.on("close", () => {
-        cli.all.clear();
-        resolve();
-      });
-    });
+    await runEsptool(cmd);
   }
 
   return { flashFirmware };
