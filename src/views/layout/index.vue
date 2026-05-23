@@ -8,7 +8,7 @@
       <div class="sider-inner">
         <a-menu
           class="sider-menu"
-          v-model:selectedKeys="selectedKeys"
+          :selected-keys="menuSelectedKeys"
           theme="dark"
           mode="inline"
           @click="onMenuClick"
@@ -31,7 +31,7 @@
       </a-layout-header>
       <a-layout-content class="app-main-content">
         <div class="app-main-scroll">
-          <router-view />
+          <router-view :key="route.fullPath" />
         </div>
       </a-layout-content>
       <footer class="app-terminal">
@@ -44,34 +44,27 @@
 import Terminal from "@/components/Terminal.vue";
 import DeviceTopBar from "@/components/DeviceTopBar.vue";
 import LanguageSwitch from "@/components/LanguageSwitch.vue";
-import { computed, watch } from "vue";
+import { computed } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
-import { storeToRefs } from "pinia";
-import { useToolsStore } from "@/stores/Tool";
+import { useMenuNavigation } from "@/composables/useMenuNavigation";
 import { getMenuItems } from "@/router/menu";
 import type { MenuProps } from "ant-design-vue";
 
-const router = useRouter();
 const route = useRoute();
+const router = useRouter();
 const { t } = useI18n();
-const store = useToolsStore();
-const { selectedKeys } = storeToRefs(store);
+const { navigateTo } = useMenuNavigation();
 
 const menuRoutes = computed(() => getMenuItems(router));
 
-watch(
-  () => route.name,
-  (name) => {
-    if (name) {
-      selectedKeys.value = [name];
-    }
-  },
-  { immediate: true }
+/** 菜单选中态仅跟随当前路由 */
+const menuSelectedKeys = computed(() =>
+  route.name ? [String(route.name)] : []
 );
 
 const onMenuClick: MenuProps["onClick"] = ({ key }) => {
-  router.push({ name: String(key) });
+  void navigateTo(String(key));
 };
 </script>
 <style scoped>

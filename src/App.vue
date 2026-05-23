@@ -5,9 +5,7 @@
       algorithm: theme.darkAlgorithm,
     }"
   >
-    <Suspense>
-      <RouterView />
-    </Suspense>
+    <RouterView />
   </a-config-provider>
 </template>
 <script setup lang="ts">

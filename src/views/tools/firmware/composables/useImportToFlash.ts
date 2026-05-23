@@ -40,7 +40,6 @@ export function useImportToFlash() {
   async function importConfig(path: string): Promise<boolean> {
     const ok = await applyFlashConfig(path);
     if (ok) {
-      store.selectedKeys = ["flash"];
       await router.push({ name: "flash" });
     }
     return ok;

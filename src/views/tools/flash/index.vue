@@ -98,7 +98,7 @@
   </div>
 </template>
 <script setup lang="ts">
-import { ref, watch } from "vue";
+import { onMounted, ref, watch } from "vue";
 import SPIMode from "@/components/SPIMode.vue";
 import Upload from "@/components/Upload.vue";
 import { Firmware } from "@/model/model";
@@ -131,7 +131,7 @@ const flashCheckOption = ref({ indeterminate: false, selectAll: false });
 const selectedMode = ref("keep");
 const selectedBaud = ref("1152000");
 const eraseChecked = ref(false);
-const currentDir = await getCurrentDir();
+const currentDir = ref("");
 
 const columns = ref([
   {
@@ -244,7 +244,8 @@ const merge = async () => {
     return;
   }
 
-  const filename = `${currentDir}\\firmware\\${selectedChipType.value}-merge-bin-${moment().format("YYYYMMDDHHmmss")}.bin`;
+  const dir = await ensureCurrentDir();
+  const filename = `${dir}\\firmware\\${selectedChipType.value}-merge-bin-${moment().format("YYYYMMDDHHmmss")}.bin`;
 
   await runEsptoolWithStdout(
     [
@@ -316,14 +317,24 @@ const flashFirmwareBtn = async (item: Firmware) => {
 
 const chipTypeList = ref<{ label: string; value: string }[]>([]);
 
-try {
-  chipTypeList.value = (await getChipTypeList()).map((item: string) => ({
-    label: item,
-    value: item,
-  }));
-} catch {
-  message.error(i18n.global.t("flash.chipListFailed"));
+async function ensureCurrentDir() {
+  if (!currentDir.value) {
+    currentDir.value = await getCurrentDir();
+  }
+  return currentDir.value;
 }
+
+onMounted(async () => {
+  await ensureCurrentDir();
+  try {
+    chipTypeList.value = (await getChipTypeList()).map((item: string) => ({
+      label: item,
+      value: item,
+    }));
+  } catch {
+    message.error(i18n.global.t("flash.chipListFailed"));
+  }
+});
 
 const uploadHandle = async (paths: string | string[]) => {
   const pathList = Array.isArray(paths) ? paths : [paths];
