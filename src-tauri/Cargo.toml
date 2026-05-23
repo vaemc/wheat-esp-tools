@@ -2,8 +2,8 @@
 name = "wheat-esp-tools"
 version = "0.0.1"
 description = "Wheat ESP Tools"
-authors = ["you"]
-license = ""
+authors = ["wheat <vaemc520@qq.com>"]
+license = "MIT"
 repository = ""
 edition = "2021"
 

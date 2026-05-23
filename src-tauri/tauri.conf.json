@@ -47,6 +47,8 @@
       }
     },
     "bundle": {
+      "copyright": "Copyright © 2026 wheat <vaemc520@qq.com>",
+      "publisher": "wheat",
       "windows": {
         "wix": {
           "language": "zh-CN"

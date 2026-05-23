@@ -2,6 +2,7 @@
   "name": "wheat-esp-tools",
   "private": true,
   "version": "0.0.1",
+  "author": "wheat <vaemc520@qq.com>",
   "type": "module",
   "scripts": {
     "dev": "vite",

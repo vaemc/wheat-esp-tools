@@ -21,8 +21,6 @@
       </span>
     </section>
 
-    <p class="panel-hint">{{ $t("partition.deviceHint") }}</p>
-
     <section class="panel">
       <header class="panel-head">
         <span class="panel-title">{{ $t("partition.layout") }}</span>
@@ -157,11 +155,5 @@ async function copyCsv() {
 .panel-meta {
   font-size: 12px;
   color: rgba(255, 255, 255, 0.45);
-}
-.panel-hint {
-  margin: 0 0 12px;
-  font-size: 12px;
-  color: rgba(255, 255, 255, 0.45);
-  line-height: 1.5;
 }
 </style>
