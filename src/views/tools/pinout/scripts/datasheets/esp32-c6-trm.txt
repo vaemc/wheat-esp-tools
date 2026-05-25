@@ -1,0 +1,72 @@
+ESP32-C6 Technical Reference Manual v1.2 — IO MUX / RTC / Analog excerpts
+Source: Espressif esp32-c6_technical_reference_manual_cn.pdf
+        Chapter 7 "IO MUX 与 GPIO 矩阵"
+Tables  7.12-1   IO MUX Pin Functions       (五个备选功能 F0~F4)
+        7.13-1   LP IO MUX Pin Functions    (LP_GPIO0~LP_GPIO7)
+        7.13-2   RTC / Analog Pin Functions (ADC1_CHx, USB_D±)
+
+
+=========================================================================
+Table 7.12-1.  IO MUX Pin Functions
+   GPIO  Function0     Function1  Function2 Function3   Function4    DRV RST  Note
+=========================================================================
+   0   XTAL_32K_P    GPIO0     GPIO0    -        -        2    0    R
+   1   XTAL_32K_N    GPIO1     GPIO1    -        -        2    0    R
+   2   GPIO2         GPIO2     GPIO2    FSPIQ    -        2    1    R
+   3   GPIO3         GPIO3     GPIO3    -        -        2    1    R
+   4   MTMS          MTMS      GPIO4    FSPIHD   -        2    1    R
+   5   MTDI          MTDI      GPIO5    FSPIWP   -        2    1    R
+   6   MTCK          MTCK      GPIO6    FSPICLK  -        2    1    R
+   7   MTDO          MTDO      GPIO7    FSPID    -        2    1    R
+   8   GPIO8         GPIO8     GPIO8    -        -        2    1    -
+   9   GPIO9         GPIO9     GPIO9    -        -        2    3    -
+   10  GPIO10        GPIO10    GPIO10   -        -        2    1    S1
+   11  GPIO11        GPIO11    GPIO11   -        -        2    1    S1
+   12  GPIO12        GPIO12    GPIO12   -        -        3    1    USB
+   13  GPIO13        GPIO13    GPIO13   -        -        3    3    USB
+   14  GPIO14        GPIO14    GPIO14   -        -        2    1    S0
+   15  GPIO15        GPIO15    GPIO15   -        -        2    1    -
+   16  U0TXD         U0TXD     GPIO16   FSPICS0  -        2    4    -
+   17  U0RXD         U0RXD     GPIO17   FSPICS1  -        2    3    -
+   18  SDIO_CMD      SDIO_CMD  GPIO18   FSPICS2  -        2    3    -
+   19  SDIO_CLK      SDIO_CLK  GPIO19   FSPICS3  -        2    3    -
+   20  SDIO_DATA0    SDIO_DATA0 GPIO20  FSPICS4  -        2    3    -
+   21  SDIO_DATA1    SDIO_DATA1 GPIO21  FSPICS5  -        2    3    -
+   22  SDIO_DATA2    SDIO_DATA2 GPIO22  -        -        2    3    -
+   23  SDIO_DATA3    SDIO_DATA3 GPIO23  -        -        2    3    -
+   24  SPICS0        SPICS0    GPIO24   -        -        2    3    S1
+   25  SPIQ          SPIQ      GPIO25   -        -        2    3    S1
+   26  SPIWP         SPIWP     GPIO26   -        -        2    3    S1
+   27  VDD_SPI       GPIO27    GPIO27   -        -        2    0    S1
+   28  SPIHD         SPIHD     GPIO28   -        -        2    3    S1
+   29  SPICLK        SPICLK    GPIO29   -        -        2    3    S1
+   30  SPID          SPID      GPIO30   -        -        2    3    S1
+
+
+=========================================================================
+Table 7.13-1.  LP IO MUX Pin Functions
+   LP_GPIO  GPIO    PinName     Function0    Function1
+=========================================================================
+   0       0       XTAL_32K_P    LP_GPIO0     LP_UART_DTRN
+   1       1       XTAL_32K_N    LP_GPIO1     LP_UART_DSRN
+   2       2       GPIO2         LP_GPIO2     LP_UART_RTSN
+   3       3       GPIO3         LP_GPIO3     LP_UART_CTSN
+   4       4       MTMS          LP_GPIO4     LP_UART_RXD
+   5       5       MTDI          LP_GPIO5     LP_UART_TXD
+   6       6       MTCK          LP_GPIO6     LP_I2C_SDA
+   7       7       MTDO          LP_GPIO7     LP_I2C_SCL
+
+
+=========================================================================
+Table 7.13-2.  RTC / Analog Pin Functions
+   GPIO  Function0     Function1
+=========================================================================
+   0     XTAL_32K_P    ADC1_CH0
+   1     XTAL_32K_N    ADC1_CH1
+   2     GPIO2         ADC1_CH2
+   3     GPIO3         ADC1_CH3
+   4     MTMS          ADC1_CH4
+   5     MTDI          ADC1_CH5
+   6     MTCK          ADC1_CH6
+   12    GPIO12        USB_D-
+   13    GPIO13        USB_D+

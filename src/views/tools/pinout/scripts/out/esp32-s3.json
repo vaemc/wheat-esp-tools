@@ -60,9 +60,25 @@
         "f": "F1",
         "name": "GPIO0",
         "type": "I/O/T"
+      },
+      {
+        "f": "F2",
+        "name": "GPIO0",
+        "type": "I/O/T"
       }
     ],
-    "lpio": [],
+    "lpio": [
+      {
+        "f": "F0",
+        "name": "RTC_GPIO0",
+        "type": "I/O/T"
+      },
+      {
+        "f": "F1",
+        "name": "sar_i2c_scl_0",
+        "type": "I/O/T"
+      }
+    ],
     "analog": []
   },
   {
@@ -82,10 +98,29 @@
         "f": "F1",
         "name": "GPIO1",
         "type": "I/O/T"
+      },
+      {
+        "f": "F2",
+        "name": "GPIO1",
+        "type": "I/O/T"
       }
     ],
-    "lpio": [],
-    "analog": []
+    "lpio": [
+      {
+        "f": "F0",
+        "name": "RTC_GPIO1",
+        "type": "I/O/T"
+      },
+      {
+        "f": "F1",
+        "name": "sar_i2c_sda_0",
+        "type": "I/O/T"
+      }
+    ],
+    "analog": [
+      "TOUCH1",
+      "ADC1_CH0"
+    ]
   },
   {
     "number": 7,
@@ -104,10 +139,29 @@
         "f": "F1",
         "name": "GPIO2",
         "type": "I/O/T"
+      },
+      {
+        "f": "F2",
+        "name": "GPIO2",
+        "type": "I/O/T"
       }
     ],
-    "lpio": [],
-    "analog": []
+    "lpio": [
+      {
+        "f": "F0",
+        "name": "RTC_GPIO2",
+        "type": "I/O/T"
+      },
+      {
+        "f": "F1",
+        "name": "sar_i2c_scl_1",
+        "type": "I/O/T"
+      }
+    ],
+    "analog": [
+      "TOUCH2",
+      "ADC1_CH1"
+    ]
   },
   {
     "number": 8,
@@ -126,10 +180,29 @@
         "f": "F1",
         "name": "GPIO3",
         "type": "I/O/T"
+      },
+      {
+        "f": "F2",
+        "name": "GPIO3",
+        "type": "I/O/T"
       }
     ],
-    "lpio": [],
-    "analog": []
+    "lpio": [
+      {
+        "f": "F0",
+        "name": "RTC_GPIO3",
+        "type": "I/O/T"
+      },
+      {
+        "f": "F1",
+        "name": "sar_i2c_sda_1",
+        "type": "I/O/T"
+      }
+    ],
+    "analog": [
+      "TOUCH3",
+      "ADC1_CH2"
+    ]
   },
   {
     "number": 9,
@@ -148,10 +221,24 @@
         "f": "F1",
         "name": "GPIO4",
         "type": "I/O/T"
+      },
+      {
+        "f": "F2",
+        "name": "GPIO4",
+        "type": "I/O/T"
       }
     ],
-    "lpio": [],
-    "analog": []
+    "lpio": [
+      {
+        "f": "F0",
+        "name": "RTC_GPIO4",
+        "type": "I/O/T"
+      }
+    ],
+    "analog": [
+      "TOUCH4",
+      "ADC1_CH3"
+    ]
   },
   {
     "number": 10,
@@ -170,10 +257,24 @@
         "f": "F1",
         "name": "GPIO5",
         "type": "I/O/T"
+      },
+      {
+        "f": "F2",
+        "name": "GPIO5",
+        "type": "I/O/T"
       }
     ],
-    "lpio": [],
-    "analog": []
+    "lpio": [
+      {
+        "f": "F0",
+        "name": "RTC_GPIO5",
+        "type": "I/O/T"
+      }
+    ],
+    "analog": [
+      "TOUCH5",
+      "ADC1_CH4"
+    ]
   },
   {
     "number": 11,
@@ -192,10 +293,24 @@
         "f": "F1",
         "name": "GPIO6",
         "type": "I/O/T"
+      },
+      {
+        "f": "F2",
+        "name": "GPIO6",
+        "type": "I/O/T"
       }
     ],
-    "lpio": [],
-    "analog": []
+    "lpio": [
+      {
+        "f": "F0",
+        "name": "RTC_GPIO6",
+        "type": "I/O/T"
+      }
+    ],
+    "analog": [
+      "TOUCH6",
+      "ADC1_CH5"
+    ]
   },
   {
     "number": 12,
@@ -214,10 +329,24 @@
         "f": "F1",
         "name": "GPIO7",
         "type": "I/O/T"
+      },
+      {
+        "f": "F2",
+        "name": "GPIO7",
+        "type": "I/O/T"
       }
     ],
-    "lpio": [],
-    "analog": []
+    "lpio": [
+      {
+        "f": "F0",
+        "name": "RTC_GPIO7",
+        "type": "I/O/T"
+      }
+    ],
+    "analog": [
+      "TOUCH7",
+      "ADC1_CH6"
+    ]
   },
   {
     "number": 13,
@@ -239,12 +368,26 @@
       },
       {
         "f": "F2",
+        "name": "GPIO8",
+        "type": "I/O/T"
+      },
+      {
+        "f": "F4",
         "name": "SUBSPICS1",
-        "type": "O/T"
+        "type": "I/O/T"
       }
     ],
-    "lpio": [],
-    "analog": []
+    "lpio": [
+      {
+        "f": "F0",
+        "name": "RTC_GPIO8",
+        "type": "I/O/T"
+      }
+    ],
+    "analog": [
+      "TOUCH8",
+      "ADC1_CH7"
+    ]
   },
   {
     "number": 14,
@@ -266,17 +409,31 @@
       },
       {
         "f": "F2",
-        "name": "SUBSPIHD",
-        "type": "I1/O/T"
+        "name": "GPIO9",
+        "type": "I/O/T"
       },
       {
-        "f": "F3",
+        "f": "F4",
+        "name": "SUBSPIHD",
+        "type": "I/O/T"
+      },
+      {
+        "f": "F5",
         "name": "FSPIHD",
-        "type": "I1/O/T"
+        "type": "I/O/T"
       }
     ],
-    "lpio": [],
-    "analog": []
+    "lpio": [
+      {
+        "f": "F0",
+        "name": "RTC_GPIO9",
+        "type": "I/O/T"
+      }
+    ],
+    "analog": [
+      "TOUCH9",
+      "ADC1_CH8"
+    ]
   },
   {
     "number": 15,
@@ -298,22 +455,36 @@
       },
       {
         "f": "F2",
-        "name": "FSPIIO4",
-        "type": "I1/O/T"
+        "name": "GPIO10",
+        "type": "I/O/T"
       },
       {
         "f": "F3",
-        "name": "SUBSPICS0",
-        "type": "O/T"
+        "name": "FSPIIO4",
+        "type": "I/O/T"
       },
       {
         "f": "F4",
+        "name": "SUBSPICS0",
+        "type": "I/O/T"
+      },
+      {
+        "f": "F5",
         "name": "FSPICS0",
-        "type": "I1/O/T"
+        "type": "I/O/T"
       }
     ],
-    "lpio": [],
-    "analog": []
+    "lpio": [
+      {
+        "f": "F0",
+        "name": "RTC_GPIO10",
+        "type": "I/O/T"
+      }
+    ],
+    "analog": [
+      "TOUCH10",
+      "ADC1_CH9"
+    ]
   },
   {
     "number": 16,
@@ -335,22 +506,36 @@
       },
       {
         "f": "F2",
-        "name": "FSPIIO5",
-        "type": "I1/O/T"
+        "name": "GPIO11",
+        "type": "I/O/T"
       },
       {
         "f": "F3",
-        "name": "SUBSPID",
-        "type": "I1/O/T"
+        "name": "FSPIIO5",
+        "type": "I/O/T"
       },
       {
         "f": "F4",
+        "name": "SUBSPID",
+        "type": "I/O/T"
+      },
+      {
+        "f": "F5",
         "name": "FSPID",
-        "type": "I1/O/T"
+        "type": "I/O/T"
       }
     ],
-    "lpio": [],
-    "analog": []
+    "lpio": [
+      {
+        "f": "F0",
+        "name": "RTC_GPIO11",
+        "type": "I/O/T"
+      }
+    ],
+    "analog": [
+      "TOUCH11",
+      "ADC2_CH0"
+    ]
   },
   {
     "number": 17,
@@ -372,22 +557,36 @@
       },
       {
         "f": "F2",
-        "name": "FSPIIO6",
-        "type": "I1/O/T"
+        "name": "GPIO12",
+        "type": "I/O/T"
       },
       {
         "f": "F3",
-        "name": "SUBSPICLK",
-        "type": "O/T"
+        "name": "FSPIIO6",
+        "type": "I/O/T"
       },
       {
         "f": "F4",
+        "name": "SUBSPICLK",
+        "type": "I/O/T"
+      },
+      {
+        "f": "F5",
         "name": "FSPICLK",
-        "type": "I1/O/T"
+        "type": "I/O/T"
       }
     ],
-    "lpio": [],
-    "analog": []
+    "lpio": [
+      {
+        "f": "F0",
+        "name": "RTC_GPIO12",
+        "type": "I/O/T"
+      }
+    ],
+    "analog": [
+      "TOUCH12",
+      "ADC2_CH1"
+    ]
   },
   {
     "number": 18,
@@ -409,22 +608,36 @@
       },
       {
         "f": "F2",
-        "name": "FSPIIO7",
-        "type": "I1/O/T"
+        "name": "GPIO13",
+        "type": "I/O/T"
       },
       {
         "f": "F3",
-        "name": "SUBSPIQ",
-        "type": "I1/O/T"
+        "name": "FSPIIO7",
+        "type": "I/O/T"
       },
       {
         "f": "F4",
+        "name": "SUBSPIQ",
+        "type": "I/O/T"
+      },
+      {
+        "f": "F5",
         "name": "FSPIQ",
-        "type": "I1/O/T"
+        "type": "I/O/T"
       }
     ],
-    "lpio": [],
-    "analog": []
+    "lpio": [
+      {
+        "f": "F0",
+        "name": "RTC_GPIO13",
+        "type": "I/O/T"
+      }
+    ],
+    "analog": [
+      "TOUCH13",
+      "ADC2_CH2"
+    ]
   },
   {
     "number": 19,
@@ -446,22 +659,36 @@
       },
       {
         "f": "F2",
-        "name": "FSPIDQS",
-        "type": "O/T"
+        "name": "GPIO14",
+        "type": "I/O/T"
       },
       {
         "f": "F3",
-        "name": "SUBSPIWP",
-        "type": "I1/O/T"
+        "name": "FSPIDQS",
+        "type": "I/O/T"
       },
       {
         "f": "F4",
+        "name": "SUBSPIWP",
+        "type": "I/O/T"
+      },
+      {
+        "f": "F5",
         "name": "FSPIWP",
-        "type": "I1/O/T"
+        "type": "I/O/T"
       }
     ],
-    "lpio": [],
-    "analog": []
+    "lpio": [
+      {
+        "f": "F0",
+        "name": "RTC_GPIO14",
+        "type": "I/O/T"
+      }
+    ],
+    "analog": [
+      "TOUCH14",
+      "ADC2_CH3"
+    ]
   },
   {
     "number": 20,
@@ -484,7 +711,7 @@
     "iomux": [
       {
         "f": "F0",
-        "name": "GPIO15",
+        "name": "XTAL_32K_P",
         "type": "I/O/T"
       },
       {
@@ -494,12 +721,25 @@
       },
       {
         "f": "F2",
+        "name": "GPIO15",
+        "type": "I/O/T"
+      },
+      {
+        "f": "F3",
         "name": "U0RTS",
-        "type": "O"
+        "type": "I/O/T"
       }
     ],
-    "lpio": [],
-    "analog": []
+    "lpio": [
+      {
+        "f": "F0",
+        "name": "RTC_GPIO15",
+        "type": "I/O/T"
+      }
+    ],
+    "analog": [
+      "ADC2_CH4"
+    ]
   },
   {
     "number": 22,
@@ -511,7 +751,7 @@
     "iomux": [
       {
         "f": "F0",
-        "name": "GPIO16",
+        "name": "XTAL_32K_N",
         "type": "I/O/T"
       },
       {
@@ -521,12 +761,25 @@
       },
       {
         "f": "F2",
+        "name": "GPIO16",
+        "type": "I/O/T"
+      },
+      {
+        "f": "F3",
         "name": "U0CTS",
-        "type": "I1"
+        "type": "I/O/T"
       }
     ],
-    "lpio": [],
-    "analog": []
+    "lpio": [
+      {
+        "f": "F0",
+        "name": "RTC_GPIO16",
+        "type": "I/O/T"
+      }
+    ],
+    "analog": [
+      "ADC2_CH5"
+    ]
   },
   {
     "number": 23,
@@ -548,12 +801,25 @@
       },
       {
         "f": "F2",
+        "name": "GPIO17",
+        "type": "I/O/T"
+      },
+      {
+        "f": "F3",
         "name": "U1TXD",
-        "type": "O"
+        "type": "I/O/T"
       }
     ],
-    "lpio": [],
-    "analog": []
+    "lpio": [
+      {
+        "f": "F0",
+        "name": "RTC_GPIO17",
+        "type": "I/O/T"
+      }
+    ],
+    "analog": [
+      "ADC2_CH6"
+    ]
   },
   {
     "number": 24,
@@ -575,17 +841,30 @@
       },
       {
         "f": "F2",
-        "name": "U1RXD",
-        "type": "I1"
+        "name": "GPIO18",
+        "type": "I/O/T"
       },
       {
         "f": "F3",
+        "name": "U1RXD",
+        "type": "I/O/T"
+      },
+      {
+        "f": "F4",
         "name": "CLK_OUT3",
-        "type": "O"
+        "type": "I/O/T"
       }
     ],
-    "lpio": [],
-    "analog": []
+    "lpio": [
+      {
+        "f": "F0",
+        "name": "RTC_GPIO18",
+        "type": "I/O/T"
+      }
+    ],
+    "analog": [
+      "ADC2_CH7"
+    ]
   },
   {
     "number": 25,
@@ -607,17 +886,31 @@
       },
       {
         "f": "F2",
-        "name": "U1RTS",
-        "type": "O"
+        "name": "GPIO19",
+        "type": "I/O/T"
       },
       {
         "f": "F3",
+        "name": "U1RTS",
+        "type": "I/O/T"
+      },
+      {
+        "f": "F4",
         "name": "CLK_OUT2",
-        "type": "O"
+        "type": "I/O/T"
       }
     ],
-    "lpio": [],
-    "analog": []
+    "lpio": [
+      {
+        "f": "F0",
+        "name": "RTC_GPIO19",
+        "type": "I/O/T"
+      }
+    ],
+    "analog": [
+      "USB_D-",
+      "ADC2_CH8"
+    ]
   },
   {
     "number": 26,
@@ -639,17 +932,31 @@
       },
       {
         "f": "F2",
-        "name": "U1CTS",
-        "type": "I1"
+        "name": "GPIO20",
+        "type": "I/O/T"
       },
       {
         "f": "F3",
+        "name": "U1CTS",
+        "type": "I/O/T"
+      },
+      {
+        "f": "F4",
         "name": "CLK_OUT1",
-        "type": "O"
+        "type": "I/O/T"
       }
     ],
-    "lpio": [],
-    "analog": []
+    "lpio": [
+      {
+        "f": "F0",
+        "name": "RTC_GPIO20",
+        "type": "I/O/T"
+      }
+    ],
+    "analog": [
+      "USB_D+",
+      "ADC2_CH9"
+    ]
   },
   {
     "number": 27,
@@ -668,9 +975,20 @@
         "f": "F1",
         "name": "GPIO21",
         "type": "I/O/T"
+      },
+      {
+        "f": "F2",
+        "name": "GPIO21",
+        "type": "I/O/T"
       }
     ],
-    "lpio": [],
+    "lpio": [
+      {
+        "f": "F0",
+        "name": "RTC_GPIO21",
+        "type": "I/O/T"
+      }
+    ],
     "analog": []
   },
   {
@@ -684,10 +1002,15 @@
       {
         "f": "F0",
         "name": "SPICS1",
-        "type": "O/T"
+        "type": "I/O/T"
       },
       {
         "f": "F1",
+        "name": "SPICS1",
+        "type": "I/O/T"
+      },
+      {
+        "f": "F2",
         "name": "GPIO26",
         "type": "I/O/T"
       }
@@ -717,10 +1040,15 @@
       {
         "f": "F0",
         "name": "SPIHD",
-        "type": "I1/O/T"
+        "type": "I/O/T"
       },
       {
         "f": "F1",
+        "name": "SPIHD",
+        "type": "I/O/T"
+      },
+      {
+        "f": "F2",
         "name": "GPIO27",
         "type": "I/O/T"
       }
@@ -739,10 +1067,15 @@
       {
         "f": "F0",
         "name": "SPIWP",
-        "type": "I1/O/T"
+        "type": "I/O/T"
       },
       {
         "f": "F1",
+        "name": "SPIWP",
+        "type": "I/O/T"
+      },
+      {
+        "f": "F2",
         "name": "GPIO28",
         "type": "I/O/T"
       }
@@ -761,10 +1094,15 @@
       {
         "f": "F0",
         "name": "SPICS0",
-        "type": "O/T"
+        "type": "I/O/T"
       },
       {
         "f": "F1",
+        "name": "SPICS0",
+        "type": "I/O/T"
+      },
+      {
+        "f": "F2",
         "name": "GPIO29",
         "type": "I/O/T"
       }
@@ -783,10 +1121,15 @@
       {
         "f": "F0",
         "name": "SPICLK",
-        "type": "O/T"
+        "type": "I/O/T"
       },
       {
         "f": "F1",
+        "name": "SPICLK",
+        "type": "I/O/T"
+      },
+      {
+        "f": "F2",
         "name": "GPIO30",
         "type": "I/O/T"
       }
@@ -805,10 +1148,15 @@
       {
         "f": "F0",
         "name": "SPIQ",
-        "type": "I1/O/T"
+        "type": "I/O/T"
       },
       {
         "f": "F1",
+        "name": "SPIQ",
+        "type": "I/O/T"
+      },
+      {
+        "f": "F2",
         "name": "GPIO31",
         "type": "I/O/T"
       }
@@ -827,10 +1175,15 @@
       {
         "f": "F0",
         "name": "SPID",
-        "type": "I1/O/T"
+        "type": "I/O/T"
       },
       {
         "f": "F1",
+        "name": "SPID",
+        "type": "I/O/T"
+      },
+      {
+        "f": "F2",
         "name": "GPIO32",
         "type": "I/O/T"
       }
@@ -848,18 +1201,23 @@
     "iomux": [
       {
         "f": "F0",
-        "name": "SPICLK_N_DIFF",
-        "type": "O/T"
+        "name": "SPICLK_N",
+        "type": "I/O/T"
       },
       {
         "f": "F1",
-        "name": "GPIO48",
+        "name": "SPICLK_N_DIFF",
         "type": "I/O/T"
       },
       {
         "f": "F2",
+        "name": "GPIO48",
+        "type": "I/O/T"
+      },
+      {
+        "f": "F3",
         "name": "SUBSPICLK_N_DIFF",
-        "type": "O/T"
+        "type": "I/O/T"
       }
     ],
     "lpio": [],
@@ -875,18 +1233,23 @@
     "iomux": [
       {
         "f": "F0",
-        "name": "SPICLK_P_DIFF",
-        "type": "O/T"
+        "name": "SPICLK_P",
+        "type": "I/O/T"
       },
       {
         "f": "F1",
-        "name": "GPIO47",
+        "name": "SPICLK_P_DIFF",
         "type": "I/O/T"
       },
       {
         "f": "F2",
+        "name": "GPIO47",
+        "type": "I/O/T"
+      },
+      {
+        "f": "F3",
         "name": "SUBSPICLK_P_DIFF",
-        "type": "O/T"
+        "type": "I/O/T"
       }
     ],
     "lpio": [],
@@ -912,18 +1275,23 @@
       },
       {
         "f": "F2",
-        "name": "FSPIHD",
-        "type": "I1/O/T"
+        "name": "GPIO33",
+        "type": "I/O/T"
       },
       {
         "f": "F3",
-        "name": "SUBSPIHD",
-        "type": "I1/O/T"
+        "name": "FSPIHD",
+        "type": "I/O/T"
       },
       {
         "f": "F4",
+        "name": "SUBSPIHD",
+        "type": "I/O/T"
+      },
+      {
+        "f": "F5",
         "name": "SPIIO4",
-        "type": "I1/O/T"
+        "type": "I/O/T"
       }
     ],
     "lpio": [],
@@ -949,18 +1317,23 @@
       },
       {
         "f": "F2",
-        "name": "FSPICS0",
-        "type": "I1/O/T"
+        "name": "GPIO34",
+        "type": "I/O/T"
       },
       {
         "f": "F3",
-        "name": "SUBSPICS0",
-        "type": "O/T"
+        "name": "FSPICS0",
+        "type": "I/O/T"
       },
       {
         "f": "F4",
+        "name": "SUBSPICS0",
+        "type": "I/O/T"
+      },
+      {
+        "f": "F5",
         "name": "SPIIO5",
-        "type": "I1/O/T"
+        "type": "I/O/T"
       }
     ],
     "lpio": [],
@@ -986,18 +1359,23 @@
       },
       {
         "f": "F2",
-        "name": "FSPID",
-        "type": "I1/O/T"
+        "name": "GPIO35",
+        "type": "I/O/T"
       },
       {
         "f": "F3",
-        "name": "SUBSPID",
-        "type": "I1/O/T"
+        "name": "FSPID",
+        "type": "I/O/T"
       },
       {
         "f": "F4",
+        "name": "SUBSPID",
+        "type": "I/O/T"
+      },
+      {
+        "f": "F5",
         "name": "SPIIO6",
-        "type": "I1/O/T"
+        "type": "I/O/T"
       }
     ],
     "lpio": [],
@@ -1023,18 +1401,23 @@
       },
       {
         "f": "F2",
-        "name": "FSPICLK",
-        "type": "I1/O/T"
+        "name": "GPIO36",
+        "type": "I/O/T"
       },
       {
         "f": "F3",
-        "name": "SUBSPICLK",
-        "type": "O/T"
+        "name": "FSPICLK",
+        "type": "I/O/T"
       },
       {
         "f": "F4",
+        "name": "SUBSPICLK",
+        "type": "I/O/T"
+      },
+      {
+        "f": "F5",
         "name": "SPIIO7",
-        "type": "I1/O/T"
+        "type": "I/O/T"
       }
     ],
     "lpio": [],
@@ -1060,18 +1443,23 @@
       },
       {
         "f": "F2",
-        "name": "FSPIQ",
-        "type": "I1/O/T"
+        "name": "GPIO37",
+        "type": "I/O/T"
       },
       {
         "f": "F3",
-        "name": "SUBSPIQ",
-        "type": "I1/O/T"
+        "name": "FSPIQ",
+        "type": "I/O/T"
       },
       {
         "f": "F4",
+        "name": "SUBSPIQ",
+        "type": "I/O/T"
+      },
+      {
+        "f": "F5",
         "name": "SPIDQS",
-        "type": "I0/O/T"
+        "type": "I/O/T"
       }
     ],
     "lpio": [],
@@ -1097,13 +1485,18 @@
       },
       {
         "f": "F2",
-        "name": "FSPIWP",
-        "type": "I1/O/T"
+        "name": "GPIO38",
+        "type": "I/O/T"
       },
       {
         "f": "F3",
+        "name": "FSPIWP",
+        "type": "I/O/T"
+      },
+      {
+        "f": "F4",
         "name": "SUBSPIWP",
-        "type": "I1/O/T"
+        "type": "I/O/T"
       }
     ],
     "lpio": [],
@@ -1120,22 +1513,27 @@
       {
         "f": "F0",
         "name": "MTCK",
-        "type": "I1"
+        "type": "I/O/T"
       },
       {
         "f": "F1",
-        "name": "GPIO39",
+        "name": "MTCK",
         "type": "I/O/T"
       },
       {
         "f": "F2",
-        "name": "CLK_OUT3",
-        "type": "O"
+        "name": "GPIO39",
+        "type": "I/O/T"
       },
       {
         "f": "F3",
+        "name": "CLK_OUT3",
+        "type": "I/O/T"
+      },
+      {
+        "f": "F4",
         "name": "SUBSPICS1",
-        "type": "O/T"
+        "type": "I/O/T"
       }
     ],
     "lpio": [],
@@ -1152,17 +1550,22 @@
       {
         "f": "F0",
         "name": "MTDO",
-        "type": "O/T"
+        "type": "I/O/T"
       },
       {
         "f": "F1",
-        "name": "GPIO40",
+        "name": "MTDO",
         "type": "I/O/T"
       },
       {
         "f": "F2",
+        "name": "GPIO40",
+        "type": "I/O/T"
+      },
+      {
+        "f": "F3",
         "name": "CLK_OUT2",
-        "type": "O"
+        "type": "I/O/T"
       }
     ],
     "lpio": [],
@@ -1190,17 +1593,22 @@
       {
         "f": "F0",
         "name": "MTDI",
-        "type": "I1"
+        "type": "I/O/T"
       },
       {
         "f": "F1",
-        "name": "GPIO41",
+        "name": "MTDI",
         "type": "I/O/T"
       },
       {
         "f": "F2",
+        "name": "GPIO41",
+        "type": "I/O/T"
+      },
+      {
+        "f": "F3",
         "name": "CLK_OUT1",
-        "type": "O"
+        "type": "I/O/T"
       }
     ],
     "lpio": [],
@@ -1217,10 +1625,15 @@
       {
         "f": "F0",
         "name": "MTMS",
-        "type": "I1"
+        "type": "I/O/T"
       },
       {
         "f": "F1",
+        "name": "MTMS",
+        "type": "I/O/T"
+      },
+      {
+        "f": "F2",
         "name": "GPIO42",
         "type": "I/O/T"
       }
@@ -1239,17 +1652,22 @@
       {
         "f": "F0",
         "name": "U0TXD",
-        "type": "O"
+        "type": "I/O/T"
       },
       {
         "f": "F1",
-        "name": "GPIO43",
+        "name": "U0TXD",
         "type": "I/O/T"
       },
       {
         "f": "F2",
+        "name": "GPIO43",
+        "type": "I/O/T"
+      },
+      {
+        "f": "F3",
         "name": "CLK_OUT1",
-        "type": "O"
+        "type": "I/O/T"
       }
     ],
     "lpio": [],
@@ -1266,17 +1684,22 @@
       {
         "f": "F0",
         "name": "U0RXD",
-        "type": "I1"
+        "type": "I/O/T"
       },
       {
         "f": "F1",
-        "name": "GPIO44",
+        "name": "U0RXD",
         "type": "I/O/T"
       },
       {
         "f": "F2",
+        "name": "GPIO44",
+        "type": "I/O/T"
+      },
+      {
+        "f": "F3",
         "name": "CLK_OUT2",
-        "type": "O"
+        "type": "I/O/T"
       }
     ],
     "lpio": [],
@@ -1299,6 +1722,11 @@
         "f": "F1",
         "name": "GPIO45",
         "type": "I/O/T"
+      },
+      {
+        "f": "F2",
+        "name": "GPIO45",
+        "type": "I/O/T"
       }
     ],
     "lpio": [],
@@ -1319,6 +1747,11 @@
       },
       {
         "f": "F1",
+        "name": "GPIO46",
+        "type": "I/O/T"
+      },
+      {
+        "f": "F2",
         "name": "GPIO46",
         "type": "I/O/T"
       }

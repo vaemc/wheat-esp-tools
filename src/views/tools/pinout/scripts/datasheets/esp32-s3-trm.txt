@@ -1,0 +1,123 @@
+ESP32-S3 Technical Reference Manual v1.8 — pin function tables
+Source: esp32-s3_technical_reference_manual_cn.pdf, chapter 6 (IO MUX / GPIO Matrix)
+Sections 6.12 / 6.13 verbatim. Used by scripts/extract.cjs to enrich
+chip pin metadata with the full IO MUX function set (F0..F4), RTC IO MUX,
+and analog (TOUCH/ADC/USB) information.
+
+================================================================
+Table 6.12-1.  IO MUX Pin Functions
+   GPIO  Function0          Function1            Function2  Function3   Function4   Function5  DRV  RST
+================================================================
+0   GPIO0              GPIO0                GPIO0      -           -           -      2    3    R
+1   GPIO1              GPIO1                GPIO1      -           -           -      2    1    R
+2   GPIO2              GPIO2                GPIO2      -           -           -      2    1    R
+3   GPIO3              GPIO3                GPIO3      -           -           -      2    1    R
+4   GPIO4              GPIO4                GPIO4      -           -           -      2    0    R
+5   GPIO5              GPIO5                GPIO5      -           -           -      2    0    R
+6   GPIO6              GPIO6                GPIO6      -           -           -      2    0    R
+7   GPIO7              GPIO7                GPIO7      -           -           -      2    0    R
+8   GPIO8              GPIO8                GPIO8      -           SUBSPICS1  -      2    0    R
+9   GPIO9              GPIO9                GPIO9      -           SUBSPIHD  FSPIHD   2    1    R
+10  GPIO10             GPIO10               GPIO10     FSPIIO4     SUBSPICS0 FSPICS0  2    1    R
+11  GPIO11             GPIO11               GPIO11     FSPIIO5     SUBSPID   FSPID    2    1    R
+12  GPIO12             GPIO12               GPIO12     FSPIIO6     SUBSPICLK FSPICLK  2    1    R
+13  GPIO13             GPIO13               GPIO13     FSPIIO7     SUBSPIQ   FSPIQ    2    1    R
+14  GPIO14             GPIO14               GPIO14     FSPIDQS     SUBSPIWP  FSPIWP   2    1    R
+15  XTAL_32K_P         GPIO15               GPIO15     U0RTS       -           -      2    0    R
+16  XTAL_32K_N         GPIO16               GPIO16     U0CTS       -           -      2    0    R
+17  GPIO17             GPIO17               GPIO17     U1TXD       -           -      2    1    R
+18  GPIO18             GPIO18               GPIO18     U1RXD       CLK_OUT3  -        2    1    R
+19  GPIO19             GPIO19               GPIO19     U1RTS       CLK_OUT2  -        3    0    R
+20  GPIO20             GPIO20               GPIO20     U1CTS       CLK_OUT1  -        3    0    R
+21  GPIO21             GPIO21               GPIO21     -           -           -      2    0    R
+26  SPICS1             SPICS1               GPIO26     -           -           -      2    3    -
+27  SPIHD              SPIHD                GPIO27     -           -           -      2    3    -
+28  SPIWP              SPIWP                GPIO28     -           -           -      2    3    -
+29  SPICS0             SPICS0               GPIO29     -           -           -      2    3    -
+30  SPICLK             SPICLK               GPIO30     -           -           -      2    3    -
+31  SPIQ               SPIQ                 GPIO31     -           -           -      2    3    -
+32  SPID               SPID                 GPIO32     -           -           -      2    3    -
+33  GPIO33             GPIO33               GPIO33     FSPIHD      SUBSPIHD  SPIIO4   2    1    -
+34  GPIO34             GPIO34               GPIO34     FSPICS0     SUBSPICS0 SPIIO5   2    1    -
+35  GPIO35             GPIO35               GPIO35     FSPID       SUBSPID   SPIIO6   2    1    -
+36  GPIO36             GPIO36               GPIO36     FSPICLK     SUBSPICLK SPIIO7   2    1    -
+37  GPIO37             GPIO37               GPIO37     FSPIQ       SUBSPIQ   SPIDQS   2    1    -
+38  GPIO38             GPIO38               GPIO38     FSPIWP      SUBSPIWP  -        2    1    -
+39  MTCK               MTCK                 GPIO39     CLK_OUT3    SUBSPICS1 -        2    1*   -
+40  MTDO               MTDO                 GPIO40     CLK_OUT2    -           -      2    1    -
+41  MTDI               MTDI                 GPIO41     CLK_OUT1    -           -      2    1    -
+42  MTMS               MTMS                 GPIO42     -           -           -      2    1    -
+43  U0TXD              U0TXD                GPIO43     CLK_OUT1    -           -      2    4    -
+44  U0RXD              U0RXD                GPIO44     CLK_OUT2    -           -      2    3    -
+45  GPIO45             GPIO45               GPIO45     -           -           -      2    2    -
+46  GPIO46             GPIO46               GPIO46     -           -           -      2    2    -
+47  SPICLK_P           SPICLK_P_DIFF        GPIO47     SUBSPICLK_P_DIFF -      -      2    1    -
+48  SPICLK_N           SPICLK_N_DIFF        GPIO48     SUBSPICLK_N_DIFF -      -      2    1    -
+
+DRV (default IO drive strength):
+  GPIO17 / GPIO18:  0:~5mA  1:~20mA  2:~10mA  3:~40mA
+  Others:           0:~5mA  1:~10mA  2:~20mA  3:~40mA
+RST (reset state):
+  0: IE=0
+  1: IE=1
+  2: IE=1, WPD=1
+  3: IE=1, WPU=1
+  4: OE=1, WPU=1
+  1*: EFUSE_DIS_PAD_JTAG=1 -> MTCK IE=1; otherwise IE=1, WPU=1
+  R : routed through RTC IO MUX (low-power domain)
+
+================================================================
+Table 6.13-1.  RTC IO MUX Pin Functions
+   RTCGPIO# GPIO# Func0         Func1         Func2  Func3
+================================================================
+0   0   GPIO0       RTC_GPIO0    -      -      sar_i2c_scl_0
+1   1   GPIO1       RTC_GPIO1    -      -      sar_i2c_sda_0
+2   2   GPIO2       RTC_GPIO2    -      -      sar_i2c_scl_1
+3   3   GPIO3       RTC_GPIO3    -      -      sar_i2c_sda_1
+4   4   GPIO4       RTC_GPIO4    -      -      -
+5   5   GPIO5       RTC_GPIO5    -      -      -
+6   6   GPIO6       RTC_GPIO6    -      -      -
+7   7   GPIO7       RTC_GPIO7    -      -      -
+8   8   GPIO8       RTC_GPIO8    -      -      -
+9   9   GPIO9       RTC_GPIO9    -      -      -
+10  10  GPIO10      RTC_GPIO10   -      -      -
+11  11  GPIO11      RTC_GPIO11   -      -      -
+12  12  GPIO12      RTC_GPIO12   -      -      -
+13  13  GPIO13      RTC_GPIO13   -      -      -
+14  14  GPIO14      RTC_GPIO14   -      -      -
+15  15  XTAL_32K_P  RTC_GPIO15   -      -      -
+16  16  XTAL_32K_N  RTC_GPIO16   -      -      -
+17  17  GPIO17      RTC_GPIO17   -      -      -
+18  18  GPIO18      RTC_GPIO18   -      -      -
+19  19  GPIO19      RTC_GPIO19   -      -      -
+20  20  GPIO20      RTC_GPIO20   -      -      -
+21  21  GPIO21      RTC_GPIO21   -      -      -
+
+The sar_i2c_* functions on GPIO0..3 are used by the ULP for RTC I2C.
+
+================================================================
+Table 6.13-2.  RTC IO MUX Analog Functions
+   RTCGPIO# GPIO#       Func0        Func1
+================================================================
+0   0   GPIO0        -            -
+1   1   GPIO1        TOUCH1       ADC1_CH0
+2   2   GPIO2        TOUCH2       ADC1_CH1
+3   3   GPIO3        TOUCH3       ADC1_CH2
+4   4   GPIO4        TOUCH4       ADC1_CH3
+5   5   GPIO5        TOUCH5       ADC1_CH4
+6   6   GPIO6        TOUCH6       ADC1_CH5
+7   7   GPIO7        TOUCH7       ADC1_CH6
+8   8   GPIO8        TOUCH8       ADC1_CH7
+9   9   GPIO9        TOUCH9       ADC1_CH8
+10  10  GPIO10       TOUCH10      ADC1_CH9
+11  11  GPIO11       TOUCH11      ADC2_CH0
+12  12  GPIO12       TOUCH12      ADC2_CH1
+13  13  GPIO13       TOUCH13      ADC2_CH2
+14  14  GPIO14       TOUCH14      ADC2_CH3
+15  15  XTAL_32K_P   XTAL_32K_P   ADC2_CH4
+16  16  XTAL_32K_N   XTAL_32K_N   ADC2_CH5
+17  17  GPIO17       -            ADC2_CH6
+18  18  GPIO18       -            ADC2_CH7
+19  19  GPIO19       USB_D-       ADC2_CH8
+20  20  GPIO20       USB_D+       ADC2_CH9
+21  21  GPIO21       -            -

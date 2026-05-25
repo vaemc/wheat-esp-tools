@@ -28,6 +28,10 @@ const shortName = computed(() => {
   const n = pin.value?.name ?? "?";
   return n.length > 22 ? n.slice(0, 20) + "…" : n;
 });
+
+const strappingTitle = computed(() =>
+  pin.value?.strapping ? `Boot: ${pin.value.strapping.purpose}` : "",
+);
 </script>
 
 <template>
@@ -55,7 +59,7 @@ const shortName = computed(() => {
           '--cat-text': category.textColor,
         } as Record<string, string>)
       "
-      :title="`#${pinNumber} ${pin?.name ?? '—'}`"
+      :title="`#${pinNumber} ${pin?.name ?? '—'}${strappingTitle ? ' — ' + strappingTitle : ''}`"
     >
       <span class="pin-pad" />
       <span class="pin-num mono">{{ pinNumber }}</span>

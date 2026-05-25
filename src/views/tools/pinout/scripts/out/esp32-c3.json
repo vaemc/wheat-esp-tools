@@ -42,18 +42,22 @@
     "iomux": [
       {
         "f": "F0",
-        "name": "GPIO0",
+        "name": "XTAL_32K_P",
         "type": "I/O/T"
       },
       {
         "f": "F1",
         "name": "GPIO0",
         "type": "I/O/T"
+      },
+      {
+        "f": "F2",
+        "name": "GPIO0",
+        "type": "I/O/T"
       }
     ],
     "lpio": [],
     "analog": [
-      "XTAL_32K_P",
       "ADC1_CH0"
     ]
   },
@@ -67,18 +71,22 @@
     "iomux": [
       {
         "f": "F0",
-        "name": "GPIO1",
+        "name": "XTAL_32K_N",
         "type": "I/O/T"
       },
       {
         "f": "F1",
         "name": "GPIO1",
         "type": "I/O/T"
+      },
+      {
+        "f": "F2",
+        "name": "GPIO1",
+        "type": "I/O/T"
       }
     ],
     "lpio": [],
     "analog": [
-      "XTAL_32K_N",
       "ADC1_CH1"
     ]
   },
@@ -102,8 +110,13 @@
       },
       {
         "f": "F2",
+        "name": "GPIO2",
+        "type": "I/O/T"
+      },
+      {
+        "f": "F3",
         "name": "FSPIQ",
-        "type": "I1/O/T"
+        "type": "I/O/T"
       }
     ],
     "lpio": [],
@@ -139,6 +152,11 @@
         "f": "F1",
         "name": "GPIO3",
         "type": "I/O/T"
+      },
+      {
+        "f": "F2",
+        "name": "GPIO3",
+        "type": "I/O/T"
       }
     ],
     "lpio": [],
@@ -157,17 +175,22 @@
       {
         "f": "F0",
         "name": "MTMS",
-        "type": "I1"
+        "type": "I/O/T"
       },
       {
         "f": "F1",
-        "name": "GPIO4",
+        "name": "MTMS",
         "type": "I/O/T"
       },
       {
         "f": "F2",
+        "name": "GPIO4",
+        "type": "I/O/T"
+      },
+      {
+        "f": "F3",
         "name": "FSPIHD",
-        "type": "I1/O/T"
+        "type": "I/O/T"
       }
     ],
     "lpio": [],
@@ -186,17 +209,22 @@
       {
         "f": "F0",
         "name": "MTDI",
-        "type": "I1"
+        "type": "I/O/T"
       },
       {
         "f": "F1",
-        "name": "GPIO5",
+        "name": "MTDI",
         "type": "I/O/T"
       },
       {
         "f": "F2",
+        "name": "GPIO5",
+        "type": "I/O/T"
+      },
+      {
+        "f": "F3",
         "name": "FSPIWP",
-        "type": "I1/O/T"
+        "type": "I/O/T"
       }
     ],
     "lpio": [],
@@ -226,17 +254,22 @@
       {
         "f": "F0",
         "name": "MTCK",
-        "type": "I1"
+        "type": "I/O/T"
       },
       {
         "f": "F1",
-        "name": "GPIO6",
+        "name": "MTCK",
         "type": "I/O/T"
       },
       {
         "f": "F2",
+        "name": "GPIO6",
+        "type": "I/O/T"
+      },
+      {
+        "f": "F3",
         "name": "FSPICLK",
-        "type": "I1/O/T"
+        "type": "I/O/T"
       }
     ],
     "lpio": [],
@@ -253,17 +286,22 @@
       {
         "f": "F0",
         "name": "MTDO",
-        "type": "O/T"
+        "type": "I/O/T"
       },
       {
         "f": "F1",
-        "name": "GPIO7",
+        "name": "MTDO",
         "type": "I/O/T"
       },
       {
         "f": "F2",
+        "name": "GPIO7",
+        "type": "I/O/T"
+      },
+      {
+        "f": "F3",
         "name": "FSPID",
-        "type": "I1/O/T"
+        "type": "I/O/T"
       }
     ],
     "lpio": [],
@@ -286,6 +324,11 @@
         "f": "F1",
         "name": "GPIO8",
         "type": "I/O/T"
+      },
+      {
+        "f": "F2",
+        "name": "GPIO8",
+        "type": "I/O/T"
       }
     ],
     "lpio": [],
@@ -306,6 +349,11 @@
       },
       {
         "f": "F1",
+        "name": "GPIO9",
+        "type": "I/O/T"
+      },
+      {
+        "f": "F2",
         "name": "GPIO9",
         "type": "I/O/T"
       }
@@ -333,8 +381,13 @@
       },
       {
         "f": "F2",
+        "name": "GPIO10",
+        "type": "I/O/T"
+      },
+      {
+        "f": "F3",
         "name": "FSPICS0",
-        "type": "I1/O/T"
+        "type": "I/O/T"
       }
     ],
     "lpio": [],
@@ -361,11 +414,16 @@
     "iomux": [
       {
         "f": "F0",
-        "name": "GPIO11",
+        "name": "VDD_SPI",
         "type": "I/O/T"
       },
       {
         "f": "F1",
+        "name": "GPIO11",
+        "type": "I/O/T"
+      },
+      {
+        "f": "F2",
         "name": "GPIO11",
         "type": "I/O/T"
       }
@@ -384,10 +442,15 @@
       {
         "f": "F0",
         "name": "SPIHD",
-        "type": "I1/O/T"
+        "type": "I/O/T"
       },
       {
         "f": "F1",
+        "name": "SPIHD",
+        "type": "I/O/T"
+      },
+      {
+        "f": "F2",
         "name": "GPIO12",
         "type": "I/O/T"
       }
@@ -406,10 +469,15 @@
       {
         "f": "F0",
         "name": "SPIWP",
-        "type": "I1/O/T"
+        "type": "I/O/T"
       },
       {
         "f": "F1",
+        "name": "SPIWP",
+        "type": "I/O/T"
+      },
+      {
+        "f": "F2",
         "name": "GPIO13",
         "type": "I/O/T"
       }
@@ -428,10 +496,15 @@
       {
         "f": "F0",
         "name": "SPICS0",
-        "type": "O/T"
+        "type": "I/O/T"
       },
       {
         "f": "F1",
+        "name": "SPICS0",
+        "type": "I/O/T"
+      },
+      {
+        "f": "F2",
         "name": "GPIO14",
         "type": "I/O/T"
       }
@@ -450,10 +523,15 @@
       {
         "f": "F0",
         "name": "SPICLK",
-        "type": "O/T"
+        "type": "I/O/T"
       },
       {
         "f": "F1",
+        "name": "SPICLK",
+        "type": "I/O/T"
+      },
+      {
+        "f": "F2",
         "name": "GPIO15",
         "type": "I/O/T"
       }
@@ -472,10 +550,15 @@
       {
         "f": "F0",
         "name": "SPID",
-        "type": "I1/O/T"
+        "type": "I/O/T"
       },
       {
         "f": "F1",
+        "name": "SPID",
+        "type": "I/O/T"
+      },
+      {
+        "f": "F2",
         "name": "GPIO16",
         "type": "I/O/T"
       }
@@ -494,10 +577,15 @@
       {
         "f": "F0",
         "name": "SPIQ",
-        "type": "I1/O/T"
+        "type": "I/O/T"
       },
       {
         "f": "F1",
+        "name": "SPIQ",
+        "type": "I/O/T"
+      },
+      {
+        "f": "F2",
         "name": "GPIO17",
         "type": "I/O/T"
       }
@@ -520,6 +608,11 @@
       },
       {
         "f": "F1",
+        "name": "GPIO18",
+        "type": "I/O/T"
+      },
+      {
+        "f": "F2",
         "name": "GPIO18",
         "type": "I/O/T"
       }
@@ -546,6 +639,11 @@
         "f": "F1",
         "name": "GPIO19",
         "type": "I/O/T"
+      },
+      {
+        "f": "F2",
+        "name": "GPIO19",
+        "type": "I/O/T"
       }
     ],
     "lpio": [],
@@ -564,10 +662,15 @@
       {
         "f": "F0",
         "name": "U0RXD",
-        "type": "I1"
+        "type": "I/O/T"
       },
       {
         "f": "F1",
+        "name": "U0RXD",
+        "type": "I/O/T"
+      },
+      {
+        "f": "F2",
         "name": "GPIO20",
         "type": "I/O/T"
       }
@@ -586,10 +689,15 @@
       {
         "f": "F0",
         "name": "U0TXD",
-        "type": "O"
+        "type": "I/O/T"
       },
       {
         "f": "F1",
+        "name": "U0TXD",
+        "type": "I/O/T"
+      },
+      {
+        "f": "F2",
         "name": "GPIO21",
         "type": "I/O/T"
       }

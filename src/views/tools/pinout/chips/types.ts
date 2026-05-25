@@ -12,6 +12,22 @@ export interface PinFunction {
   type: string;
 }
 
+/**
+ * Strapping (boot-mode) information for a pin.
+ *
+ * Strapping pins are sampled by hardware right after a reset to choose the
+ * boot mode, the VDD_SPI voltage, ROM-message verbosity, JTAG signal source,
+ * etc.  Their state must be valid for ~tens of milliseconds after the
+ * CHIP_PU rising edge — that's why these GPIOs need extra care when used
+ * as regular IO.
+ */
+export interface PinStrapping {
+  /** Default level latched at reset, when nothing else drives the pin. */
+  default?: 0 | 1;
+  /** Short Chinese description of what the pin selects at boot. */
+  purpose: string;
+}
+
 export interface PinInfo {
   /** Physical pin number (1-based) */
   number: number;
@@ -31,6 +47,8 @@ export interface PinInfo {
   lpio: PinFunction[];
   /** Analog functions (ADC channel, USB_D+, XTAL, etc.) */
   analog: string[];
+  /** Boot/strapping role, if any. Absent for normal IOs. */
+  strapping?: PinStrapping;
 }
 
 export type PinSide = "left" | "bottom" | "right" | "top" | "center";

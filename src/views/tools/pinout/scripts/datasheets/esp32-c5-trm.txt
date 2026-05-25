@@ -1,0 +1,61 @@
+ESP32-C5 Technical Reference Manual v1.1 — IO MUX / LP / Analog excerpts
+Source: Espressif esp32-c5_technical_reference_manual_cn.pdf
+        Chapter 8 "GPIO 与 IO MUX (GPIO, IO MUX)"
+Tables  8.13-1   HP IO MUX Pin Functions
+        8.14-1   LP IO MUX Pin Functions
+        8.15-1   RTC / Analog Pin Functions
+
+
+=========================================================================
+Table 8.13-1.  HP IO MUX Pin Functions
+   GPIO  Function0     Function1     Function2  Function3  Function4   DRV  RST  Note
+=========================================================================
+   0   XTAL_32K_P    GPIO0       GPIO0      -          -        2    0    R
+   1   XTAL_32K_N    GPIO1       GPIO1      -          -        2    0    R
+   2   MTMS          MTMS        GPIO2      FSPIQ      -        2    1    R
+   3   MTDI          MTDI        GPIO3      -          -        2    1    R
+   4   MTCK          MTCK        GPIO4      FSPIHD     -        2    1    R
+   5   MTDO          MTDO        GPIO5      FSPIWP     -        2    1    R
+   6   GPIO6         GPIO6       GPIO6      FSPICLK    -        2    0    R
+   7   GPIO7         SDIO_DATA1  GPIO7      FSPID      -        2    1    -
+   8   GPIO8         SDIO_DATA0  GPIO8      -          -        2    0    -
+   9   GPIO9         SDIO_CLK    GPIO9      -          -        2    0    -
+   10  GPIO10        SDIO_CMD    GPIO10     FSPICS0    -        2    0    -
+   11  U0TXD         U0TXD       GPIO11     -          -        2    4    -
+   12  U0RXD         U0RXD       GPIO12     -          -        2    1    -
+   13  GPIO13        SDIO_DATA3  GPIO13     -          -        3    1    USB
+   14  GPIO14        SDIO_DATA2  GPIO14     -          -        3    3    USB
+   23  GPIO23        GPIO23      GPIO23     -          -        2    0    -
+   24  GPIO24        GPIO24      GPIO24     -          -        2    0    -
+   25  GPIO25        GPIO25      GPIO25     -          -        2    1    -
+   26  GPIO26        GPIO26      GPIO26     -          -        2    1    -
+   27  GPIO27        GPIO27      GPIO27     -          -        2    3    -
+   28  GPIO28        GPIO28      GPIO28     -          -        2    3    -
+
+
+=========================================================================
+Table 8.14-1.  LP IO MUX Pin Functions
+   LP_GPIO  GPIO    Function0           Function1   Function2 Function3
+=========================================================================
+   0       0       LP_UART_DTRN        LP_GPIO0    -        -
+   1       1       LP_UART_DSRN        LP_GPIO1    -        -
+   2       2       LP_UART_RTSN        LP_GPIO2    -        LP_I2C_SDA
+   3       3       LP_UART_CTSN        LP_GPIO3    -        LP_I2C_SCL
+   4       4       LP_UART_RXD         LP_GPIO4    -        -
+   5       5       LP_UART_TXD         LP_GPIO5    -        -
+   6       6       -                   LP_GPIO6    -        -
+
+
+=========================================================================
+Table 8.15-1.  RTC / Analog Pin Functions
+   GPIO  Function0    Function1
+=========================================================================
+   0   XTAL_32K_P    -
+   1   XTAL_32K_N    ADC1_CH0
+   2   MTMS          ADC1_CH1
+   3   MTDI          ADC1_CH2
+   4   MTCK          ADC1_CH3
+   5   MTDO          ADC1_CH4
+   6   GPIO6         ADC1_CH5
+   13  GPIO13        USB_D-
+   14  GPIO14        USB_D+

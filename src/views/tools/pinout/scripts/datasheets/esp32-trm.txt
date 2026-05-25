@@ -1,0 +1,116 @@
+ESP32 Technical Reference Manual v5.7 — pin function tables
+Source: esp32_technical_reference_manual_cn.pdf
+        Chapter 6 "IO MUX 与 GPIO 矩阵 (GPIO, IO MUX)"
+Tables  6.10-1  IO MUX Pin Functions    (六个备选功能 F0~F5)
+        6.11-1  RTC IO MUX & RTC Analog Pin Functions
+
+Notes:
+  * The original 6.10-1 table has a "Pad Name" column between "GPIO#"
+    and "Function0". It has been dropped here so that rows match the
+    parser shape used by every other chip ("GPIO# F0 F1 F2 F3 F4 F5
+    DRV RST Note"). RST is left as "-" because the ESP32 TRM only
+    publishes a single combined "Reset" column; the reference info is
+    preserved in the trailing Note column.
+  * Table 6.11-1 is split into two virtual tables (RTC IO MUX vs.
+    Analog) so that RTC routing and analog channels land in the
+    correct UI sections.
+  * GPIO20, 24, 28-31 are intentionally absent — they don't exist on
+    the ESP32 chip.
+
+================================================================
+Table 6.10-1.  IO MUX Pin Functions
+   GPIO  Function0    Function1    Function2    Function3    Function4    Function5    DRV  RST  Note
+================================================================
+0   GPIO0    CLK_OUT1   GPIO0       -           -           EMAC_TX_CLK    3   -   R
+1   U0TXD    CLK_OUT3   GPIO1       -           -           EMAC_RXD2      3   -   -
+2   GPIO2    HSPIWP     GPIO2       HS2_DATA0   SD_DATA0    -              2   -   R
+3   U0RXD    CLK_OUT2   GPIO3       -           -           -              3   -   -
+4   GPIO4    HSPIHD     GPIO4       HS2_DATA1   SD_DATA1    EMAC_TX_ER     2   -   R
+5   GPIO5    VSPICS0    GPIO5       HS1_DATA6   -           EMAC_RX_CLK    3   -   -
+6   SD_CLK   SPICLK     GPIO6       HS1_CLK     U1CTS       -              3   -   -
+7   SD_DATA0 SPIQ       GPIO7       HS1_DATA0   U2RTS       -              3   -   -
+8   SD_DATA1 SPID       GPIO8       HS1_DATA1   U2CTS       -              3   -   -
+9   SD_DATA2 SPIHD      GPIO9       HS1_DATA2   U1RXD       -              3   -   -
+10  SD_DATA3 SPIWP      GPIO10      HS1_DATA3   U1TXD       -              3   -   -
+11  SD_CMD   SPICS0     GPIO11      HS1_CMD     U1RTS       -              3   -   -
+12  MTDI     HSPIQ      GPIO12      HS2_DATA2   SD_DATA2    EMAC_TXD3      2   -   R
+13  MTCK     HSPID      GPIO13      HS2_DATA3   SD_DATA3    EMAC_RX_ER     2   -   R
+14  MTMS     HSPICLK    GPIO14      HS2_CLK     SD_CLK      EMAC_TXD2      3   -   R
+15  MTDO     HSPICS0    GPIO15      HS2_CMD     SD_CMD      EMAC_RXD3      3   -   R
+16  GPIO16   -          GPIO16      HS1_DATA4   U2RXD       EMAC_CLK_OUT   1   -   -
+17  GPIO17   -          GPIO17      HS1_DATA5   U2TXD       EMAC_CLK_180   1   -   -
+18  GPIO18   VSPICLK    GPIO18      HS1_DATA7   -           -              1   -   -
+19  GPIO19   VSPIQ      GPIO19      U0CTS       -           EMAC_TXD0      1   -   -
+21  GPIO21   VSPIHD     GPIO21      -           -           EMAC_TX_EN     1   -   -
+22  GPIO22   VSPIWP     GPIO22      U0RTS       -           EMAC_TXD1      1   -   -
+23  GPIO23   VSPID      GPIO23      HS1_STROBE  -           -              1   -   -
+25  GPIO25   -          GPIO25      -           -           EMAC_RXD0      0   -   R
+26  GPIO26   -          GPIO26      -           -           EMAC_RXD1      0   -   R
+27  GPIO27   -          GPIO27      -           -           EMAC_RX_DV     0   -   R
+32  GPIO32   -          GPIO32      -           -           -              0   -   R
+33  GPIO33   -          GPIO33      -           -           -              0   -   R
+34  GPIO34   -          GPIO34      -           -           -              0   -   R/I
+35  GPIO35   -          GPIO35      -           -           -              0   -   R/I
+36  GPIO36   -          GPIO36      -           -           -              0   -   R/I
+37  GPIO37   -          GPIO37      -           -           -              0   -   R/I
+38  GPIO38   -          GPIO38      -           -           -              0   -   R/I
+39  GPIO39   -          GPIO39      -           -           -              0   -   R/I
+
+DRV (default IO drive strength):
+  0:~5mA  1:~10mA  2:~20mA  3:~40mA
+RST (reset state) — see Table 6.10-1 footnote in the ESP32 TRM:
+  R: routed through RTC IO MUX
+  I: GPIO34-39 are input-only
+
+================================================================
+Table 6.11-1a.  RTC IO MUX Pin Functions (RTC GPIO mapping)
+   RTCGPIO# GPIO# PinAlias       RTC_GPIO        ULP/RTC I2C
+================================================================
+0   36  GPIO36   RTC_GPIO0    -
+1   37  GPIO37   RTC_GPIO1    -
+2   38  GPIO38   RTC_GPIO2    -
+3   39  GPIO39   RTC_GPIO3    -
+4   34  GPIO34   RTC_GPIO4    -
+5   35  GPIO35   RTC_GPIO5    -
+6   25  GPIO25   RTC_GPIO6    -
+7   26  GPIO26   RTC_GPIO7    -
+8   33  GPIO33   RTC_GPIO8    -
+9   32  GPIO32   RTC_GPIO9    -
+10  4   GPIO4    RTC_GPIO10   sar_i2c_scl_0
+11  0   GPIO0    RTC_GPIO11   sar_i2c_sda_0
+12  2   GPIO2    RTC_GPIO12   sar_i2c_scl_1
+13  15  GPIO15   RTC_GPIO13   sar_i2c_sda_1
+14  13  GPIO13   RTC_GPIO14   -
+15  12  GPIO12   RTC_GPIO15   -
+16  14  GPIO14   RTC_GPIO16   -
+17  27  GPIO27   RTC_GPIO17   -
+
+The sar_i2c_* functions are the ULP RTC I2C on GPIO0/2/4/15. ESP32
+has a single ULP I2C; any of these pads can be assigned via the
+RTCIO_SAR_I2C_IO_REG register.
+
+================================================================
+Table 6.11-1b.  RTC IO MUX Analog Functions
+   RTCGPIO# GPIO# PinAlias       AnalogF0       AnalogF1     AnalogF2
+================================================================
+0   36  GPIO36   ADC1_CH0   -          -
+1   37  GPIO37   ADC1_CH1   -          -
+2   38  GPIO38   ADC1_CH2   -          -
+3   39  GPIO39   ADC1_CH3   -          -
+4   34  GPIO34   ADC1_CH6   -          -
+5   35  GPIO35   ADC1_CH7   -          -
+6   25  GPIO25   DAC_1      ADC2_CH8   -
+7   26  GPIO26   DAC_2      ADC2_CH9   -
+8   33  GPIO33   ADC1_CH5   TOUCH8     -
+9   32  GPIO32   ADC1_CH4   TOUCH9     -
+10  4   GPIO4    ADC2_CH0   TOUCH0     -
+11  0   GPIO0    ADC2_CH1   TOUCH1     -
+12  2   GPIO2    ADC2_CH2   TOUCH2     -
+13  15  GPIO15   ADC2_CH3   TOUCH3     -
+14  13  GPIO13   ADC2_CH4   TOUCH4     -
+15  12  GPIO12   ADC2_CH5   TOUCH5     -
+16  14  GPIO14   ADC2_CH6   TOUCH6     -
+17  27  GPIO27   ADC2_CH7   TOUCH7     -
+
+ADC_H (high-side ADC reference) is shared by GPIO36-39 and is not a
+selectable channel; it is not duplicated here.

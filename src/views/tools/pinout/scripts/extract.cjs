@@ -671,29 +671,263 @@ const CHIP_META = {
   esp32: {
     name: "ESP32",
     expected: 48,
-    extract: extractEsp32,
+    extract: () => enrichWithTrm("esp32", extractEsp32()),
   },
   "esp32-s3": {
     name: "ESP32-S3",
     expected: 57,
-    extract: () => extractCommon("esp32-s3", 57),
+    extract: () => enrichWithTrm("esp32-s3", extractCommon("esp32-s3", 57)),
   },
   "esp32-c3": {
     name: "ESP32-C3",
     expected: 33,
-    extract: () => extractCommon("esp32-c3", 33),
+    extract: () => enrichWithTrm("esp32-c3", extractCommon("esp32-c3", 33)),
   },
   "esp32-c6": {
     name: "ESP32-C6",
     expected: 41,
-    extract: () => extractCommon("esp32-c6", 41, { twoColumnAnalog: true }),
+    extract: () =>
+      enrichWithTrm(
+        "esp32-c6",
+        extractCommon("esp32-c6", 41, { twoColumnAnalog: true }),
+      ),
   },
   "esp32-c5": {
     name: "ESP32-C5",
     expected: 41,
-    extract: () => extractCommon("esp32-c5", 41),
+    extract: () => enrichWithTrm("esp32-c5", extractCommon("esp32-c5", 41)),
   },
 };
+
+/* --------------------------------------------------------------------- *
+ *  TRM enrichment                                                       *
+ * --------------------------------------------------------------------- *
+ *
+ * The compact pin-overview table in the official datasheet only lists 1–2
+ * IO MUX functions per pin.  The Technical Reference Manual (TRM) ships a
+ * full IO MUX matrix with 5 functions (F0..F4) per pin plus separate
+ * RTC IO MUX and analog tables.  When a `<chip>-trm.txt` file is present
+ * in `datasheets/`, this step parses the three tables and overrides the
+ * iomux / lpio / analog fields with the more complete TRM data, leaving
+ * unrelated pins (power, GND, etc.) untouched.
+ *
+ * Tables 6.12-1 / 6.13-1 / 6.13-2 in the ESP32-S3 TRM are the format
+ * reference; other chips can be enriched by dropping a similarly shaped
+ * text file into the datasheets folder.
+ */
+
+function readTrmTables(chipId) {
+  const file = path.join(DATA_DIR, chipId + "-trm.txt");
+  if (!fs.existsSync(file)) return null;
+  const text = fs.readFileSync(file, "utf8");
+
+  const sections = text.split(/={6,}\s*\r?\n/);
+  const tables = [];
+  for (let i = 1; i + 1 < sections.length; i += 2) {
+    tables.push({ header: sections[i], body: sections[i + 1] });
+  }
+  if (!tables.length) return null;
+
+  // Tables are routed by header keyword, so chips that only provide a
+  // subset (e.g. ESP32-C3 with no LP IO MUX) still work.  Order in the
+  // file is irrelevant.
+  let ioMux = new Map();
+  let rtcMux = new Map();
+  let analog = new Map();
+  for (const t of tables) {
+    const h = t.header.toLowerCase();
+    const isLp = /lp\s*(?:io\s*)?mux|rtc\s*io\s*mux/.test(h);
+    const isAnalog = /analog|rtc.*analog/.test(h);
+    if (isLp && !isAnalog) {
+      rtcMux = parseRtcMuxTable(t.body);
+    } else if (isAnalog) {
+      analog = parseAnalogTable(t.body);
+    } else {
+      // Default — IO MUX (or a plain "Pin Functions" table).
+      const m = parseIoMuxTable(t.body);
+      if (m.size) ioMux = m;
+    }
+  }
+  return { ioMux, rtcMux, analog };
+}
+
+function tokensFromRow(line) {
+  // The TRM tables are space/tab aligned; split on runs of whitespace,
+  // ignore empty leading/trailing tokens.
+  return line.trim().split(/\s+/).filter(Boolean);
+}
+
+function parseIoMuxTable(body) {
+  // Generic IO MUX row parser that handles both ESP32-S3 (6 function cols,
+  // keyed by GPIO#) and ESP32-C3 (5 function cols, keyed by package-pin#).
+  //
+  // Layout assumed:                 first  funcs...      last 3
+  //   <key#> <F0> <F1> ... <Fn>  <DRV> <RST> <Note>
+  //
+  // We don't trust the leading number to be the GPIO — we instead scan
+  // the function list for a "GPIOn" entry, which always exists.
+  const out = new Map();
+  for (const raw of body.split(/\r?\n/)) {
+    const line = raw.trim();
+    if (!line || line.startsWith("DRV") || line.startsWith("RST") ||
+        line.startsWith("GPIO") || line.startsWith("Others") ||
+        line.startsWith("0:") || line.startsWith("1:") || line.startsWith("2:") ||
+        line.startsWith("3:") || line.startsWith("4:") || line.startsWith("R ")) continue;
+    if (!/^\d+\s/.test(line)) continue;
+    const tok = tokensFromRow(line);
+    // Need at least: key#, one func, DRV, RST, Note = 5 tokens
+    if (tok.length < 5) continue;
+    const funcs = tok.slice(1, tok.length - 3);
+    if (funcs.length === 0) continue;
+    let gpio = null;
+    for (const f of funcs) {
+      const m = /^GPIO(\d+)$/.exec(f);
+      if (m) { gpio = parseInt(m[1], 10); break; }
+    }
+    if (gpio == null) continue;
+    // Don't clobber a previously-seen entry that already has more functions
+    // (defensive: avoids wrap-around rows shrinking earlier data).
+    const prev = out.get(gpio);
+    if (!prev || funcs.length > prev.length) out.set(gpio, funcs);
+  }
+  return out;
+}
+
+/**
+ * Resolve a GPIO# from a row's tokens.  We try (in order):
+ *   1. Find a "GPIOn" / "LP_GPIOn" / "RTC_GPIOn" entry inside the row.
+ *   2. Fall back to the very first numeric token (works for rows like
+ *      "0 XTAL_32K_P ADC1_CH0" where the GPIO is encoded only in the
+ *      leading column).
+ */
+function gpioFromRowTokens(tok) {
+  // Prefer a bare "GPIOn" — that is always the actual GPIO number on
+  // every chip (chips like ESP32 have RTC_GPIOn != GPIOn so we must
+  // not let RTC_GPIOn / LP_GPIOn win the lookup).
+  for (const f of tok) {
+    const m = /^GPIO(\d+)$/.exec(f);
+    if (m) return parseInt(m[1], 10);
+  }
+  // Fall back to LP_/RTC_-prefixed forms (S3 / C3 / etc. where the two
+  // numberings happen to be identical).
+  for (const f of tok) {
+    const m = /^(?:LP_|RTC_)GPIO(\d+)$/.exec(f);
+    if (m) return parseInt(m[1], 10);
+  }
+  const n = parseInt(tok[0], 10);
+  return Number.isNaN(n) ? null : n;
+}
+
+/**
+ * Real LP / RTC function names — used to keep only meaningful tokens out
+ * of an LP IO MUX row (drops pin aliases like "XTAL_32K_P", separators
+ * "-", etc.).
+ */
+const LP_FUNC_RE = /^(?:LP_|RTC_|sar_|lp_|adc_|touch|TOUCH|GLITCH_|SAR_)/i;
+
+/**
+ * Analog/RTC peripheral functions — ADC, TOUCH, DAC, USB.
+ * XTAL_32K_P/N are dedicated *digital* alternates for the 32 kHz crystal
+ * input and are intentionally NOT considered analog here, even though they
+ * appear in some chips' RTC/Analog table as the row's "Function 0".
+ */
+const ANALOG_FUNC_RE =
+  /^(?:ADC\d_CH\d+|TOUCH\d+|DAC_?\d+|USB_D[+\-]|USB_DP|USB_DM|TEMPERATURE_SENS|GLITCH_DET)$/i;
+
+function parseRtcMuxTable(body) {
+  // Each chip lays this table out slightly differently:
+  //   ESP32-S3:  RTCGPIO# GPIO# PinName  RTC_GPIO#  -  -  sar_xxx
+  //   ESP32-C6:  LP_GPIO# GPIO# PinName  LP_GPIOn   LP_UART_xxx
+  //   ESP32-P4:  similar to S3 but different LP signals
+  // Strategy: pick the GPIO#, then keep tokens that look like a real
+  // LP/RTC function, dropping the duplicated pin-alias and "-" markers.
+  const out = new Map();
+  for (const raw of body.split(/\r?\n/)) {
+    const line = raw.trim();
+    if (!line || !/^\d+\s/.test(line)) continue;
+    const tok = tokensFromRow(line);
+    if (tok.length < 3) continue;
+    const gpio = gpioFromRowTokens(tok);
+    if (gpio == null) continue;
+    const funcs = tok.filter((t) => LP_FUNC_RE.test(t));
+    if (!funcs.length) continue;
+    out.set(gpio, funcs);
+  }
+  return out;
+}
+
+function parseAnalogTable(body) {
+  const out = new Map();
+  for (const raw of body.split(/\r?\n/)) {
+    const line = raw.trim();
+    if (!line || !/^\d+\s/.test(line)) continue;
+    const tok = tokensFromRow(line);
+    if (tok.length < 2) continue;
+    const gpio = gpioFromRowTokens(tok);
+    if (gpio == null) continue;
+    const funcs = tok.filter((t) => ANALOG_FUNC_RE.test(t));
+    if (!funcs.length) continue;
+    out.set(gpio, funcs);
+  }
+  return out;
+}
+
+/**
+ * Resolve a pin's GPIO number.  We don't rely on chip-specific alias
+ * tables: every IO MUX row contains a "GPIOn" entry in one of its
+ * function columns, so scanning the pin's existing iomux list works
+ * across all chips.
+ */
+function pinToGpio(pin) {
+  if (!pin || !pin.name) return null;
+  const m = /^GPIO(\d+)$/.exec(pin.name);
+  if (m) return parseInt(m[1], 10);
+  if (Array.isArray(pin.iomux)) {
+    for (const f of pin.iomux) {
+      const fm = /^GPIO(\d+)$/.exec(f && f.name);
+      if (fm) return parseInt(fm[1], 10);
+    }
+  }
+  return null;
+}
+
+function enrichWithTrm(chipId, pins) {
+  const tables = readTrmTables(chipId);
+  if (!tables) return pins;
+
+  let touched = 0;
+  for (const pin of pins) {
+    const gpio = pinToGpio(pin);
+    if (gpio == null) continue;
+
+    const ioFuncs = tables.ioMux.get(gpio);
+    if (ioFuncs) {
+      pin.iomux = ioFuncs.map((name, i) => ({
+        f: "F" + i,
+        name: name === "-" ? "" : name,
+        type: "I/O/T",
+      })).filter((f) => f.name);
+    }
+
+    const rtcFuncs = tables.rtcMux.get(gpio);
+    if (rtcFuncs) {
+      pin.lpio = rtcFuncs.map((name, i) => ({
+        f: "F" + i,
+        name: name === "-" ? "" : name,
+        type: "I/O/T",
+      })).filter((f) => f.name);
+    }
+
+    const analogFuncs = tables.analog.get(gpio);
+    if (analogFuncs) {
+      pin.analog = analogFuncs.filter((a) => a && a !== "-");
+    }
+
+    touched++;
+  }
+  console.log(`  TRM enrichment applied to ${touched}/${pins.length} pins`);
+  return pins;
+}
 
 function emitJson(chipId, pins) {
   fs.mkdirSync(OUT_DIR, { recursive: true });

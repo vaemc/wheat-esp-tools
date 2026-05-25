@@ -77,6 +77,25 @@ const isHovering = computed(() => store.hoveredPin !== null);
         </div>
       </section>
 
+      <section v-if="focusedPin.strapping" class="block boot-block">
+        <h4 class="block-title">
+          {{ t("pinout.sectionBoot") }}
+          <span class="block-badge boot-badge-pill">BOOT</span>
+        </h4>
+        <p class="boot-purpose">{{ focusedPin.strapping.purpose }}</p>
+        <div v-if="focusedPin.strapping.default !== undefined" class="kv-grid">
+          <div class="kv">
+            <span class="k">{{ t("pinout.bootDefault") }}</span>
+            <span class="v mono">{{ focusedPin.strapping.default }}</span>
+          </div>
+          <div class="kv">
+            <span class="k">{{ t("pinout.bootSampleAt") }}</span>
+            <span class="v">{{ t("pinout.bootSampleAtValue") }}</span>
+          </div>
+        </div>
+        <p class="boot-hint">{{ t("pinout.bootHint") }}</p>
+      </section>
+
       <section
         v-if="focusedPin.resetAt || focusedPin.resetAfter"
         class="block"
@@ -307,6 +326,39 @@ const isHovering = computed(() => store.hoveredPin !== null);
   border-radius: 999px;
   letter-spacing: 0.08em;
   text-transform: none;
+}
+
+.boot-block {
+  padding: 12px 14px;
+  border: 1px solid rgba(220, 38, 38, 0.35);
+  background: linear-gradient(
+    180deg,
+    rgba(220, 38, 38, 0.07) 0%,
+    rgba(220, 38, 38, 0.02) 100%
+  );
+  border-radius: 12px;
+}
+
+.boot-badge-pill {
+  background: #dc2626;
+  color: #ffffff;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+}
+
+.boot-purpose {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--pinout-text-0);
+  font-weight: 500;
+}
+
+.boot-hint {
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.55;
+  color: var(--pinout-text-3);
 }
 
 .chips {

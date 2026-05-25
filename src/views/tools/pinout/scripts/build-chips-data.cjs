@@ -72,6 +72,109 @@ function makeQfn(pinCount, centerPin = null) {
 }
 
 /* --------------------------------------------------------------------- */
+/*  Strapping (boot-mode) pins                                            */
+/* --------------------------------------------------------------------- *
+ *
+ * Sampled by hardware right after a reset, these GPIOs select the boot
+ * mode, VDD_SPI voltage, ROM-message verbosity, JTAG signal source, etc.
+ * They must be left in a known valid state for tens of milliseconds after
+ * CHIP_PU goes high — when used as regular IO, an external pull-up or
+ * pull-down might be required.
+ *
+ * Sources (per-chip):
+ *   ESP32     :  datasheet v5.2, §3 "Strapping & Configuration"
+ *   ESP32-S3  :  datasheet v1.7, §2.4 "Strapping Pins"
+ *   ESP32-C3  :  datasheet v1.7, §2.5 "Strapping Pins"
+ *   ESP32-C6  :  datasheet v1.4, §2.6 "Strapping Pins"
+ *   ESP32-C5  :  datasheet rev0.4, §2.6 "Strapping Pins"
+ *   ESP32-P4  :  datasheet rev1.0, §2.5 "Strapping Pins"
+ *
+ * Keys are GPIO numbers (matched against the pin name "GPIOn" or the
+ * registered alias).
+ */
+const STRAPPING = {
+  esp32: {
+    0: { default: 1, purpose: "启动模式选择 (与 GPIO2 共同决定 SPI Boot / 下载模式)" },
+    2: { default: 0, purpose: "启动模式选择 (与 GPIO0 共同决定下载方式)" },
+    12: { default: 0, purpose: "VDD_SDIO 电压选择 (MTDI: 0=3.3V / 1=1.8V)" },
+    15: { default: 1, purpose: "U0TXD 启动日志使能 (MTDO: 0=静默 / 1=输出)" },
+    5: { default: 1, purpose: "SDIO 时序选择 (与 MTDO 配合)" },
+  },
+  "esp32-s3": {
+    0: { default: 1, purpose: "启动模式选择 (1=SPI Flash Boot / 0=下载模式)" },
+    3: { purpose: "启动 ROM Log 输出口选择 (USB-Serial-JTAG / UART)" },
+    45: { default: 0, purpose: "VDD_SPI 电压选择 (0=3.3V / 1=1.8V)" },
+    46: { default: 0, purpose: "ROM 启动日志使能 (0=正常输出 / 1=静默)" },
+  },
+  "esp32-c3": {
+    2: { default: 1, purpose: "启动模式选择 (1=SPI Flash Boot / 0=Joint Download)" },
+    8: { default: 1, purpose: "ROM 启动日志使能 (1=输出 / 0=静默)" },
+    9: { default: 1, purpose: "启动模式选择 (与 GPIO2 一起决定下载方式)" },
+  },
+  "esp32-c6": {
+    4: { purpose: "JTAG 信号源选择" },
+    5: { purpose: "下载模式日志输出选择" },
+    8: { default: 1, purpose: "ROM 启动日志使能 (1=输出 / 0=静默)" },
+    9: { default: 1, purpose: "启动模式选择 (1=SPI Flash Boot / 0=下载模式)" },
+    15: { purpose: "JTAG 信号源选择 (USB-Serial-JTAG / 普通 JTAG)" },
+  },
+  "esp32-c5": {
+    2: { purpose: "ROM 启动日志使能" },
+    7: { purpose: "VDD_SPI 电压选择" },
+    8: { default: 1, purpose: "启动模式选择 (1=SPI Flash Boot / 0=下载模式)" },
+    27: { purpose: "JTAG 信号源选择" },
+    28: { purpose: "芯片测试模式 (出厂校准)" },
+  },
+  "esp32-p4": {
+    34: { purpose: "VDD_SPI 电压选择" },
+    35: { default: 1, purpose: "启动模式选择 (1=SPI Flash Boot / 0=下载模式)" },
+    36: { purpose: "ROM 启动日志使能" },
+    37: { purpose: "JTAG 信号源选择 (USB-Serial-JTAG / 普通 JTAG)" },
+    45: { purpose: "Boot 配置位" },
+  },
+};
+
+/**
+ * Derive a pin's GPIO number from its data — robust across chips that use
+ * different pad-name conventions (XTAL_32K_P is GPIO0 on C6/C5 but GPIO15
+ * on S3, MTDI is GPIO12 on ESP32 but GPIO41 on S3, etc).
+ *
+ *   1. If the pin's own name is "GPIOn", that's the answer.
+ *   2. Otherwise look through the iomux function list and pick the first
+ *      "GPIOn" entry — by Espressif convention, every IO MUX row contains
+ *      its own GPIO number in one of the alt-function columns.
+ *   3. If no GPIOn appears in the iomux list, the pin is dedicated
+ *      (Power / Analog) and has no GPIO number.
+ */
+function pinToGpio(pin) {
+  if (!pin || !pin.name) return null;
+  const m = /^GPIO(\d+)$/.exec(pin.name);
+  if (m) return parseInt(m[1], 10);
+  if (Array.isArray(pin.iomux)) {
+    for (const f of pin.iomux) {
+      const fm = /^GPIO(\d+)$/.exec(f && f.name);
+      if (fm) return parseInt(fm[1], 10);
+    }
+  }
+  return null;
+}
+
+function applyStrapping(chipId, pins) {
+  const map = STRAPPING[chipId];
+  if (!map) return 0;
+  let count = 0;
+  for (const pin of pins) {
+    const gpio = pinToGpio(pin);
+    if (gpio == null) continue;
+    const info = map[gpio];
+    if (!info) continue;
+    pin.strapping = { ...info };
+    count++;
+  }
+  return count;
+}
+
+/* --------------------------------------------------------------------- */
 /*  Per-chip metadata                                                     */
 /* --------------------------------------------------------------------- */
 const CHIP_META = {
@@ -202,15 +305,15 @@ function buildEsp32P4() {
   const data = readP4PinsFromTs();
   if (!data) {
     // Source TS gone — chips-data/esp32-p4.json is now the canonical source.
-    // Returning null tells the driver loop to skip emission for P4.
-    return null;
+    // We still need to refresh strapping data on the existing JSON so newer
+    // STRAPPING values flow through.  Read, patch, write back.
+    return refreshStrappingInPlace("esp32-p4");
   }
-  const variants = meta.variants.map((v) => ({
-    id: v.id,
-    label: v.label,
-    layout: v.layout,
-    pins: data[v.id] || [],
-  }));
+  const variants = meta.variants.map((v) => {
+    const pins = data[v.id] || [];
+    applyStrapping("esp32-p4", pins);
+    return { id: v.id, label: v.label, layout: v.layout, pins };
+  });
   return {
     id: "esp32-p4",
     name: meta.name,
@@ -225,10 +328,32 @@ function buildEsp32P4() {
   };
 }
 
+/**
+ * When a chip's source data isn't available anymore (e.g. ESP32-P4 after the
+ * TS source was deleted), we still want STRAPPING updates to flow through
+ * to chips-data/<chip>.json.  This re-reads the existing JSON, refreshes
+ * the strapping fields and returns the updated definition for re-emit.
+ */
+function refreshStrappingInPlace(chipId) {
+  const file = path.join(CHIPS_DATA_DIR, chipId + ".json");
+  if (!fs.existsSync(file)) return null;
+  const def = JSON.parse(fs.readFileSync(file, "utf8"));
+  let touched = 0;
+  for (const v of def.variants) {
+    // Drop any stale strapping first, so we never leave behind data for a
+    // GPIO that's since been removed from STRAPPING.
+    for (const p of v.pins) delete p.strapping;
+    touched += applyStrapping(chipId, v.pins);
+  }
+  console.log(`  refreshed strapping on ${touched} pins of ${chipId}`);
+  return def;
+}
+
 function buildSimpleChip(chipId) {
   const meta = CHIP_META[chipId];
   if (!meta) throw new Error(`No metadata for ${chipId}`);
   const pins = readPinsFromOut(chipId);
+  applyStrapping(chipId, pins);
   const variants = meta.variants.map((v) => ({
     id: v.id,
     label: v.label,
@@ -260,6 +385,7 @@ function summarize(chip) {
     iomux: v0.pins.filter((p) => p.iomux && p.iomux.length).length,
     lpio: v0.pins.filter((p) => p.lpio && p.lpio.length).length,
     analog: v0.pins.filter((p) => p.analog && p.analog.length).length,
+    strapping: v0.pins.filter((p) => p.strapping).length,
   };
 }
 

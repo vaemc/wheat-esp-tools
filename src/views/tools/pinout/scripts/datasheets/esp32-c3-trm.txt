@@ -1,0 +1,44 @@
+ESP32-C3 Technical Reference Manual v1.4 — IO MUX / Analog excerpts
+Source: Espressif esp32-c3_technical_reference_manual_cn.pdf
+        Chapter 5 "IO MUX 与 GPIO 矩阵 (GPIO, IO MUX)"
+Tables  5.12-1  IO MUX Pin Functions    (五个备选功能 F0~F4)
+        5.13-1  RTC / Analog Pin Funcs  (GPIO0~GPIO4 上的模拟功能)
+
+
+====================================================================
+Table 5.12-1.  IO MUX Pin Functions
+   PIN  Function0      Function1   Function2  Function3  Function4   DRV  RST
+====================================================================
+   4    XTAL_32K_P  GPIO0   GPIO0   -        -        2    0    R
+   5    XTAL_32K_N  GPIO1   GPIO1   -        -        2    0    R
+   6    GPIO2       GPIO2   GPIO2   FSPIQ    -        2    1    R
+   8    GPIO3       GPIO3   GPIO3   -        -        2    1    R
+   9    MTMS        MTMS    GPIO4   FSPIHD   -        2    1    R
+   10   MTDI        MTDI    GPIO5   FSPIWP   -        2    1    R
+   12   MTCK        MTCK    GPIO6   FSPICLK  -        2    1    G
+   13   MTDO        MTDO    GPIO7   FSPID    -        2    1    G
+   14   GPIO8       GPIO8   GPIO8   -        -        2    1    -
+   15   GPIO9       GPIO9   GPIO9   -        -        2    3    -
+   16   GPIO10      GPIO10  GPIO10  FSPICS0  -        2    1    G
+   18   VDD_SPI     GPIO11  GPIO11  -        -        2    0    -
+   19   SPIHD       SPIHD   GPIO12  -        -        2    3    -
+   20   SPIWP       SPIWP   GPIO13  -        -        2    3    -
+   21   SPICS0      SPICS0  GPIO14  -        -        2    3    -
+   22   SPICLK      SPICLK  GPIO15  -        -        2    3    -
+   23   SPID        SPID    GPIO16  -        -        2    3    -
+   24   SPIQ        SPIQ    GPIO17  -        -        2    3    -
+   25   GPIO18      GPIO18  GPIO18  -        -        3    0    USB
+   26   GPIO19      GPIO19  GPIO19  -        -        3    0    USB
+   27   U0RXD       U0RXD   GPIO20  -        -        2    3    G
+   28   U0TXD       U0TXD   GPIO21  -        -        2    4    -
+
+
+====================================================================
+Table 5.13-1.  RTC / Analog Pin Functions
+   GPIO  Function0   Function1
+====================================================================
+   0     XTAL_32K_P  ADC1_CH0
+   1     XTAL_32K_N  ADC1_CH1
+   2     GPIO2       ADC1_CH2
+   3     GPIO3       ADC1_CH3
+   4     MTMS        ADC1_CH4

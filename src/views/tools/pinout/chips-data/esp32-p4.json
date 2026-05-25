@@ -1559,7 +1559,10 @@
             }
           ],
           "lpio": [],
-          "analog": []
+          "analog": [],
+          "strapping": {
+            "purpose": "VDD_SPI 电压选择"
+          }
         },
         {
           "number": 66,
@@ -1591,7 +1594,11 @@
             }
           ],
           "lpio": [],
-          "analog": []
+          "analog": [],
+          "strapping": {
+            "default": 1,
+            "purpose": "启动模式选择 (1=SPI Flash Boot / 0=下载模式)"
+          }
         },
         {
           "number": 67,
@@ -1634,7 +1641,10 @@
             }
           ],
           "lpio": [],
-          "analog": []
+          "analog": [],
+          "strapping": {
+            "purpose": "ROM 启动日志使能"
+          }
         },
         {
           "number": 69,
@@ -1661,7 +1671,10 @@
             }
           ],
           "lpio": [],
-          "analog": []
+          "analog": [],
+          "strapping": {
+            "purpose": "JTAG 信号源选择 (USB-Serial-JTAG / 普通 JTAG)"
+          }
         },
         {
           "number": 70,
@@ -1987,7 +2000,10 @@
             }
           ],
           "lpio": [],
-          "analog": []
+          "analog": [],
+          "strapping": {
+            "purpose": "Boot 配置位"
+          }
         },
         {
           "number": 88,
@@ -3927,7 +3943,10 @@
             }
           ],
           "lpio": [],
-          "analog": []
+          "analog": [],
+          "strapping": {
+            "purpose": "VDD_SPI 电压选择"
+          }
         },
         {
           "number": 66,
@@ -3959,7 +3978,11 @@
             }
           ],
           "lpio": [],
-          "analog": []
+          "analog": [],
+          "strapping": {
+            "default": 1,
+            "purpose": "启动模式选择 (1=SPI Flash Boot / 0=下载模式)"
+          }
         },
         {
           "number": 67,
@@ -4002,7 +4025,10 @@
             }
           ],
           "lpio": [],
-          "analog": []
+          "analog": [],
+          "strapping": {
+            "purpose": "ROM 启动日志使能"
+          }
         },
         {
           "number": 69,
@@ -4029,7 +4055,10 @@
             }
           ],
           "lpio": [],
-          "analog": []
+          "analog": [],
+          "strapping": {
+            "purpose": "JTAG 信号源选择 (USB-Serial-JTAG / 普通 JTAG)"
+          }
         },
         {
           "number": 70,
@@ -4355,7 +4384,10 @@
             }
           ],
           "lpio": [],
-          "analog": []
+          "analog": [],
+          "strapping": {
+            "purpose": "Boot 配置位"
+          }
         },
         {
           "number": 88,

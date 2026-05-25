@@ -24,6 +24,14 @@ const anyAnalogIncludes = (pin: PinInfo, needles: string[]) =>
 
 export const CATEGORIES: Category[] = [
   {
+    id: "boot",
+    label: "Boot / Strapping",
+    color: "#dc2626",
+    textColor: "#ffffff",
+    description: "复位时被采样的 Strapping 引脚 (启动模式 / VDD_SPI / JTAG / 日志)",
+    match: (p) => !!p.strapping,
+  },
+  {
     id: "power",
     label: "电源 / GND",
     color: "#f59e0b",
