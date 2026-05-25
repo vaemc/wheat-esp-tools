@@ -61,7 +61,18 @@ export const layoutChildren: RouteRecordRaw[] = [
       menu: true,
       menuOrder: 4,
     },
-  }
+  },
+  {
+    path: "tools/pinout",
+    name: "pinout",
+    component: () => import("@/views/tools/pinout/index.vue"),
+    meta: {
+      icon: "🧩",
+      titleKey: "menu.pinout",
+      menu: true,
+      menuOrder: 6,
+    },
+  },
 ];
 
 export const routes: RouteRecordRaw[] = [

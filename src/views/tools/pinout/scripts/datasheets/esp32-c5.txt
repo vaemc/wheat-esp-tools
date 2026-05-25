@@ -1,0 +1,4524 @@
+ESP32-C5 Series
+
+Datasheet Version 1.2
+
+Ultra-low-power SoC with 32-bit RISC-V single-core microprocessor 
+2.4 and 5 GHz dual-band Wi-Fi 6 (802.11ax), Bluetooth ® 5 (LE), Zigbee, and 
+Thread (802.15.4) 
+Support connection to external flash and PSRAM 
+29 GPIOs, rich set of peripherals 
+QFN48 (6×6 mm) package 
+
+| | ESP32-C5HR2 | |
+| --- | --- | --- |
+| | ESP32-C5HR8 | |
+| | ESP32-C5HF4 | |
+
+Including:
+
+www.espressif.com
+
+Product Overview
+
+The ESP32-C5 SoC (System on Chip) supports 2.4 and 5 GHz dual-band Wi-Fi 6, Bluetooth LE 5, Zigbee 3.0 
+and Thread 1.4. It consists of a high-performance (HP) 32-bit RISC-V processor, an low-power (LP) 32-bit 
+RISC-V processor, wireless baseband and MAC (Wi-Fi, Bluetooth LE, and 802.15.4), RF module, and numerous 
+peripherals, with time-division coexistence of Wi-Fi, Bluetooth and 802.15.4. 
+The functional block diagram of the SoC is shown below. 
+
+Espressif’s ESP32-C5 Wi-Fi + Bluetooth® Low Energy + 802.15.4 SoC
+
+2.4/5 GHz RF
+
+CPU System Wireless MAC and Baseband Wi-Fi MAC
+
+⚙
+
+Balun + Switch
+
+Wi-Fi Baseband
+
+HP RISC-V 
+32-bit 
+Microprocessor 
+LP RISC-V 
+32-bit 
+Microprocessor 
+
+Transmitter
+
+Bluetooth LE Link Controller
+
+Bluetooth LE Baseband
+
+Cache
+
+HP Memory
+
+Receiver
+
+LP Memory
+
+802.15.4 Baseband
+
+802.15.4 MAC
+
+JTAG
+
+ROM
+
+Synthesizer
+
+Peripherals
+
+Power Management
+
+⚙ ⚙ ⚙
+
+LP IO ⚙
+
+GPIO
+
+I2C
+
+SPI
+
+Power Management Unit
+
+⚙ ⚙ ⚙
+
+CAN FD I2S UART
+
+RTC Watchdog Timer
+
+Security
+
+⚙ ⚙ ⚙
+
+AES SHA⚙ ⚙ RSA ⚙
+
+PCNT
+
+RMT
+
+GDMA
+
+RTC Super Watchdog Timer
+
+ETM⚙
+
+⚙ ⚙
+
+⚙ RTC Timer
+
+LED PWM
+
+ADC
+
+ECC⚙ ⚙
+
+HMAC
+
+Digital Signature
+
+⚙ ⚙ ⚙
+
+LP UART ⚙
+
+MCPWM
+
+USB Serial/ JTAG
+
+PARLIO
+
+APM⚙
+
+SDIO Slave⚙ ECDSA TRNG⚙
+
+⚙
+
+LP I2C ⚙
+
+⚙ ⚙
+
+Brownout Detector
+
+Main System Watchdog Timers
+
+⚙ ⚙
+
+Secure ⚙ Boot
+
+General-Purpose Timers ⚙
+
+⚙
+
+TEE Controller
+
+Key Manager
+
+eFuse Controller
+
+System Timer
+
+⚙
+
+⚙ Analog Voltage Comparator
+
+Bit-Scrambler ⚙ Controller
+
+Power Glitch Detector
+
+Flash/PSRAM Encryption (XTS-AES)
+
+Temperature Sensor
+
+Modules having power in specific power modes: Active Active and Modem-sleep Active, Modem-sleep, Light-sleep; ⚙ optional in Light-sleep All modes ⚙ optional in Deep-sleep
+
+| | | | | | | | | | | | | All modes | | | | | | ⚙ | | optional in Deep-sleep | | | | | | | | | | | | | | | | | | |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| | | | | | | | | | | | | | | | ESP32-C5 | | Functional | | | | | | Block | | | Diagram | | | | | | | | | | | | |
+| For more | information | | | | | | on | | power | | | | consumption, | | | | see | | Section | | | | 4.1.3.6 | | | Power | | Management | | | | | | Unit. | | | | |
+| Espressif | Systems | | | | | | | | | | | | | | | | | | | | 2 | | | | | | | | | | ESP32-C5 | | | | Series | Datasheet | | v1.2 |
+
+Submit Documentation Feedback
+
+Features 
+Wi-Fi 
+• 1T1R in 2.4 and 5 GHz dual band 
+• Operating frequency: 2412 ~ 2484 MHz, 5180 ~ 5885 MHz 
+• Data rate up to 150 Mbps 
+• IEEE 802.11ax-compliant 
+– 20 MHz-only non-AP mode 
+– Uplink and downlink OFDMA to enhance connectivity and performance in congested environments 
+for IoT applications 
+– Downlink MU-MIMO (multi-user, multiple input, multiple output) to increase network capacity 
+– Beamformee that improves signal quality 
+– Spatial reuse to maximize parallel transmissions 
+– Target wake time (TWT) that optimizes power saving mechanisms 
+• IEEE 802.11ac-compliant 
+– 20 MHz bandwidth 
+– Downlink fullband MU-MIMO 
+• Fully compatible with IEEE 802.11a/b/g/n protocol 
+– 20 MHz and 40 MHz bandwidth 
+– MCS0 ~ MCS7 
+– Wi-Fi multimedia (WMM) 
+– TX/RX A-MPDU, TX/RX A-MSDU 
+– Immediate block ACK 
+– Fragmentation and defragmentation 
+– Transmission opportunity (TXOP) 
+– Automatic beacon monitoring (hardware TSF) 
+– Four virtual Wi-Fi interfaces 
+– Simultaneous support for Infrastructure BSS in Station mode, SoftAP mode, Station + SoftAP mode, 
+and promiscuous mode 
+Note that when ESP32-C5 scans in Station mode, the SoftAP channel will change along with the 
+Station channel 
+– Antenna diversity 
+– 802.11mc FTM 
+
+Bluetooth ® 
+• Bluetooth LE: Bluetooth Core 6.0 certified 
+• Bluetooth mesh 1.1 
+• High power mode (20 dBm) 
+• Direction finding (AoA/AoD) 
+• Periodic advertising with responses (PAwR) 
+• LE connection subrating 
+• LE power control 
+• Speed: 125 Kbps, 500 Kbps, 1 Mbps, 2 Mbps 
+• LE advertising extensions and multiple advertising sets 
+• Allow devices to operate in Broadcaster, Observer, Central, and Peripheral roles concurrently 
+IEEE 802.15.4 
+• Compliant with IEEE 802.15.4-2015 protocol 
+• OQPSK PHY in 2.4 GHz band 
+• Data rate: 250 Kbps 
+• Thread 1.4 
+• Zigbee 3.0 
+CPU and Memory 
+• High-performance (HP) RISC-V processor: 
+– Clock speed: up to 240 MHz 
+– Five-stage pipeline 
+– CoreMark® score: 820.19 CoreMark；3.42 CoreMark/MHz (O3) 
+• Low-power (LP) RISC-V processor: 
+– Clock speed: up to 48 MHz 
+– Two-stage pipeline 
+• ROM: 320 KB 
+• HP SRAM: 384 KB 
+• LP SRAM: 16 KB 
+• Flash/PSRAM controller with cache is supported 
+• Flash in-circuit programming (ICP) is supported 
+
+Advanced Peripheral Interfaces • 29 GPIOs • Analog interfaces: – 12-bit SAR ADC, up to 6 channels – Temperature sensor – Brownout detector – Analog voltage comparator • Digital interfaces: – Two UART controllers – Low-power (LP) UART controller – Two SPI ports for communication with flash/PSRAM – General-purpose SPI port – I2C – Low-power (LP) I2C – I2S – Pulse count controller – USB Serial/JTAG controller – Two CAN FD controllers, compatible with ISO 11898-1:2015 – SDIO slave controller (not supported by chip revision v0.0 and v0.1) – LED PWM controller, up to 6 channels – Motor control PWM (MCPWM), up to 6 channels – Remote control peripheral (RMT) (TX/RX) – Parallel IO interface (PARLIO) – General DMA controller (GDMA), with 3 transmit channels and 3 receive channels – BitScrambler – Event task matrix (ETM) • Timers: – 52-bit system timer – Two 54-bit general-purpose timers – 48-bit RTC timer – Three digital watchdog timers – Analog watchdog timer
+
+Security 
+• Cryptographic hardware acceleration: 
+– AES-128/256 (NIST FIPS 197) 
+– SHA 
+– RSA 
+– ECC 
+– HMAC 
+– Digital signature algorithm (DSA) 
+– Elliptic curve digital signature algorithm (ECDSA) 
+• External memory encryption and decryption (XTS_AES) 
+• Secure boot 
+• True random number generator (TRNG) 
+• Key manager (supported by chip revision v1.2 or later) 
+• Access permission management (APM) and trusted execution environment (TEE) controller 
+• Power glitch detector 
+RF Module 
+• Antenna switches, RF balun, power amplifier, low-noise receive amplifier 
+• Up to +20 dBm of power for an 802.11b transmission 
+• Up to +19 dBm of power for an 802.11ax transmission 
+• Up to -107 dBm of sensitivity for Bluetooth LE receiver (125 Kbps) 
+Applications 
+With low power consumption, ESP32-C5 is an ideal choice for IoT devices in the following areas: 
+• Smart Home 
+• Industrial Automation 
+• Health Care 
+• Consumer Electronics 
+• Smart Agriculture 
+• POS Machines 
+• Service Robot 
+• Audio Devices 
+• Generic Low-power IoT Sensor Hubs 
+• Generic Low-power IoT Data Loggers 
+• Wi-Fi + Bluetooth Networking Card 
+
+Contents
+
+Note:
+
+Check the link or the QR code to make sure that you use the latest version of this document: https://www.espressif.com/documentation/esp32-c5_datasheet_en.pdf
+
+Contents
+
+Product Overview 2 
+Features 3 
+Applications 6 
+1 ESP32-C5 Series Information 14 
+1.1 Nomenclature 14 
+1.2 Comparison 14 
+1.3 Chip Revision 14 
+2 Pins 16 
+2.1 Pin Layout 16 
+2.2 Pin Overview 18 
+2.3 IO Pins 21 
+2.3.1 IO MUX Functions 21 
+2.3.2 LP IO MUX Functions 23 
+2.3.3 Analog Functions 24 
+2.3.4 Restrictions for GPIOs and LP GPIOs 25 
+2.4 Analog Pins 26 
+2.5 Power Supply 27 
+2.5.1 Power Pins 27 
+2.5.2 Power Scheme 27 
+2.5.3 Chip Power-up and Reset 28 
+2.6 Pin Mapping Between Chip and Flash/PSRAM 29 
+3 Boot Configurations 30 
+3.1 Chip Boot Mode Control 31 
+3.2 SDIO Sampling and Driving Clock Edge Control 32 
+3.3 ROM Messages Printing Control 32 
+3.4 JTAG Signal Source Control 33 
+4 Functional Description 35 
+4.1 System 35 
+4.1.1 Microprocessor and Master 35 
+4.1.1.1 High-Performance CPU 35 
+4.1.1.2 RISC-V Trace Encoder 35 
+4.1.1.3 Low-Power CPU 36 
+
+Contents
+
+4.1.1.4 GDMA Controller 36 
+4.1.2 Memory Organization 37 
+4.1.2.1 Internal Memory 38 
+4.1.2.2 External Memory 38 
+4.1.2.3 eFuse Controller 38 
+4.1.2.4 cache 39 
+4.1.3 System Components 39 
+4.1.3.1 IO MUX and GPIO Matrix 39 
+4.1.3.2 Reset 40 
+4.1.3.3 Clock 40 
+4.1.3.4 Interrupt Matrix 41 
+4.1.3.5 Event Task Matrix 41 
+4.1.3.6 Power Management Unit 41 
+4.1.3.7 System Timer 42 
+4.1.3.8 Timer Group 42 
+4.1.3.9 Watchdog Timers 43 
+4.1.3.10 RTC Timer 43 
+4.1.3.11 Permission Control 44 
+4.1.3.12 System Registers 44 
+4.1.3.13 Debug Assistant 44 
+4.1.3.14 Brownout Detector 45 
+4.1.4 Cryptography and Security Component 45 
+4.1.4.1 AES Accelerator 45 
+4.1.4.2 ECC Accelerator 46 
+4.1.4.3 HMAC Accelerator 46 
+4.1.4.4 RSA Accelerator 47 
+4.1.4.5 SHA Accelerator 47 
+4.1.4.6 Digital Signature Algorithm 48 
+4.1.4.7 Elliptic Curve Digital Signature Algorithm 48 
+4.1.4.8 External Memory Encryption and Decryption 49 
+4.1.4.9 True Random Number Generator 49 
+4.1.4.10 Key Manager 49 
+4.1.4.11 Power Glitch Detector 51 
+4.2 Peripherals 52 
+4.2.1 Connectivity Interface 52 
+4.2.1.1 UART Controller 52 
+4.2.1.2 SPI Controller 52 
+4.2.1.3 I2C Controller 53 
+4.2.1.4 I2S Controller 54 
+4.2.1.5 USB Serial/JTAG Controller 55 
+4.2.1.6 CAN FD Controller 55 
+4.2.1.7 LED PWM Controller 56 
+4.2.1.8 Pulse Count Controller 56 
+4.2.1.9 Motor Control PWM 57 
+4.2.1.10 Remote Control Peripheral 58 
+4.2.1.11 Parallel IO Controller 58 
+
+Contents
+
+4.2.1.12 BitScrambler 59 
+4.2.1.13 SDIO Slave Controller 60 
+4.2.2 Analog Signal Processing 61 
+4.2.2.1 Temperature Sensor 61 
+4.2.2.2 ADC Controller 61 
+4.2.2.3 Analog Voltage Comparator 62 
+4.3 Wireless Communication 63 
+4.3.1 Radio 63 
+4.3.1.1 2.4 & 5 GHz Receiver 63 
+4.3.1.2 2.4 & 5 GHz Transmitter 63 
+4.3.1.3 Clock Generator 63 
+4.3.2 Wi-Fi 63 
+4.3.2.1 Wi-Fi Radio and Baseband 64 
+4.3.2.2 Wi-Fi MAC 65 
+4.3.2.3 Networking Features 65 
+4.3.3 Bluetooth LE 66 
+4.3.3.1 Bluetooth LE PHY 66 
+4.3.3.2 Bluetooth LE Link Controller 66 
+4.3.4 802.15.4 67 
+4.3.4.1 802.15.4 PHY 67 
+4.3.4.2 802.15.4 MAC 67 
+5 Electrical Characteristics 68 
+5.1 Absolute Maximum Ratings 68 
+5.2 Recommended Power Supply Characteristics 68 
+5.3 VDD_SPI Output Characteristics 69 
+5.4 DC Characteristics (3.3 V, 25 °C) 69 
+5.5 ADC Characteristics 70 
+5.6 Current Consumption 70 
+5.6.1 RF Current Consumption in Active Mode 70 
+5.6.2 Current Consumption in Other Modes 72 
+5.7 Reliability 72 
+6 RF Characteristics 74 
+6.1 2.4 GHz Wi-Fi Radio 74 
+6.1.1 2.4 GHz Wi-Fi RF Transmitter (TX) Characteristics 74 
+6.1.2 2.4 GHz Wi-Fi RF Receiver (RX) Characteristics 75 
+6.2 5 GHz Wi-Fi Radio 77 
+6.2.1 5 GHz Wi-Fi RF Transmitter (TX) Characteristics 77 
+6.2.2 5 GHz Wi-Fi RF Receiver (RX) Characteristics 78 
+6.3 Bluetooth LE Radio 80 
+6.3.1 Bluetooth LE RF Transmitter (TX) Characteristics 80 
+6.3.2 Bluetooth LE RF Receiver (RX) Characteristics 81 
+6.4 802.15.4 Radio 83 
+6.4.1 802.15.4 RF Transmitter (TX) Characteristics 84 
+6.4.2 802.15.4 RF Receiver (RX) Characteristics 84 
+
+Contents 
+7 Packaging 85 
+Related Documentation and Resources 86 
+Appendix A – ESP32-C5 Consolidated Pin Overview 88 
+Revision History 90 
+
+List of Tables
+
+List of Tables 
+1-1 ESP32-C5 Series Information 14 
+2-1 Pin Overview 18 
+2-2 Peripheral Signals Routed via IO MUX 21 
+2-3 IO MUX Pin Functions 22 
+2-4 LP Peripheral Signals Routed via LP IO MUX 23 
+2-5 LP IO MUX Functions 23 
+2-6 Analog Signals Routed to Analog Functions 24 
+2-7 Analog Functions 24 
+2-8 Analog Pins 26 
+2-9 Power Pins 27 
+2-10 Voltage Regulators 27 
+2-11 Description of Timing Parameters for Power-up and Reset 28 
+2-12 Pin Mapping Between Chip and Off-Package Flash 29 
+2-13 Pin Mapping Between Chip and Off-Package PSRAM 29 
+3-1 Default Configuration of Strapping Pins 30 
+3-2 Description of Timing Parameters for the Strapping Pins 31 
+3-3 Boot Mode Control 32 
+3-4 SDIO Input Sampling Edge/Output Driving Edge Control 32 
+3-5 UART0 ROM Message Printing Control 33 
+3-6 USB Serial/JTAG ROM Message Printing Control 33 
+3-7 JTAG Signal Source Control 34 
+5-1 Absolute Maximum Ratings 68 
+5-2 Recommended Power Characteristics 68 
+5-3 VDD_SPI Internal and Output Characteristics 69 
+5-4 DC Characteristics (3.3 V, 25 °C) 69 
+5-5 ADC Characteristics 70 
+5-6 ADC Calibration Results 70 
+5-7 Current Consumption for Wi-Fi (2.4 GHz) in Active Mode 70 
+5-8 Current Consumption for Wi-Fi (5 GHz) in Active Mode 71 
+5-9 Current Consumption for Bluetooth LE in Active Mode 71 
+5-10 Current Consumption for 802.15.4 in Active Mode 71 
+5-11 Current Consumption in Modem-sleep Mode 72 
+5-12 Current Consumption in Low-Power Modes 72 
+5-13 Reliability Qualifications 72 
+6-1 2.4 GHz Wi-Fi RF Characteristics 74 
+6-2 2.4 GHz TX Power with Spectral Mask and EVM Meeting 802.11 Standards 74 
+6-3 2.4 GHz TX EVM Test 1 74 
+6-4 2.4 GHz RX Sensitivity 75 
+6-5 2.4 GHz Maximum RX Level 76 
+6-6 2.4 GHz RX Adjacent Channel Rejection 76 
+6-7 5 GHz Wi-Fi RF Characteristics 77 
+6-8 5 GHz TX Power with Spectral Mask and EVM Meeting 802.11 Standards 77 
+6-9 5 GHz TX EVM Test 1 77 
+
+List of Tables
+
+6-10 5 GHz RX Sensitivity 78 
+6-11 5 GHz Maximum RX Level 79 
+6-12 5 GHz RX Adjacent Channel Rejection 79 
+6-13 Bluetooth LE RF Characteristics 80 
+6-14 Bluetooth LE - Transmitter Characteristics - 1 Mbps 80 
+6-15 Bluetooth LE - Transmitter Characteristics - 2 Mbps 80 
+6-16 Bluetooth LE - Transmitter Characteristics - 125 Kbps 81 
+6-17 Bluetooth LE - Transmitter Characteristics - 500 Kbps 81 
+6-18 Bluetooth LE - Receiver Characteristics - 1 Mbps 81 
+6-19 Bluetooth LE - Receiver Characteristics - 2 Mbps 82 
+6-20 Bluetooth LE - Receiver Characteristics - 125 Kbps 83 
+6-21 Bluetooth LE - Receiver Characteristics - 500 Kbps 83 
+6-22 802.15.4 RF Characteristics 83 
+6-23 802.15.4 Transmitter Characteristics - 250 Kbps 84 
+6-24 802.15.4 Receiver Characteristics - 250 Kbps 84 
+7-1 Pin Overview 88 
+
+List of Figures
+
+List of Figures 1-1 ESP32-C5 Series Nomenclature 14 2-1 ESP32-C5HR2 & ESP32-C5HR8 Pin Layout (Top View) 16 2-2 ESP32-C5HF4 Pin Layout (Top View) 17 2-3 ESP32-C5 Power Scheme 28 2-4 Visualization of Timing Parameters for Power-up and Reset 28 3-1 Visualization of Timing Parameters for the Strapping Pins 31 4-1 Address Mapping Structure 37 7-1 QFN48 (6×6 mm) Package 85
+
+1 ESP32-C5 Series Information
+
+1 ESP32-C5 Series Information
+
+1.1 Nomenclature
+
+ESP32-C5 H/N F/R x
+
+Chip series
+
+In-package flash or PSRAM size
+
+Ambient temperature H: High temperature N: Normal temperature
+
+F: In-package flash R: In-package PSRAM
+
+Figure 1-1. ESP32-C5 Series Nomenclature
+
+1.2 Comparison
+
+Table 1-1. ESP32-C5 Series Information
+
+Ambient Part Number 1
+
+Temp. 2 (°C)
+
+In-Package Flash 3 In-Package PSRAM Package Chip Revision
+
+ESP32-C5HR2 4 –40 ∼ 105 — 2 MB (Quad SPI) 5
+
+QFN48 (6×6 mm)
+
+v1.2
+
+ESP32-C5HR8 8 MB (Quad SPI)
+
+v1.0/v1.2
+
+ESP32-C5HF4 4 MB (Quad SPI) — 
+1 For details on chip marking and packing, see Section 7 Packaging. 
+2 Ambient temperature specifies the recommended temperature range of the environment outside an Espres 
+sif chip. 
+3 For information about in-package flash, see also Section 4.1.2.1 Internal Memory. By default, the SPI flash 
+on the chip operates at a maximum clock frequency of 80 MHz and does not support the auto suspend 
+feature. If you have a requirement for a higher flash clock frequency of 120 MHz or if you need the flash 
+auto suspend feature, please contact us. 
+4 The variant is not yet in mass production. 
+5 For details about SPI modes, see Section 2.6 Pin Mapping Between Chip and Flash/PSRAM. 
+1.3 Chip Revision 
+As shown in Table 1-1 ESP32-C5 Series Information, ESP32-C5 now has multiple chip revisions available on the 
+market using the same part number. 
+
+1 ESP32-C5 Series Information
+
+For chip revision identification, ESP-IDF release that supports a specific chip revision, and errors fixed in each chip revision, please refer to ESP32-C5 Series SoC Errata.
+
+2 Pins
+
+2 Pins
+
+2.1 Pin Layout
+
+ESP32-C5
+
+VDDA6
+
+GND
+
+VDDA7
+
+MTDI
+
+MTMS
+
+XTAL_32K_N
+
+XTAL_32K_P
+
+VDDPST1
+
+CHIP_PU
+
+VDDA8
+
+XTAL_P
+
+XTAL_N
+
+1
+
+4
+
+M
+
+T
+
+D
+
+O
+
+1
+
+3
+
+M
+
+T
+
+C
+
+K
+
+27 SPIQ
+
+28 SPIWP
+
+29 VDD_SPI
+
+25 SPICS1
+
+3
+
+9
+
+V
+
+D
+
+D
+
+P
+
+S
+
+T
+
+3
+
+4
+
+0
+
+V
+
+D
+
+D
+
+A
+
+1
+
+4
+
+1
+
+V
+
+D
+
+D
+
+A
+
+2
+
+4
+
+2
+
+A
+
+N
+
+T _
+
+2
+
+G
+
+4
+
+3
+
+G
+
+N
+
+D
+
+3
+
+7
+
+G
+
+P
+
+IO
+
+2
+
+7
+
+12
+
+11
+
+10
+
+9
+
+8
+
+7
+
+6
+
+5
+
+4
+
+3
+
+2
+
+1
+
+26
+
+30
+
+31
+
+32
+
+33
+
+34
+
+35
+
+36
+
+2
+
+4
+
+2
+
+3
+
+2
+
+2
+
+2
+
+1
+
+2
+
+0
+
+1
+
+9
+
+1
+
+8
+
+1
+
+7
+
+1
+
+6
+
+1
+
+5
+
+4
+
+6
+
+4
+
+7
+
+4
+
+8
+
+4
+
+5
+
+4
+
+4
+
+3
+
+8
+
+49 GND
+
+SPIHD
+
+SPICLK
+
+SPID
+
+GPIO23
+
+GPIO24
+
+GPIO25
+
+GPIO26
+
+SPICS0
+
+V
+
+D
+
+D
+
+P
+
+S
+
+T
+
+2
+
+G
+
+P
+
+IO
+
+1
+
+4
+
+G
+
+P
+
+IO
+
+1
+
+3
+
+U
+
+0
+
+R
+
+X
+
+D
+
+U
+
+0
+
+T
+
+X
+
+D
+
+G
+
+P
+
+IO
+
+1
+
+0
+
+G
+
+P
+
+IO
+
+9
+
+G
+
+P
+
+IO
+
+8
+
+G
+
+P
+
+IO
+
+7
+
+G
+
+P
+
+IO
+
+6
+
+V
+
+D
+
+D
+
+A
+
+3
+
+V
+
+D
+
+D
+
+A
+
+4
+
+V
+
+D
+
+D
+
+A
+
+5
+
+G
+
+N
+
+D
+
+A
+
+N
+
+T _
+
+5
+
+G
+
+G
+
+P
+
+IO
+
+2
+
+8
+
+Figure 2-1. ESP32-C5HR2 & ESP32-C5HR8 Pin Layout (Top View)
+
+Espressif Systems 16
+
+Submit Documentation Feedback
+
+2 Pins
+
+ESP32-C5
+
+VDDA6
+
+GND
+
+VDDA7
+
+MTDI
+
+MTMS
+
+XTAL_32K_N
+
+XTAL_32K_P
+
+VDDPST1
+
+CHIP_PU
+
+VDDA8
+
+XTAL_P
+
+XTAL_N
+
+1
+
+4
+
+M
+
+T
+
+D
+
+O
+
+1
+
+3
+
+M
+
+T
+
+C
+
+K
+
+27 NC
+
+28 NC
+
+29 NC
+
+25 SPICS1
+
+3
+
+9
+
+V
+
+D
+
+D
+
+P
+
+S
+
+T
+
+4
+
+0
+
+V
+
+D
+
+D
+
+A
+
+4
+
+1
+
+V
+
+D
+
+D
+
+A
+
+4
+
+2
+
+A
+
+N
+
+T _
+
+G
+
+4
+
+3
+
+G
+
+N
+
+D
+
+3
+
+7
+
+G
+
+P
+
+O I
+
+12
+
+11
+
+10
+
+9
+
+8
+
+7
+
+6
+
+5
+
+4
+
+3
+
+2
+
+1
+
+26
+
+30
+
+31
+
+32
+
+33
+
+34
+
+35
+
+36
+
+2
+
+4
+
+2
+
+3
+
+2
+
+2
+
+2
+
+1
+
+2
+
+0
+
+1
+
+9
+
+1
+
+8
+
+1
+
+7
+
+1
+
+6
+
+1
+
+5
+
+4
+
+6
+
+4
+
+7
+
+4
+
+8
+
+4
+
+5
+
+4
+
+4
+
+3
+
+8
+
+49 GND
+
+NC
+
+NC
+
+NC
+
+GPIO23
+
+GPIO24
+
+GPIO25
+
+GPIO26
+
+NC
+
+V
+
+D
+
+D
+
+P
+
+S
+
+T
+
+2
+
+G
+
+P
+
+O I
+
+1
+
+4
+
+G
+
+P
+
+O I
+
+1
+
+3
+
+U
+
+0
+
+R
+
+X
+
+D
+
+U
+
+0
+
+T
+
+X
+
+D
+
+G
+
+P
+
+O I
+
+1
+
+0
+
+G
+
+P
+
+O I
+
+9
+
+G
+
+P
+
+O I
+
+8
+
+G
+
+P
+
+O I
+
+7
+
+G
+
+P
+
+O I
+
+6
+
+V
+
+D
+
+D
+
+A
+
+V
+
+D
+
+D
+
+A
+
+V
+
+D
+
+D
+
+A
+
+G
+
+N
+
+D
+
+A
+
+N
+
+T _
+
+G
+
+G
+
+P
+
+O I
+
+Figure 2-2. ESP32-C5HF4 Pin Layout (Top View)
+
+Espressif Systems 17
+
+Submit Documentation Feedback
+
+2 Pins
+
+2.2 Pin Overview 
+The ESP32-C5 chip integrates multiple peripherals that require communication with the outside world. To keep 
+the chip package size reasonably small, the number of available pins has to be limited. So the only way to 
+route all the incoming and outgoing signals is through pin multiplexing. Pin muxing is controlled via software 
+programmable registers. For details, see ESP32-C5 Technical Reference Manual > Chapter IO MUX and GPIO 
+Matrix. 
+All in all, the ESP32-C5 chip has the following types of pins: 
+• IO pins with the following predefined sets of functions to choose from: 
+– Each IO pin has predefined IO MUX functions – see Table 2-3 IO MUX Pin Functions 
+– Some IO pins have predefined LP IO MUX functions – see Table 2-5 LP IO MUX Functions 
+– Some IO pins have predefined analog functions – see Table 2-7 Analog Functions 
+Predefined functions means that each IO pin has a set of direct connections to certain signals from 
+on-chip components. During run-time, the user can configure which component signal from a 
+predefined set to connect to a certain pin at a certain time via memory mapped registers. 
+• Analog pins that have exclusively-dedicated analog functions – see Table 2-8 Analog Pins 
+• Power pins supply power to the chip components and non-power pins – see Table 2-9 Power Pins 
+Table 2-1 Pin Overview gives an overview of all the pins. For more information, see respective sections below. 
+Alternatively, see Appendix A – ESP32-C5 Consolidated Pin Overview. 
+
+| | Pin | | | | Pin | | | | Pin | | | Pin Providing | | | Pin | Settings | 4,5 | | Pin | Function | Sets | 1 | | |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| | No. | | | | Name | | | | Type | | | Power | 2-4 | At | Reset | After | Reset | IO MUX | | LP IO | MUX | Analog | | |
+| | 1 | | | | VDDA6 | | | Power | | | | | | | | | | | | | | | | |
+| | 2 | | | | GND | | | Power | | | | | | | | | | | | | | | | |
+| | 3 | | | | VDDA7 | | | Power | | | | | | | | | | | | | | | | |
+| | 4 | | | | XTAL_N | | | Analog | | | | | | | | | | | | | | | | |
+| | 5 | | | | XTAL_P | | | Analog | | | | | | | | | | | | | | | | |
+| | 6 | | | | VDDA8 | | | Power | | | | | | | | | | | | | | | | |
+| | 7 | | | | CHIP_PU | | | Analog | | | | VDDPST1 | | | | | | | | | | | | |
+| | 8 | | | | VDDPST1 | | | Power | | | | | | | | | | | | | | | | |
+| | 9 | | | | XTAL_32K_P | | | | IO | | | VDDPST1 | | | | | | IO MUX | | LP IO | MUX | Analog | | |
+| | 10 | | | | XTAL_32K_N | | | | IO | | | VDDPST1 | | | | | | IO MUX | | LP IO | MUX | Analog | | |
+| | 11 | | | | MTMS | | | | IO | | | VDDPST1 | | IE | | IE | | IO MUX | | LP IO | MUX | Analog | | |
+| | 12 | | | | MTDI | | | | IO | | | VDDPST1 | | IE | | IE | | IO MUX | | LP IO | MUX | Analog | | |
+| | 13 | | | | MTCK | | | | IO | | | VDDPST1 | | | | IE, | WPU | IO MUX | | LP IO | MUX | Analog | | |
+| | 14 | | | | MTDO | | | | IO | | | VDDPST1 | | IE | | IE | | IO MUX | | LP IO | MUX | Analog | | |
+| | 15 | | | | GPIO6 | | | | IO | | | VDDPST1 | | IE | | IE | | IO MUX | | LP IO | MUX | Analog | | |
+| | 16 | | | | GPIO7 | | | | IO | | | VDDPST1 | | IE | | IE | | IO MUX | | | | | | |
+| | 17 | | | | GPIO8 | | | | IO | | | VDDPST1 | | | | IE | | IO MUX | | | | Analog | | |
+| | 18 | | | | GPIO9 | | | | IO | | | VDDPST1 | | | | IE | | IO MUX | | | | Analog | | |
+| | 19 | | | | GPIO10 | | | | IO | | | VDDPST1 | | | | IE | | IO MUX | | | | | | |
+| | | | | | | | | | | | | | | | | | | | | Cont’d | on next | | page | |
+| Espressif | | | | | Systems | | | | | | | | | | 18 | | | ESP32-C5 | | Series | Datasheet | | | v1.2 |
+
+Table 2-1. Pin Overview Submit Documentation Feedback
+
+2 Pins
+
+Table 2-1 – cont’d from previous page 
+Pin Pin Pin Pin Providing Pin Settings 4,5 Pin Function Sets 1 
+No. Name Type Power 2-4 At Reset After Reset IO MUX LP IO MUX Analog 
+20 U0TXD IO VDDPST1 IE, OE IO MUX 
+21 U0RXD IO VDDPST1 IE, WPU IO MUX 
+22 GPIO13 IO VDDPST2 IE IO MUX Analog 
+23 GPIO14 IO VDDPST2 USB_PU IE, USB_PU 4 IO MUX Analog 
+24 VDDPST2 Power 
+25 SPICS1 IO VDD_SPI WPU IE, WPU IO MUX 
+26 SPICS0/NC 6 IO VDD_SPI WPU IE, WPU IO MUX 
+27 SPIQ/NC 6 IO VDD_SPI WPU IE, WPU IO MUX 
+28 SPIWP/NC 6 IO VDD_SPI WPU IE, WPU IO MUX 
+29 VDD_SPI/NC 6 Power/IO — IO MUX Analog 
+30 SPIHD/NC 6 IO VDD_SPI WPU IE, WPU IO MUX 
+31 SPICLK/NC 6 IO VDD_SPI WPU IE, WPU IO MUX 
+32 SPID/NC 6 IO VDD_SPI WPU IE, WPU IO MUX 
+33 GPIO23 IO VDDPST3 IE IO MUX 
+34 GPIO24 IO VDDPST3 IE IO MUX 
+35 GPIO25 IO VDDPST3 IE IE IO MUX 
+36 GPIO26 IO VDDPST3 IE IE IO MUX 
+37 GPIO27 IO VDDPST3 IE, WPU IE, WPU IO MUX 
+38 GPIO28 IO VDDPST3 IE, WPU IE, WPU 5 IO MUX 
+39 VDDPST3 Power 
+40 VDDA1 Power 
+41 VDDA2 Power 
+42 ANT_2G Analog 
+43 GND Power 
+44 VDDA3 Power 
+45 VDDA4 Power 
+46 VDDA5 Power 
+47 GND Power 
+48 ANT_5G Analog 
+1. Bold marks the pin function set in which a pin has its default function in the default boot mode. See Section 3.1 Chip Boot Mode 
+Control. 
+2. In column Pin Providing Power, regarding pins powered by VDD_SPI: 
+• Power actually comes from the internal power rail supplying power to VDD_SPI. For details, see Section 2.5.2 Power 
+Scheme. 
+3. Except for GPIO13 and GPIO14 whose default drive strength is 40 mA, the default drive strength for all the other pins is 20 mA. 
+4. Column Pin Settings shows predefined settings at reset and after reset with the following abbreviations: 
+• IE – input enabled 
+• OE – output enabled 
+• WPU – internal weak pull-up resistor enabled 
+• WPD – internal weak pull-down resistor enabled 
+• USB_PU – USB pull-up resistor enabled 
+– By default, the USB function is enabled for USB pins (i.e., GPIO13 and GPIO14), and the pin pull-up is decided by the 
+USB pull-up. The USB pull-up resistor is controlled by USB_SERIAL_JTAG_DP/DM_PULLUP and its pull-up value is 
+controlled by USB_SERIAL_JTAG_PULLUP_VALUE. For details, see ESP32-C5 Technical Reference Manual > Chapter 
+USB Serial/JTAG Controller. 
+– When the USB function is disabled, USB pins are used as regular GPIOs. In this case, the internal weak pull-up and 
+pull-down resistors of the USB pins are disabled by default, but are configurable by IO_MUX_GPIO_FUN_WPU/WPD. 
+For details, see ESP32-C5 Technical Reference Manual > Chapter IO MUX and GPIO Matrix (GPIO, IO MUX). 
+
+2 Pins
+
+5. Depends on the value of EFUSE_DIS_PAD_JTAG 
+• 0 - default value. Input enabled, and internal weak pull-up resistor enabled (IE & WPU) 
+• 1 - input enabled (IE) 
+6. For ESP32-C5HF4, the SPICS0, SPIQ, SPIWP, VDD_SPI, SPIHD, SPICLK, and SPID pins are not connected (NC). 
+
+2 Pins
+
+2.3 IO Pins 
+For details on configuring IO pins, see ESP32-C5 Technical Reference Manual > Chapter IO MUX and GPIO 
+Matrix (GPIO, IO MUX). 
+2.3.1 IO MUX Functions 
+The IO MUX allows multiple input/output signals to be connected to a single input/output pin. Each IO pin of 
+ESP32-C5 can be connected to one of the three signals (IO MUX functions, i.e., F0-F2), as listed in Table 2-3 
+IO MUX Pin Functions. 
+Among the three sets of signals: 
+• Some are routed via the GPIO Matrix (GPIO0, GPIO1, etc.), which incorporates internal signal routing 
+circuitry for mapping signals programmatically. It gives the pin access to almost any peripheral signals. 
+However, the flexibility of programmatic mapping comes at a cost as it might affect the latency of routed 
+signals. For details about connecting to peripheral signals via GPIO Matrix, see 
+ESP32-C5 Technical Reference Manual > Chapter IO MUX and GPIO Matrix. 
+• Some are directly routed from certain peripherals (U0TXD, MTCK, etc.), including UART0, JTAG, SPI0/1, 
+and SPI2 - see Table 2-2 Peripheral Signals Routed via IO MUX. 
+
+Table 2-2. Peripheral Signals Routed via IO MUX
+
+Pin Function Signal Description U0TXD Transmit data
+
+UART0 interface
+
+U0RXD Receive data MTCK Test clock
+
+JTAG interface for debugging
+
+MTDO Test Data Out MTDI Test Data In MTMS Test Mode Select SPIQ Master in, slave out
+
+SPI0/1 interface for connection to the off-package flash via SPI bus. See also Section 2.6 Pin Mapping Between Chip and Flash/PSRAM
+
+SPID Master out, slave in 
+SPIHD Hold 
+SPIWP Write protect 
+SPICLK Clock 
+SPICS… Chip select 
+FSPIQ Master in, slave out 
+
+SPI2 main interface for fast SPI connection. Among these pins, FSPICS0 is for input or output signals in master or slave mode
+
+FSPID Master out, slave in 
+FSPIHD Hold 
+FSPIWP Write protect 
+FSPICLK Clock 
+FSPICS0 Chip select 
+SDIO_CLK Clock 
+SDIO_CMD Command SDIO interface for connection to external SDIO hosts 
+SDIO_DATA… Data 
+
+2 Pins
+
+Table 2-3 IO MUX Pin Functions shows the IO MUX functions of IO pins.
+
+Table 2-3. IO MUX Pin Functions Pin IO MUX/ IO MUX Function 1, 2
+
+No.
+
+GPIO 
+Name 1, 2 0 Type 3 1 Type 2 Type 
+9 GPIO0 GPIO0 I/O/T GPIO0 I/O/T 
+10 GPIO1 GPIO1 I/O/T GPIO1 I/O/T 
+11 GPIO2 MTMS I1 GPIO2 I/O/T FSPIQ I1/O/T 
+12 GPIO3 MTDI I1 GPIO3 I/O/T I1/O/T 
+13 GPIO4 MTCK I1 GPIO4 I/O/T FSPIHD I1/O/T 
+14 GPIO5 MTDO O/T GPIO5 I/O/T FSPIWP I1/O/T 
+15 GPIO6 GPIO6 I/O/T GPIO6 I/O/T FSPICLK I1/O/T 
+16 GPIO7 SDIO_DATA1 I1/O/T GPIO7 I/O/T FSPID I1/O/T 
+17 GPIO8 SDIO_DATA0 I1/O/T GPIO8 I/O/T 
+18 GPIO9 SDIO_CLK I1 GPIO9 I/O/T 
+19 GPIO10 SDIO_CMD I1/O/T GPIO10 I/O/T FSPICS0 I1/O/T 
+20 GPIO11 U0TXD O GPIO11 I/O/T 
+21 GPIO12 U0RXD I1 GPIO12 I/O/T 
+22 GPIO13 SDIO_DATA3 I1/O/T GPIO13 I/O/T 
+23 GPIO14 SDIO_DATA2 I1/O/T GPIO14 I/O/T 
+25 GPIO15 SPICS1 O/T GPIO15 I/O/T 
+26 GPIO16 SPICS0 O/T GPIO16 I/O/T 
+27 GPIO17 SPIQ I1/O/T GPIO17 I/O/T 
+28 GPIO18 SPIWP I1/O/T GPIO18 I/O/T 
+29 GPIO19 GPIO19 I/O/T GPIO19 I/O/T 
+30 GPIO20 SPIHD I1/O/T GPIO20 I/O/T 
+31 GPIO21 SPICLK O/T GPIO21 I/O/T 
+32 GPIO22 SPID I1/O/T GPIO22 I/O/T 
+33 GPIO23 GPIO23 I/O/T GPIO23 I/O/T 
+34 GPIO24 GPIO24 I/O/T GPIO24 I/O/T 
+35 GPIO25 GPIO25 I/O/T GPIO25 I/O/T 
+36 GPIO26 GPIO26 I/O/T GPIO26 I/O/T 
+37 GPIO27 GPIO27 I/O/T GPIO27 I/O/T 
+38 GPIO28 GPIO28 I/O/T GPIO28 I/O/T 
+1 Bold marks the default pin functions in the default boot mode. See Section 3.1 Chip 
+Boot Mode Control. 
+2 Regarding highlighted cells, see Section 2.3.4 Restrictions for GPIOs and LP 
+GPIOs. 
+3Each IO MUX function (Fn, n = 0 ~ 2) is associated with a type. The description of 
+type is as follows: 
+• I – input. O – output. T – high impedance. 
+• I1 – input; if the pin is assigned a function other than Fn, the input signal of Fn 
+is always 1. 
+• I0 – input; if the pin is assigned a function other than Fn, the input signal of 
+Fn is always 0. 
+
+2 Pins
+
+2.3.2 LP IO MUX Functions 
+When the chip is in Deep-sleep mode, the IO MUX described in Section 2.3.1 IO MUX Functions will not work. 
+That is where the LP IO MUX comes in. It allows multiple input/output signals to be a single input/output pin in 
+Deep-sleep mode, as the pin is connected to the LP system and powered by VDDPST1. 
+LP IO pins can be assigned to LP functions. They can 
+• Either work as LP GPIOs (LP_GPIO0, LP_GPIO1, etc.), connected to the LP CPU 
+• Or connect to LP peripheral signals (LP_I2C_SDA, LP_I2C_SCL, etc.) - see Table 2-4 LP Peripheral 
+Signals Routed via LP IO MUX 
+Table 2-4. LP Peripheral Signals Routed via LP IO MUX 
+
+Pin Function Signal Description LP_I2C_SDA Serial data
+
+LP I2C interface
+
+| | | | | LP_I2C_SCL | | | | | | | Serial | clock | | | |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| | | | | LP_UART_RXD | | | | | | | Receive | | | | |
+| | | | | LP_UART_TXD | | | | | | | Transmit | | | | |
+| | | | | LP_UART_RTSN | | | | | | | Request | to | send | | |
+
+LP UART interface
+
+| | | | | LP_UART_CTSN | | | | | | | Clear | to send | | | |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| | | | | LP_UART_DTRN | | | | | | | Data | set ready | | | |
+| | | | | LP_UART_DSRN | | | | | | | Data | terminal | | ready | |
+
+LP_UART_TXD Transmit LP_UART_RTSN Request to send
+
+| | Pin | | | | LP IO | | | | | | | | LP | IO MUX | Function |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| | No. | | | | Name | 1 | | | F0 | | | | | F1 | F2 F3 |
+| | 9 | | | | LP_GPIO0 | | | | LP_UART_DTRN | | | | | LP_GPIO0 | |
+| | 10 | | | | LP_GPIO1 | | | | LP_UART_DSRN | | | | | LP_GPIO1 | |
+| | 11 | | | | LP_GPIO2 | | | | LP_UART_RTSN | | | 2 | | LP_GPIO2 | 2 LP_I2C_SDA |
+| | 12 | | | | LP_GPIO3 | | | | LP_UART_CTSN | | | | | LP_GPIO3 | LP_I2C_SCL |
+| | 13 | | | | LP_GPIO4 | | | | LP_UART_RXD | | | | | LP_GPIO4 | |
+| | 14 | | | | LP_GPIO5 | | | | LP_UART_TXD | | | | | LP_GPIO5 | |
+| | 15 | | | | LP_GPIO6 | | | | | | | | | LP_GPIO6 | |
+| | 1 | This | | | column | lists | | | the | LP | GPIO | names, | | since | LP functions are configured |
+
+Table 2-5 LP IO MUX Functions shows the LP functions of LP IO pins. Table 2-5. LP IO MUX Functions with LP GPIO registers that use LP GPIO numbering. 2 Hardware flow control of LP_UART cannot be used with LP_I2C at the same time.
+
+2 Pins
+
+2.3.3 Analog Functions 
+Some IO pins also have analog functions, for analog peripherals (such as ADC) in any power mode. Internal 
+analog signals are routed to these analog functions, see Table 2-6 Analog Signals Routed to Analog 
+Functions. 
+
+Table 2-6. Analog Signals Routed to Analog Functions
+
+| | Pin Function | | Signal | | | | | | | | Description | | | | |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| | ADC1_CH… | | ADC1 | | channel | | … | signal | | | ADC1 interface | | | | |
+| | XTAL_32K_N | | Negative | | | clock | signal | | | | 32 kHz | external | clock | input/output | |
+| | XTAL_32K_P | | Positive | | | clock | signal | | | | connected | to ESP32-C5’s | | | oscillator |
+| | USB_D- | | Data | | - | | | | | | | | | | |
+| | | | | | | | | | | | USB Serial/JTAG | | function | | |
+| | USB_D+ | | Data | | + | | | | | | | | | | |
+| | PAD_COMP… | | PAD… | | | signal | | | | | Analog | voltage | comparator | | input |
+
+Table 2-7 Analog Functions shows the analog functions of IO pins.
+
+| | | | | | | | Table | 2-7. | | | Analog Functions | | | | |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| | | | | QFN48 | | | Analog | | IO | | Analog | Function | 1, | 2 | |
+| | | | | Pin | | No. | Name | | | | F0 | F1 | | | |
+| | | | | 9 | | | GPIO0 | | | | XTAL_32K_P | | | | |
+| | | | | 10 | | | GPIO1 | | | | XTAL_32K_N | ADC1_CH0 | | | |
+| | | | | 11 | | | GPIO2 | | | | | ADC1_CH1 | | | |
+| | | | | 12 | | | GPIO3 | | | | | ADC1_CH2 | | | |
+| | | | | 13 | | | GPIO4 | | | | | ADC1_CH3 | | | |
+| | | | | 14 | | | GPIO5 | | | | | ADC1_CH4 | | | |
+| | | | | 15 | | | GPIO6 | | | | | ADC1_CH5 | | | |
+| | | | | 17 | | | GPIO8 | | | | PAD_COMP0 | | | | |
+| | | | | 18 | | | GPIO9 | | | | PAD_COMP1 | | | | |
+| | | | | 22 | | | GPIO13 | | | | USB_D | | | | |
+| | | | | 23 | | | GPIO14 | | | | USB_D+ | | | | |
+| | | | | 29 | | | GPIO19 | | | | VDD_SPI | | | | |
+| | | | | 1 | Bold | | marks | the | | default | pin functions | | in SPI | Boot | |
+| | | | | | mode. | | | | | | | | | | |
+| | | | | 2 | Regarding | | highlighted | | | | cells, see | Section | 2.3.4 | Re | |
+| | | | | | strictions | | for | GPIOs | | | and LP GPIOs. | | | | |
+| Espressif | Systems | | | | | | | | | | 24 | | | ESP32-C5 | Series Datasheet v1.2 |
+
+Submit Documentation Feedback
+
+2 Pins
+
+2.3.4 Restrictions for GPIOs and LP GPIOs 
+All IO pins of the ESP32-C5 have GPIO and some have LP GPIO pin functions. However, the IO pins are 
+multiplexed and can be configured for different purposes based on the requirements. Some IOs have 
+restrictions for usage. It is essential to consider the multiplexed nature and the limitations when using these IO 
+pins. 
+In tables of this chapter, some pin functions are highlighted . The non-highlighted GPIO or LP GPIO pins are 
+recommended for use first. If more pins are needed, the highlighted GPIOs or LP GPIOs should be chosen 
+carefully to avoid conflicts with important pin functions. 
+The highlighted IO pins have the following important pin functions: 
+• GPIO – allocated for communication with flash/PSRAM and NOT recommended for other uses. For 
+details, see Section 2.6 Pin Mapping Between Chip and Flash/PSRAM. 
+• GPIO – have one of the following important functions: 
+– Strapping pins – need to be at certain logic levels at startup. See Section 3 Boot Configurations. 
+Note: 
+Strapping pins are highlighted by pin name, instead of pin functions. 
+
+– USB_D+/- – by default, connected to the USB Serial/JTAG controller. To function as GPIOs, these pins need to be reconfigured. – JTAG interface – often used for debugging. See Table 2-2 Peripheral Signals Routed via IO MUX. To free these pins up, the pin functions USB_D+/- of the USB Serial/JTAG controller can be used instead. See also Section 3.4 JTAG Signal Source Control. – UART interface – often used for debugging. See Table 2-2 Peripheral Signals Routed via IO MUX. – SDIO interface – multiplexed with the pins for the USB Serial/JTAG controller. The SDIO Slave controller can be used together with the USB Serial/JTAG controller in single SPI mode, but not in quad SPI mode. See also Appendix A – ESP32-C5 Consolidated Pin Overview.
+
+2 Pins
+
+2.4 Analog Pins
+
+Table 2-8. Analog Pins
+
+QFN48 Pin Pin Pin 
+Pin No. Name Type Function 
+4 XTAL_N — External clock input/output connected to chip’s crystal or 
+5 XTAL_P — oscillator. P/N means differential clock positive/negative. 
+7 CHIP_PU — 
+
+High: On, enables the chip (powered up). Low: Off, the chip powers off (powered down). Note: Do not leave the CHIP_PU pin floating. 42 ANT_2G I/O 2.4 GHz RF input/output 48 ANT_5G I/O 5 GHz RF input/output
+
+2 Pins
+
+2.5 Power Supply
+
+| | QFN48 | | | Pin | | | | | | | | | | Power | 1,2 Supply | | | |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| | Pin | | No. | Name | | | | | | Direction | | Power | Domain/Other | | | IO | 4 Pins | |
+| | 1 | | | VDDA6 | | | | | | Input | | Analog | power domain | 3.3 | V | | | |
+| | 2 | | | GND | | | | | | — | | External | ground | connection | | | | |
+| | 3 | | | VDDA7 | | | | | | Input | | Analog | power domain | 3.3 | V | | | |
+| | 6 | | | VDDA8 | | | | | | Input | | Analog | power domain | 3.3 | V | | | |
+| | 8 | | | VDDPST1 | | | | | | Input | | LP | digital power | domain | | LP | IO | |
+| | 24 | | | VDDPST2 | | | | | | Input | | HP | digital and part | of analog | pin power | domains HP | IO | |
+| | 29 | | | VDD_SPI | | | | 3 | | Output | | Off-package | flash | | | Flash | IO | |
+| | 39 | | | VDDPST3 | | | | | | Input | | HP | digital power | domain | | HP | IO | |
+| | 40 | | | VDDA1 | | | | | | Input | | Analog | power domain | 3.3 | V | | | |
+| | 41 | | | VDDA2 | | | | | | Input | | Analog | power domain | 3.3 | V | | | |
+| | 43 | | | GND | | | | | | — | | External | ground | connection | | | | |
+| | 44 | | | VDDA3 | | | | | | Input | | Analog | power domain | 3.3 | V | | | |
+| | 45 | | | VDDA4 | | | | | | Input | | Analog | power domain | 3.3 | V | | | |
+| | 46 | | | VDDA5 | | | | | | Input | | Analog | power domain | 3.3 | V | | | |
+| | 47 | | | GND | | | | | | — | | External | ground | connection | | | | |
+| | 1 | | See | in conjunction | | | | | with | Section | 2.5.2 | Power | Scheme. | | | | | |
+| | 2 | | For recommended | | | | | | and | maximum | | voltage | and current, | see Section | 5.1 Absolute | Maximum | Ratings | |
+| | | | and | Section | 5.2 | | Recommended | | | | Power | Supply | Characteristics. | | | | | |
+| | 3 | | To configure | | | VDD_SPI | | | | as input | or | output, | see ESP32-C5 | Technical | Reference | Manual > Chapter | | |
+| | | | Low-Power | | Management. | | | | | | | | | | | | | |
+| | 4 | | LP IO | pins | are | | those | | powered | | by | VDDPST1 | and so on, | as shown | in Figure | 2-3 ESP32-C5 | Power | |
+| | | | Scheme. | See | | also | | | Table | 2-1 | Pin Overview | | > Column Pin | Providing | Power. | | | |
+| 2.5.2 | | | Power | Scheme | | | | | | | | | | | | | | |
+| The | power | | scheme | | is | shown | | | in | Figure | 2-3 | ESP32-C5 | Power | Scheme. | | | | |
+
+2.5.1 Power Pins The chip is powered via the power pins described in Table 2-9 Power Pins. Table 2-9. Power Pins The components on the chip are powered via voltage regulators.
+
+Table 2-10. Voltage Regulators
+
+| | | | | | Voltage | | | | Regulator | | | Output | Power Supply | | | | | |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| | | | | | HP | | | | | | | 1.1 V | HP power | domain | | | | |
+| | | | | | LP | | | | | | | 1.1 V | LP power | domain | | | | |
+
+2 Pins
+
+LP Voltage Regulator
+
+VDDPST1 VDDPST2 VDDPST3 VDDAX
+
+HP Voltage Regulator
+
+LP IO LP System
+
+HP System
+
+Analog
+
+HP IO1 Flash IO HP IO0
+
+VDD_SPI
+
+RSPI
+
+Figure 2-3. ESP32-C5 Power Scheme
+
+2.5.3 Chip Power-up and Reset 
+Once the power is supplied to the chip, its power rails need a short time to stabilize. After that, CHIP_PU – the 
+pin used for power-up and reset – should be pulled high to activate the chip. For information on CHIP_PU as 
+well as power-up and reset timing, see Figure 2-4 and Table 2-11. 
+
+VIL_nRST
+
+tST BL tRST
+
+2.8 V
+
+VDDPST1, VDDPST2, VDDPST3, VDDA1, VDDA2, VDDA3, VDDA4, VDDA5, VDDA6, VDDA7, VDDA8
+
+CHIP_PU
+
+Figure 2-4. Visualization of Timing Parameters for Power-up and Reset
+
+Table 2-11. Description of Timing Parameters for Power-up and Reset Parameter Description Min (µs)
+
+tST BL
+
+Time reserved for the power rails of VDDPST1, VDDPST2, VD DPST3, VDDA1, VDDA2, VDDA3, VDDA4, VDDA5, VDDA6, VDDA7, and VDDA8 to stabilize before the CHIP_PU pin is pulled high to activate the chip
+
+50 tRST
+
+Time reserved for CHIP_PU to stay below VIL_nRST to reset the chip (see Table 5-4)
+
+50
+
+2 Pins
+
+2.6 Pin Mapping Between Chip and Flash/PSRAM 
+Table 2-12 lists the pin mapping between the chip and off-package flash/PSRAM for all SPI modes. It can also 
+serve as a reference for chip variants with in-package flash/PSRAM. 
+For more information on SPI controllers, see also Section 4.2.1.2 SPI Controller. 
+
+Notice: It is not recommended to use the pins connected to flash/PSRAM for any other purposes.
+
+Table 2-12. Pin Mapping Between Chip and Off-Package Flash
+
+QFN40 Pin Name Single SPI Dual SPI Quad SPI 
+Pin No. flash flash flash 
+31 SPICLK CLK CLK CLK 
+26 SPICS0 1 CS# CS# CS# 
+32 SPID MOSI SIO0 2 SIO0 
+27 SPIQ MISO SIO1 SIO1 
+28 SPIWP WP# SIO2 
+30 SPIHD HOLD# SIO3 
+1 SPICS0 is used to access flash 
+2 SIO: Serial Data Input and Output 
+
+Table 2-13. Pin Mapping Between Chip and Off-Package PSRAM
+
+QFN48 Pin Name Single SPI Quad SPI 
+Pin No. PSRAM PSRAM 
+31 SPICLK CLK CLK 
+25 SPICS1 1 CE# CE# 
+32 SPID SI 2 SIO0 
+27 SPIQ SO 3 SIO1 
+28 SPIWP SIO2 
+30 SPIHD SIO3 
+1 SPICS1 is used to access PSRAM 
+2 SI: Serial Data Input, equivalent to MOSI 
+3 SO: Serial Data Output, equivalent to MISO 
+
+3 Boot Configurations 
+The chip allows for configuring the following boot parameters through strapping pins and eFuse parameters at 
+power-up or a hardware reset, without microcontroller interaction. 
+• Chip boot mode 
+– Strapping pin: GPIO26, GPIO27, and GPIO28 
+• SDIO sampling and driving clock edge 
+– Strapping pin: GPIO25 and MTDI 
+• ROM message printing 
+– Strapping pin: GPIO27 
+– eFuse parameter: EFUSE_UART_PRINT_CONTROL and 
+EFUSE_DIS_USB_SERIAL_JTAG_ROM_PRINT 
+• JTAG signal source 
+– Strapping pin: GPIO7 
+– eFuse parameter: EFUSE_DIS_PAD_JTAG, EFUSE_DIS_USB_JTAG, and EFUSE_JTAG_SEL_ENABLE 
+The default values of all the above eFuse parameters are 0, which means that they are not burnt. Given that 
+eFuse is one-time programmable, once programmed to 1, it can never be reverted to 0. For how to program 
+eFuse parameters, please refer to ESP32-C5 Technical Reference Manual > Chapter eFuse Controller. 
+The default values of the strapping pins, namely the logic levels, are determined by pins’ internal weak 
+pull-up/pull-down resistors at reset if the pins are not connected to any circuit, or connected to an external 
+high-impedance circuit. 
+
+Table 3-1. Default Configuration of Strapping Pins Strapping Pin Default Configuration Bit Value GPIO25 Floating – GPIO26 Floating – GPIO27 Pull-up 1 GPIO28 Pull-up 1 GPIO7 Floating – MTMS Floating – MTDI Floating –
+
+To change the bit values, the strapping pins should be connected to external pull-down/pull-up 
+resistances. 
+All strapping pins have latches. At Chip Reset, the latches sample the bit values of their respective strapping 
+pins and store them until the chip is powered down or shut down. The states of latches cannot be changed in 
+any other way. It makes the strapping pin values available during the entire chip operation, and the pins are 
+freed up to be used as regular IO pins after reset. For details on Chip Reset, see 
+ESP32-C5 Technical Reference Manual > Chapter Reset and Clock. 
+
+The timing of signals connected to the strapping pins should adhere to the setup time and hold time specifications in Table 3-2 and Figure 3-1.
+
+Table 3-2. Description of Timing Parameters for the Strapping Pins
+
+Parameter Description Min (ms) tSU
+
+Setup time is the time reserved for the power rails to stabilize be fore the CHIP_PU pin is pulled high to activate the chip.
+
+0 tH
+
+Hold time is the time reserved for the chip to read the strapping pin values after CHIP_PU is already high and before these pins start operating as regular IO pins.
+
+3
+
+Strapping pin
+
+VIH_nRST
+
+VIH
+
+tSU tH
+
+CHIP_PU
+
+Figure 3-1. Visualization of Timing Parameters for the Strapping Pins
+
+3.1 Chip Boot Mode Control 
+GPIO26, GPIO27 and GPIO28 control the boot mode after the reset is released. See Table 3-3 Boot Mode 
+Control. 
+
+Table 3-3. Boot Mode Control
+
+| | Boot | | Mode | GPIO26 | | GPIO27 | | | GPIO28 | |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| | SPI | | 1 Boot | Any value | | Any value | | | 1 | 1 |
+| | Joint | | Download | 2 Boot 0 Any value | | 1 | | | 0 | |
+| | Joint | | Download | 3 Boot 1 0 | | 0 | | | 0 | |
+| | 1 | Bold | marks the | default value and | configuration. | | | | | |
+| | 2 | Joint | Download | Boot 0 mode | supports | the | following | | down | |
+
+Boot Mode GPIO26 GPIO27 GPIO28 
+SPI Boot 1 Any value Any value 1 1 
+Joint Download Boot 0 2 Any value 1 0 
+Joint Download Boot 1 3 0 0 0 
+1 Bold marks the default value and configuration. 
+2 Joint Download Boot 0 mode supports the following down 
+load methods: 
+• USB-Serial-JTAG Download Boot 
+• UART Download Boot 
+• SPI Slave Download Boot (chip revision v0.1 only) 
+3 Joint Download Boot 1 mode supports the following down 
+load methods: 
+• UART Download Boot 
+• SDIO Download Boot 
+In SPI Boot mode, the ROM bootloader loads and executes the program from SPI flash to boot the 
+system. 
+In Joint Download Boot 0 mode, users can download binary files into flash using UART0, USB, or SPI Slave 
+interfaces. It is also possible to download binary files into SRAM and execute it from SRAM. 
+In Joint Download Boot 1 mode, users can download binary files into flash using UART0 or SDIO interfaces. It is 
+also possible to download binary files into SRAM and execute it from SRAM. 
+
+3.2 SDIO Sampling and Driving Clock Edge Control The strapping pin GPIO25 and MTDI can be used to decide on which clock edge to sample signals and drive output lines. See Table 3-4 SDIO Input Sampling Edge/Output Driving Edge Control.
+
+Table 3-4. SDIO Input Sampling Edge/Output Driving Edge Control
+
+| | Edge | | behavior | | | | GPIO25 | | MTDI | |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| | Falling | | edge sampling, | falling edge | output | | 0 | | | 0 |
+| | Falling | | edge sampling, | rising edge | output | | 0 | | | 1 |
+| | Rising | | edge sampling, | falling edge | output | | 1 | | | 0 |
+| | Rising | | edge sampling, | rising edge | output | | 1 | | | 1 |
+
+1 GPIO25 and MTDI are floating by default, so above are not default configurations.
+
+3.3 ROM Messages Printing Control 
+During the boot process, the messages by the ROM code can be printed to: 
+• (Default) UART0 and USB Serial/JTAG controller 
+• UART0 
+
+• USB Serial/JTAG controller To print ROM messages to UART0 or USB Serial/JTAG controller, see the description below. EFUSE_UART_PRINT_CONTROL and GPIO27 control printing ROM messages to UART0 as shown in Table 3-5 UART0 ROM Message Printing Control.
+
+Table 3-5. UART0 ROM Message Printing Control
+
+UART0 ROM Message Printing Register 2 eFuse 3 GPIO27 ROM messages are always printed to UART0 during boot
+
+0
+
+0 (0b00) x 4
+
+Print is enabled during boot
+
+1 (0b01)
+
+0 Print is disabled during boot 1 Print is disabled during boot
+
+2 (0b10)
+
+0 Print is enabled during boot 1 Print is disabled during boot 3 (0b11) x Print is disabled during boot 1 x x 1 Bold marks the default value and configuration. 2 Register: LP_AON_STORE4_REG[0] 3 eFuse: EFUSE_UART_PRINT_CONTROL 4x: x indicates that the value has no effect on the result and can be ignored.
+
+EFUSE_DIS_USB_SERIAL_JTAG_ROM_PRINT controls the printing to USB Serial/JTAG controller as shown in Table 3-6 USB Serial/JTAG ROM Message Printing Control.
+
+Table 3-6. USB Serial/JTAG ROM Message Printing Control
+
+USB Serial/JTAG ROM Message Printing
+
+EFUSE_DIS_USB_SERIAL_JTAG_ROM_PRINT
+
+Enabled 0 Disabled
+
+1 Ignored 1 Bold marks the default value and configuration.
+
+3.4 JTAG Signal Source Control 
+The strapping pin GPIO7 can be used to control the source of JTAG signals during the early boot process. This 
+pin does not have any internal pull resistors and the strapping value must be controlled by the external circuit 
+that cannot be in a high impedance state. 
+As Table 3-7 shows, GPIO7 is used in combination with EFUSE_DIS_PAD_JTAG, EFUSE_DIS_USB_JTAG, and 
+EFUSE_JTAG_SEL_ENABLE. 
+
+Table 3-7. JTAG Signal Source Control
+
+JTAG Signal Source eFuse 1 2 eFuse 2 3 eFuse 3 4 GPIO7 USB Serial/JTAG Controller
+
+6
+
+0
+
+0
+
+0 x 5
+
+1
+
+1
+
+JTAG pins MTDI, MTCK, MTMS, and MTDO
+
+0 x
+
+x x
+
+1
+
+USB Serial/JTAG Controller 6
+
+1
+
+0
+
+JTAG is disabled
+
+x 1
+
+1 Bold marks the default value and configuration. 
+2 eFuse 1: EFUSE_DIS_PAD_JTAG 
+3 eFuse 2: EFUSE_DIS_USB_JTAG 
+4 eFuse 3: EFUSE_JTAG_SEL_ENABLE 
+5x: x indicates that the value has no effect on the result and can be ignored. 
+6In Joint Download Boot 1 mode, the USB Serial/JTAG controller is forcibly disabled, and 
+the JTAG signal only comes from JTAG pins. If PAD_JTAG is also disabled, then JTAG is 
+disabled. 
+
+4.1 System 
+This section describes the core of the chip’s operation, covering its microprocessor, memory organization, 
+system components, and security features. 
+
+4.1.1 Microprocessor and Master This subsection describes the core processing units within the chip and their capabilities.
+
+4.1.1.1 High-Performance CPU 
+The ESP-RISC-V CPU (HP CPU) is a high-performance 32-bit core based on the RISC-V instruction set 
+architecture (ISA) comprising base integer (I), multiplication/division (M), atomic (A) and compressed (C) 
+standard extensions. 
+Feature List 
+• five-stage pipeline that supports clock frequency of up to 240 MHz 
+• RV32IMAC ISA (instruction set architecture) 
+• two-cycle pipelined multiplier and radix-4 SRT divider 
+• Zc extensions (Zcb, Zcmp, and Zcmt) 
+• custom hardware loop instructions (Xhwlp) 
+• compliant with RISC-V Core Local Interrupt (CLINT) 
+• compliant with RISC-V Core-Local Interrupt Controller (CLIC) 
+• branch predictor BHT, BTB, and RAS 
+• up to 3 hardware breakpoints/watchpoints 
+• up to 16 PMP/PMA regions 
+• Machine and User privilege modes 
+• USB/JTAG for debugging 
+• compliant with RISC-V debug specification v0.13 
+• offline trace debug that is compliant with RISC-V Trace Specification v2.0 
+For details, see ESP32-C5 Technical Reference Manual > Chapter High-Performance CPU. 
+4.1.1.2 RISC-V Trace Encoder 
+The RISC-V Trace Encoder in the ESP32-C5 chip provides a way to capture detailed trace information from the 
+High-Performance CPU’s execution, enabling deeper analysis and optimization of the system. It connects to 
+the HP CPU’s instruction trace interface and compresses the information into smaller packets, which are then 
+stored in internal SRAM. 
+
+Feature List 
+• compatible with Efficient Trace for RISC-V Version 2.0 
+• synchronization packets sent every few clock cycles or packets 
+• zero bytes as anchor tags to identify boundaries between data packets 
+• configurable memory writing mode: loop mode or non-loop mode 
+• trace lost status to indicate packet loss 
+• automatic restart after packet loss 
+• support for delta address mode and full address mode 
+• Support for filter unit 
+For details, see ESP32-C5 Technical Reference Manual > Chapter RISC-V Trace Encoder (TRACE). 
+4.1.1.3 Low-Power CPU 
+The ESP32-C5 Low-Power CPU (LP CPU) is a 32-bit processor based on the RISC-V ISA comprising integer 
+(I), multiplication/division (M), atomic (A), and compressed (C) standard extensions. It is designed for 
+ultra-low power consumption and is capable of staying powered on during Deep-sleep mode when the HP 
+CPU is powered down. 
+This LP CPU is designed as a simplified, low-power replacement of HP CPU in sleep modes. It can be also 
+used to supplement the functions of the HP CPU in normal working mode. The LP CPU and LP memory 
+remain powered on in Deep-sleep mode. Hence, the developer can store a program for the LP CPU in the LP 
+memory to access LP IO, LP peripherals, and RTC timers in Deep-sleep mode. 
+Feature List 
+• two-stage pipeline that supports a clock frequency of up to 48 MHz 
+• RV32IMAC ISA (instruction set architecture) 
+• 3-4 cycle multiplier and iterative divider 
+• support for custom vectored interrupts 
+• up to 2 hardware breakpoints/watchpoints 
+• JTAG for debugging 
+• compliant with RISC-V debug specification v0.13 
+• boot by the CPU, its dedicated timer, or LP IO 
+For details, see ESP32-C5 Technical Reference Manual > Chapter Low-Power CPU. 
+
+4.1.1.4 GDMA Controller The GDMA Controller is a General Direct Memory Access (GDMA) controller that allows peripheral-to-memory, memory-to-peripheral, and memory-to-memory data transfer without the CPU’s intervention. The GDMA has six independent channels, three transmit channels and three receive channels. These channels are shared by peripherals with the GDMA feature, consisting of SPI2, UHCI0, I2S, AES, SHA, ADC, and PARLIO.
+
+Feature List 
+• programmable length of data to be transferred in bytes 
+• linked list of descriptors for efficient data transfer management 
+• INCR4/8/16 burst transfer when accessing the internal RAM or external memory for improved 
+performance 
+• access to an address space of up to 384 KB in internal RAM 
+• software-configurable selection of peripheral requesting service 
+• fixed-priority and round-robin channel arbitration schemes for managing bandwidth 
+• support for Event Task Matrix 
+For details, see ESP32-C5 Technical Reference Manual > Chapter GDMA Controller (DMA). 
+4.1.2 Memory Organization 
+This subsection describes the memory arrangement to explain how data is stored, accessed, and managed 
+for efficient operation. 
+Figure 4-1 illustrates the address mapping structure of ESP32-C5. 
+
+Figure 4-1. Address Mapping Structure
+
+4.1.2.1 Internal Memory 
+The internal memory of ESP32-C5 refers to the memory integrated on the chip die or in the chip package, 
+including ROM, SRAM, eFuse, and flash. 
+Feature List 
+• 320 KB of ROM for booting and core functions 
+• 384 KB of SRAM for data and instructions 
+• 16 KB of low-power SRAM (LP SRAM) that can be accessed by HP CPU or LP CPU. It can retain data in 
+Deep-sleep mode 
+• 4 Kbit of eFuse memory, with 1792 bits available for users 
+For details, see ESP32-C5 Technical Reference Manual > Chapter System and Memory. 
+4.1.2.2 External Memory 
+ESP32-C5 supports SPI, Dual SPI, Quad SPI, and QPI interfaces that allow connection to the external flash and 
+PSRAM. 
+CPU’s instruction memory space and read-only data memory space can map into the external flash and 
+PSRAM of ESP32-C5, and the size of the external flash or PSRAM can be 32 MB at most. ESP32-C5 supports 
+hardware encryption/decryption based on XTS-AES to protect developers’ programs and data in the external 
+flash and PSRAM. 
+
+Feature List • 32 MB of instruction memory space which can map into the external flash and PSRAM as individual blocks of 64 KB. 32-bit fetch is supported • 32 MB of data memory space which can map into the external flash and PSRAM as individual blocks of 64 KB. 8-bit, 16-bit, and 32-bit reads are supported by the external flash. 8-bit, 16-bit, and 32-bit reads and writes are supported by the external PSRAM
+
+Note: 
+After ESP32-C5 is initialized, software can customize the mapping of off-package flash and PSRAM into the CPU ad 
+dress space. 
+
+For details, see ESP32-C5 Technical Reference Manual > Chapter System and Memory.
+
+4.1.2.3 eFuse Controller 
+The eFuse memory is a one-time programmable memory that stores parameters and user data, and the eFuse 
+controller of ESP32-C5 is used to program and read this eFuse memory. 
+
+Feature List • 4 Kbits in total, with 1792 bits reserved for users, e.g., encryption key and device ID
+
+• one-time programmable storage • configurable write protection • configurable read protection • various hardware encoding schemes to protect against data corruption For details, see ESP32-C5 Technical Reference Manual > Chapter eFuse Controller.
+
+4.1.2.4 cache ESP32-C5 has an four-way set associative cache.
+
+Feature List 
+• size: 32 KB 
+• block size: 32 bytes 
+• pre-load function 
+• lock function 
+• critical word first and early restart 
+For details, see ESP32-C5 Technical Reference Manual > Chapter Cache. 
+4.1.3 System Components 
+This subsection describes the essential components that contribute to the overall functionality and control of 
+the system. 
+
+4.1.3.1 IO MUX and GPIO Matrix The IO MUX and GPIO Matrix in the ESP32-C5 chip provide flexible routing of peripheral input and output signals to the GPIO pins. These peripherals enhance the functionality and performance of the chip by allowing the configuration of I/O, support for multiplexing, and signal synchronization for peripheral inputs.
+
+Feature List 
+• 29 GPIO pins for general-purpose I/O or connection to internal peripheral signals 
+• GPIO matrix: 
+– routing 77 peripheral input and 75 output signals to any GPIO pin 
+– signal synchronization for peripheral inputs based on IO MUX operating clock 
+– GPIO Filter hardware for input signal filtering 
+• IO MUX for directly connecting certain digital signals (SPI, JTAG, UART) to pins 
+• support for Event Task Matrix 
+For details, see ESP32-C5 Technical Reference Manual > Chapter IO MUX and GPIO Matrix. 
+
+4.1.3.2 Reset 
+The ESP32-C5 chip provides four types of reset that occur at different levels, namely CPU Reset, Core Reset, 
+System Reset, and Chip Reset. Except for Chip Reset, all reset types preserve the data stored in internal 
+memory. 
+Feature List 
+• four types of reset: 
+– CPU reset – resets the CPU core 
+– core reset – resets the whole digital system except for the LP system 
+– system Reset – resets the whole digital system, including the LP system 
+– chip reset – resets the whole chip 
+• reset trigger: 
+– directly by hardware 
+– via software by configuring the corresponding registers of the CPU 
+• support for retrieving reset cause 
+For details, see ESP32-C5 Technical Reference Manual > Chapter Reset and Clock. 
+
+4.1.3.3 Clock The ESP32-C5 chip has clocks sourced from oscillators, RC circuits, and PLL circuits, which are then processed by dividers or selectors. The clocks can be classified into high-speed clocks for devices working at higher frequencies and slow-speed clocks for low-power systems and some peripherals.
+
+Feature List • high-speed clocks for HP system – external main crystal clock (supports 48 MHz crystal clock frequency) – internal fast RC oscillator clock (typically about 20 MHz, and adjustable) – PLL clock
+
+Notice: * ESP32-C5 is unable to operate without an external main crystal clock. * ESP32-C5 can automatically filter out high-frequency glitches from the external main crystal clock.
+
+• slow-speed clocks for RTC counter, RTC watchdog, and the power management unit (PMU) – internal slow RC oscillator (typically about 150 kHz) – 32 kHz external low-speed crystal clock – external IO clock (external clock source connected with digital IO)
+
+• fast-speed clocks for low-power peripherals and sensor controllers – external main crystal clock divided by 2 – internal fast RC oscillator clock (typically about 20 MHz, and adjustable) For details, see ESP32-C5 Technical Reference Manual > Chapter Reset and Clock.
+
+4.1.3.4 Interrupt Matrix 
+The Interrupt Matrix in the ESP32-C5 chip routes interrupt requests generated by various peripherals to CPU 
+interrupts. 
+Feature List 
+• 84 peripheral interrupt sources accepted as input 
+• 32 CPU peripheral interrupts generated to CPU as output 
+• current interrupt status query of peripheral interrupt sources 
+• multiple interrupt sources mapping to a single CPU interrupt (i.e., shared interrupts) 
+For details, see ESP32-C5 Technical Reference Manual > Chapter Interrupt Matrix. 
+
+4.1.3.5 Event Task Matrix ESP32-C5 integrates an SoC ETM with multiple channels. Each input event on channels is mapped to an output task. Events are generated by peripherals, while tasks are received by peripherals.
+
+Feature List 
+• up to 50 mapping channels, each connected to an event and a task and controlled independently 
+• an event or a task can be mapped to any tasks or events in the matrix. That is to say, one event can be 
+mapped to different tasks via multiple channels, or different events can be mapped to the same task via 
+their individual channels 
+• peripherals supporting ETM consisting of GPIO, LED PWM, general-purpose timers, RTC timer, system 
+timer, MCPWM, temperature sensor, ADC, I2S, LP CPU, GDMA, and PMU 
+For details, see ESP32-C5 Technical Reference Manual > Chapter Event Task Matrix. 
+4.1.3.6 Power Management Unit 
+The ESP32-C5 has an advanced Power Management Unit (PMU). It can be flexibly configured to power up 
+different power domains of the chip to achieve the best balance between chip performance, power 
+consumption, and wakeup latency. 
+The integrated LP CPU allow the ESP32-C5 to operate in Deep-sleep mode with most of the power domains 
+turned off, thus achieving extremely low-power consumption. 
+Configuring the PMU is a complex procedure. To simplify power management for typical scenarios, there are 
+the following predefined power modes that power up different combinations of power domains: 
+
+• Active mode – The HP CPU, RF circuits, and all peripherals are on. The chip can process data, receive, transmit, and listen. • Modem-sleep mode – The HP CPU is on, but the clock frequency can be reduced. The wireless connections can be configured to remain active as RF circuits are periodically switched on when required. • Light-sleep mode – The HP CPU stops running, and can be optionally powered on. The LP peripherals, as well as the LP CPU can be woken up periodically by the timer. The chip can be woken up via all wake up mechanisms: MAC, RTC timer, or external interrupts. Wireless connections can remain active. Some groups of digital peripherals can be optionally powered off. • Deep-sleep mode – Only the LP system is powered on. Wireless connection data is stored in LP memory. For details, see ESP32-C5 Technical Reference Manual > Chapter Low-Power Management.
+
+4.1.3.7 System Timer The System Timer (SYSTIMER) in the ESP32-C5 chip is a 52-bit timer that can be used to generate tick interrupts for the operating system or as a general timer to generate periodic or one-time interrupts.
+
+Feature List 
+• two 52-bit counters and three 52-bit comparators 
+• counters with an average clock frequency of 16 MHz 
+• three types of independent interrupts generated according to alarm value 
+• two alarm modes: target mode and period mode 
+• 52-bit alarm values and 26-bit alarm periods 
+• automatic reload of counter value 
+• counters can be stalled if the CPU is stalled or in OCD mode 
+• real-time alarm events 
+For details, see ESP32-C5 Technical Reference Manual > Chapter System Timer. 
+4.1.3.8 Timer Group 
+The Timer Group (TIMG) in the ESP32-C5 chip can be used to precisely time an interval, trigger an interrupt 
+after a particular interval (periodically and aperiodically), or act as a hardware clock. ESP32-C5 has two timer 
+groups, TIMG0 and TIMG1, each consisting of one general-purpose timer and one Main System Watchdog 
+Timer. 
+
+Feature List • 16-bit prescaler • 54-bit time-base counter programmable to incrementing or decrementing • able to read real-time value of the time-base counter • halt and resume the time-base counter
+
+• programmable alarm generation • timer value reload (auto-reload at an alarm or a software-controlled instant reload) • frequency calculation of slow clock for TIMG0 • level interrupt generation • real-time alarm events • support several ETM tasks and events For details, see ESP32-C5 Technical Reference Manual > Chapter Timer Group (TIMG).
+
+4.1.3.9 Watchdog Timers 
+The Watchdog Timers (WDT) in ESP32-C5 are used to detect and recover from malfunctions. The chip 
+contains three digital watchdog timers: one in each of the two timer groups (MWDT) and one in the RTC 
+Module (RWDT). Additionally, there is one analog watchdog timer called the Super watchdog (SWD) that helps 
+prevent the system from operating in a sub-optimal state. 
+Feature List 
+• digital watchdog timers: 
+– four stages, each with a programmable timeout value. Each stage can be configured, enabled and 
+disabled separately 
+– three timeout actions for MWDT: interrupt, CPU reset, or core reset upon expiry of each stage; four 
+timeout actions for RWDT interrupt: CPU reset, core reset, or system reset for RWDT upon expiry of 
+each stage 
+– 32-bit expiry counter 
+– write protection, to prevent RWDT and MWDT configuration from being altered inadvertently 
+– flash boot protection 
+If the boot process from an SPI flash does not complete within a predetermined period of time, the 
+watchdog will reboot the entire main system 
+• analog watchdog timer： 
+– ultra-low power 
+– interrupt to indicate that the SWD is about to time out 
+– various dedicated methods for software to feed SWD, which enables SWD to monitor the working 
+state of the whole operating system 
+For details, see ESP32-C5 Technical Reference Manual > Chapter Watchdog Timers. 
+4.1.3.10 RTC Timer 
+ESP32-C5 RTC Timer is a 48-bit readable counter that can operate in any power mode. It is used as a system 
+timer when the timers in the HP system is unavailable. It also allows for configuring timer interrupts and logging 
+the time when specific events happen in the system. 
+
+Feature List 
+• 48-bit counter operating under the RTC clock 
+• real-time reading of the time-base counter’s value 
+• configurable target value for the counter to trigger an interrupt upon timeout 
+For details, see ESP32-C5 Technical Reference Manual > Chapter RTC Timer. 
+4.1.3.11 Permission Control 
+The Permission Control module in ESP32-C5 is responsible for managing access permissions to memory and 
+peripheral registers. It consists of two parts: PMP (Physical Memory Protection) and APM (Access Permission 
+Management). 
+Feature List 
+• access permission management for ROM, HP memory, HP peripheral, and LP peripheral address spaces 
+• APM supports each master (such as DMA) to select one of the four security modes 
+• access permission configuration for up to 32 address ranges 
+• individual permission configuration for each register 
+• Interrupt function and exception information record 
+For details, see ESP32-C5 Technical Reference Manual > Chapter Permission Control (PMS). 
+
+4.1.3.12 System Registers The System Registers in the ESP32-C5 chip are used to configure various auxiliary chip features.
+
+Feature List 
+• control External memory encryption and decryption 
+• control CPU core debugging 
+• control Bus timeout protection 
+For details, see ESP32-C5 Technical Reference Manual > Chapter System Registers (HP_SYSREG). 
+4.1.3.13 Debug Assistant 
+The Debug Assistant provides a set of functions to help locate bugs and issues during software debugging. It 
+offers various monitoring capabilities and logging features to assist in identifying and resolving software errors 
+efficiently. 
+
+Feature List • read/write monitoring: Monitor whether the CPU bus reads from or writes to a specified memory address space
+
+• stack pointer (SP) monitoring: Prevent stack overflow or erroneous push/pop operations violation will trigger an interrupt. • program counter (PC) logging: Record PC value. The developer can get the last PC value at the most recent CPU reset • bus access logging: Record information about bus access when the CPU or DMA writes a specified value For details, see ESP32-C5 Technical Reference Manual > Chapter Debug Assistant (ASSIST_DEBUG).
+
+4.1.3.14 Brownout Detector 
+ESP32-C5 can periodically monitor the voltage of the power supply, and in the event of abnormal voltage, it is 
+capable of generating interrupts or initiating resets. 
+Feature List 
+• configurable detection threshold 
+• configurable reset level 
+• glitch filtering 
+For more details, see the ESP32-C5 Technical Reference Manual > Chapter Power Supply Detector. 
+4.1.4 Cryptography and Security Component 
+This subsection describes the security features incorporated into the chip, which safeguard data and 
+operations. 
+4.1.4.1 AES Accelerator 
+ESP32-C5 integrates an Advanced Encryption Standard (AES) accelerator, which is a hardware device that 
+speeds up computation using AES algorithm significantly, compared to AES algorithms implemented solely in 
+software. The AES accelerator integrated in ESP32-C5 has two working modes, which are typical AES and 
+DMA-AES. 
+
+Feature List • typical AES working mode – AES-128/AES-256 encryption and decryption, compliant with NIST FIPS 197 • DMA-AES working mode – AES-128/AES-256 encryption and decryption, compliant with NIST FIPS 197 – block cipher mode, compliant with NIST SP 800-38A * ECB (Electronic Codebook) * CBC (Cipher Block Chaining) * OFB (Output Feedback) * CTR (Counter)
+
+* CFB8 (8-bit Cipher Feedback) * CFB128 (128-bit Cipher Feedback) – interrupt generation For details, see ESP32-C5 Technical Reference Manual > Chapter AES Accelerator (AES).
+
+4.1.4.2 ECC Accelerator 
+Elliptic Curve Cryptography (ECC) is an approach to public-key cryptography based on the algebraic structure 
+of elliptic curves. ECC allows smaller keys compared to RSA cryptography while providing equivalent 
+security. 
+ESP32-C5’s ECC Accelerator can complete various calculations based on different elliptic curves, thus 
+accelerating the ECC algorithm and ECC-derived algorithms (such as ECDSA). 
+Feature List 
+• three elliptic curves, namely P-192, P-256 and P-384 defined in FIPS 186-3 
+• two coordinate systems, namely Affine Coordinates and Jacobian Coordinates 
+• different point operations, including point addition, point multiplication, and point verification 
+• different modular operations based on the order or mod base of the curve, including mod addition, mod 
+subtraction, mod multiplication, and mod division 
+• interrupt upon completion of calculation 
+• secure operating mode for Base Point Multiplication within a specified time frame 
+For details, see the ESP32-C5 Technical Reference Manual > Chapter ECC Accelerator (ECC). 
+
+4.1.4.3 HMAC Accelerator The HMAC Accelerator (HMAC) module is designed to compute Message Authentication Codes (MACs) using the SHA-256 Hash algorithm and keys as described in RFC 2104. It provides hardware support for HMAC computations, significantly reducing software complexity and improving performance.
+
+Feature List 
+• standard HMAC-SHA-256 algorithm 
+• hash result only accessible by configurable hardware peripheral (in downstream mode) 
+• compatibility with challenge-response authentication algorithm 
+• required keys for the Digital Signature (DS) peripheral (in downstream mode) 
+• re-enabled soft-disabled JTAG (in downstream mode) 
+For details, see the ESP32-C5 Technical Reference Manual > Chapter HMAC Accelerator. 
+
+4.1.4.4 RSA Accelerator 
+The RSA accelerator provides hardware support for high-precision computation used in various RSA 
+asymmetric cipher algorithms, significantly improving their run time and reducing their software complexity. 
+Compared with RSA algorithms implemented solely in software, this hardware accelerator can speed up RSA 
+algorithms significantly. The RSA accelerator also supports operands of different lengths, which provides more 
+flexibility during the computation. 
+Feature List 
+• large-number modular exponentiation with two optional acceleration options 
+• large-number modular multiplication, up to 3072 bits 
+• large-number multiplication, with operands up to 1536 bits 
+• operands of different lengths 
+• interrupt on completion of computation 
+For details, see the ESP32-C5 Technical Reference Manual > Chapter RSA Accelerator. 
+4.1.4.5 SHA Accelerator 
+ESP32-C5 integrates an SHA accelerator, which is a hardware device that speeds up the SHA algorithm 
+significantly, compared to SHA algorithms implemented solely in software. The SHA accelerator integrated in 
+ESP32-C5 has two working modes, which are typical SHA and DMA-SHA. 
+Feature List 
+• the following hash algorithms introduced in FIPS PUB 180-4 
+– SHA-1 
+– SHA-224 
+– SHA-256 
+– SHA-384 
+– SHA-512/224 
+– SHA-512/256 
+– SHA-512/t 
+• two working modes 
+– typical SHA 
+– DMA-SHA 
+• interleaved function in typical SHA working mode 
+• interrupt function in DMA-SHA working mode 
+For more details, see the ESP32-C5 Technical Reference Manual > Chapter SHA Accelerator (SHA). 
+
+4.1.4.6 Digital Signature Algorithm 
+A Digital Signature Algorithm (DSA) is used to verify the authenticity and integrity of a message using a 
+cryptographic algorithm. This can be used to validate a device’s identity to a server, or to check the integrity 
+of a message. 
+ESP32-C5 includes a DSA module providing hardware acceleration of messages’ signatures based on RSA. 
+HMAC is used as the key derivation function to output the DS_KEY key using eFuse as the input key. 
+Subsequently, the DS module uses DS_KEY to decrypt the pre-encrypted parameters and calculate the 
+signature. The whole process happens in hardware so that neither the decryption key for the RSA parameters 
+nor the input key for the HMAC key derivation function can be seen by users while calculating the 
+signature. 
+Feature List 
+• RSA digital signatures with key length up to 3072 bits 
+• encrypted private key data, only decryptable by DS module 
+• SHA-256 digest to protect private key data against tampering by an attacker 
+For more details, see the ESP32-C5 Technical Reference Manual > Chapter Digital Signature Algorithm (DSA). 
+4.1.4.7 Elliptic Curve Digital Signature Algorithm 
+In cryptography, the Elliptic Curve Digital Signature Algorithm (ECDSA) offers a variant of the Digital Signature 
+Algorithm (DSA) which uses elliptic-curve cryptography. 
+ESP32-C5’s ECDSA accelerator provides a secure and efficient environment for computing ECDSA signatures. 
+It offers fast computations while ensuring the confidentiality of the signing process to prevent information 
+leakage. This makes it a valuable tool for applications that require high-speed cryptographic operations with 
+strong security guarantees. By using the ECDSA accelerator, users can be confident that their data is being 
+protected without sacrificing performance. 
+
+Feature List • digital signature generation and verification • public key exportation • three elliptic curves, namely P-192, P-256, and P-384 defined in FIPS 186-3 • four hash algorithms for message hash in the ECDSA operation, namely SHA-224, SHA-256, SHA-384, and SHA-512 defined in FIPS PUB 180-4 • deterministic ECDSA defined in RFC6979. • high security features: – dynamic access permission in different operation statuses to ensure information security, preventing key leakage due to intermediate data leakage – fixed-duration signing and verification processes to resist side-channel attacks
+
+For details, see the ESP32-C5 Technical Reference Manual > Chapter Elliptic Curve Digital Signature Algorithm (ECDSA).
+
+4.1.4.8 External Memory Encryption and Decryption 
+The ESP32-C5 integrates an External Memory Encryption and Decryption module that complies with the 
+XTS-AES standard algorithm specified in IEEE Std 1619-2007, providing security for users’ application code and 
+data stored in the external memory (flash and PSRAM). Users can store proprietary firmware and sensitive data 
+(e.g., credentials for gaining access to a private network) to the off-package flash, and securely run 
+data-sensitive applications in PSRAM. 
+Feature List 
+• general XTS-AES algorithm, compliant with IEEE Std 1619-2007 
+• software-based manual encryption 
+• high-speed auto encryption without software 
+• high-speed auto decryption without software 
+• encryption and decryption functions jointly enabled/disabled by registers configuration, eFuse 
+parameters, and boot mode 
+• configurable counter measures against DPA attacks 
+• flash and PSRAM use their own separate keys 
+For more details, see the ESP32-C5 Technical Reference Manual > Chapter External Memory Encryption and 
+Decryption (XTS_AES). 
+4.1.4.9 True Random Number Generator 
+The ESP32-C5 contains a true random number generator, which generates 32-bit random numbers that can 
+be used for cryptographical operations, among other things. 
+Feature List 
+• RNG entropy source 
+– thermal noise from high-speed ADC or SAR ADC 
+– an asynchronous clock mismatch 
+For more details, see the ESP32-C5 Technical Reference Manual > Chapter Random Number Generator 
+(RNG). 
+4.1.4.10 Key Manager 
+The key manager is the security core of the system. They can store and deploy keys securely. The key 
+manager utilizes each chip’s unique physical unclonable function (PUF) to generate a hardware unique key 
+(HUK) for that chip, which serves as the chip’s root of trust. The HUK is generated automatically each time the 
+chip powers on and disappears when the chip powers off. The key manager thus protects key storage and 
+provisioning by design. 
+
+On the ESP32-C5, the key manager stores key information (not the keys in plaintext, but the information needed to recover them) in external memory, enabling flexible key management features such as unlimited number of keys and dynamic key changes.
+
+Feature List 
+The HUK generator has the following features: 
+• HUK generation mode: 
+– generates a new HUK and its recovery information 
+• HUK recovery mode: 
+– recovers a deployed HUK with its recovery information 
+• prompt for HUK recovery error 
+• prompt for HUK risk level 
+The key manager has the following features: 
+• unlimited number of keys 
+• specified private key deployment (AES deploy mode): 
+– users specify the value of the key 
+• negotiated private key deployment (ECDH0 deploy mode): 
+– highest security mode: there is no need to worry about the leaks of data in external channels 
+– requires chip initiation to obtain the private key 
+– negotiates the key value between each chip and the user 
+• negotiated private key deployment (ECDH1 deploy mode): 
+– provides auxiliary key software/scripts to users 
+– no need to boot the chip to obtain the private key 
+• random key deployment (random deploy mode): 
+– deploys a hardware-generated random key with nobody knowing the exact value 
+• private key recovery deployment (private key recovery mode): 
+– recovers exactly the same key by entering the key information generated during deployment 
+• key information export (key_info export mode): 
+– generates unique key information for the same key each time 
+For more details, see the ESP32-C5 Technical Reference Manual > Chapter Key Manager. 
+
+Note: This feature is supported by chip revision v1.2 or later.
+
+4.1.4.11 Power Glitch Detector 
+ESP32-C5 can monitor the voltage of the power supply in real time. When a voltage glitch occurs, the chip will 
+reset immediately to prevent power glitch attacks. 
+Feature List 
+• configurable threshold for power glitch (around 2.7 V by default) 
+• enabled upon power-up 
+For more details, see the ESP32-C5 Technical Reference Manual > Chapter Power Supply Detector. 
+
+4.2 Peripherals 
+This section describes the chip’s peripheral capabilities, covering connectivity interfaces and on-chip sensors 
+that extend its functionality. 
+4.2.1 Connectivity Interface 
+This subsection describes the connectivity interfaces on the chip that enable communication and interaction 
+with external devices and networks. 
+
+4.2.1.1 UART Controller ESP32-C5 has three UART interfaces, i.e. UART0, UART1, and LP UART. All the three interfaces provide hardware flow control (CTS and RTS signals) and software flow control (XON and XOFF).
+
+Feature List 
+• programmable baud rates up to 5 MBaud 
+• RAM shared by TX FIFOs and RX FIFOs 
+• support for various lengths of data bits and stop bits 
+• parity bit support 
+• special character AT_CMD detection 
+• RS485 protocol support (not supported by LP UART) 
+• IrDA protocol support (not supported by LP UART) 
+• high-speed data communication using GDMA (not supported by LP UART) 
+• receive timeout feature 
+• UART as the wake-up source 
+• software and hardware flow control 
+For details, see ESP32-C5 Technical Reference Manual > Chapter UART Controller (UART). 
+Pin Assignment 
+The pins connected to transmit and receive signals (U0TXD and U0RXD) for UART0 are multiplexed with 
+GPIO11 and GPIO12 via IO MUX. Other signals can be routed to any GPIOs via the GPIO matrix. 
+For LP UART, the pins used are multiplexed with LP_GPIO0 ~ LP_GPIO5 via LP IO MUX. 
+For more information about the pin assignment, see Section 2.3 IO Pins and 
+ESP32-C5 Technical Reference Manual > Chapter GPIO Matrix and IO MUX. 
+
+4.2.1.2 SPI Controller ESP32-C5 features three SPI interfaces (SPI0, SPI1, and SPI2). SPI0 and SPI1 can be configured to operate in SPI memory mode, while SPI2 can be configured to operate in general-purpose SPI mode.
+
+Feature List 
+• SPI Memory mode 
+In SPI memory mode, SPI0 and SPI1 interfaces are for external SPI memory. Data are transferred in unit of 
+byte. Up to four-line STR reads and writes are supported. The clock frequency is configurable to a 
+maximum of 120 MHz. 
+• SPI2 General-purpose SPI (GP-SPI) mode 
+SPI2 can operate in master and slave modes. SPI2 supports two-line full-duplex communication and 
+single/two/four-line half-duplex communication in both master and slave modes. The host’s clock 
+frequency is configurable. Data are transferred in unit of byte. The clock polarity (CPOL) and phase 
+(CPHA) are also configurable. The SPI2 interface can connect to GDMA. 
+– In master mode, the clock frequency is 80 MHz at most, and the four modes of SPI transfer format 
+are supported. 
+– In slave mode, the clock frequency is 40 MHz at most, and the four modes of SPI transfer format 
+are also supported. 
+For details, see ESP32-C5 Technical Reference Manual > Chapter SPI Controller (SPI). 
+Pin Assignment 
+For SPI0/1, the pins are multiplexed with GPIO15 ~ GPIO18 and GPIO20 ~ GPIO22 via the IO MUX. 
+For SPI2, the pins for data and clock signals are multiplexed with GPIO2 and GPIO4 ~ GPIO7 via the IO MUX. 
+The pins for chip select signals for multiplexed with GPIO10 via the IO MUX. SPI2 signals can also be routed to 
+any GPIOs via the GPIO matrix. 
+For more information about the pin assignment, see Section 2.3 IO Pins and 
+ESP32-C5 Technical Reference Manual > Chapter GPIO Matrix and IO MUX. 
+4.2.1.3 I2C Controller 
+ESP32-C5 has an I2C and an LP I2C bus interface. I2C is used for I2C master mode or slave mode, depending 
+on your configuration, while LP I2C is always in master mode. 
+Feature List 
+• standard mode (100 Kbit/s) 
+• fast mode (400 Kbit/s) 
+• up to 800 Kbit/s (constrained by SCL and SDA pull-up strength) 
+• 7-bit and 10-bit addressing mode 
+• double addressing mode 
+• 7-bit broadcast address 
+For details, see ESP32-C5 Technical Reference Manual > Chapter I2C Controller (I2C). 
+
+Pin Assignment For regular I2C, the pins used can be chosen from any GPIOs via the GPIO Matrix. For LP I2C, the pins used are multiplexed with LP_GPIO2 and LP_GPIO3 via LP IO MUX. For more information about the pin assignment, see Section 2.3 IO Pins and ESP32-C5 Technical Reference Manual > Chapter GPIO Matrix and IO MUX.
+
+4.2.1.4 I2S Controller 
+ESP32-C5 includes a standard I2S interface. This interface can operate as a master or a slave in full-duplex 
+mode or half-duplex mode, and supports 8-bit, 16-bit, 24-bit, or 32-bit serial communication. BCK clock 
+frequency, from 10 kHz up to 40 MHz, is supported. 
+The I2S interface supports TDM Philips, TDM MSB alignment, TDM PCM standard, PDM standard, and 
+PCM-to-PDM TX interface. It connects to the GDMA controller. 
+
+Feature List • master mode and slave mode • full-duplex and half-duplex communications • separate TX and RX units that can work independently or simultaneously • a variety of audio standards supported: – TDM Philips standard – TDM MSB alignment standard – TDM PCM standard – PDM standard • various TX/RX modes – TDM TX mode, up to 16 channels supported – TDM RX mode, up to 16 channels supported – PDM TX mode * raw PDM data transmission * PCM-to-PDM data format conversion, up to 2 channels supported – PDM RX mode * raw PDM data reception • configurable clock source with frequency up to 240 MHz • configurable high-precision sample clock with a variety of sampling frequencies supported • 8/16/24/32-bit data width • synchronous counter in TX mode • ETM feature
+
+• direct memory access • standard I2S interface interrupts For details, see ESP32-C5 Technical Reference Manual > Chapter I2S Controller (I2S).
+
+Pin Assignment The pins for the I2S controller can be chosen from any GPIOs via the GPIO Matrix. For more information about the pin assignment, see Section 2.3 IO Pins and ESP32-C5 Technical Reference Manual > Chapter GPIO Matrix and IO MUX.
+
+4.2.1.5 USB Serial/JTAG Controller 
+ESP32-C5 contains a USB Serial/JTAG controller. This unit can be used to program the SoC’s flash, read 
+program output, as well as attach a debugger to the running program. All of these are possible for any 
+computer with a USB host without any active external components. 
+Feature List 
+• USB 2.0 full speed compliant, capable of up to 12 Mbit/s transfer speed (note that this controller does 
+not support the faster 480 Mbit/s high-speed transfer mode) 
+• CDC-ACM virtual serial port and JTAG adapter functionality 
+• programming the chip’s flash 
+• CPU debugging with compact JTAG instructions 
+• a full-speed USB PHY integrated in the chip 
+For details, see ESP32-C5 Technical Reference Manual > Chapter USB Serial/JTAG Controller 
+(USB_SERIAL_JTAG). 
+Pin Assignment 
+The pins for the USB Serial/JTAG controller are multiplexed with GPIO13 ~ GPIO14 via IO MUX. GPIO13 ~ GPIO14 
+are also multiplexed with the pins for the SDIO Slave controller. The SDIO Slave controller can be used 
+together with the USB Serial/JTAG controller in single SPI mode, but not in quad SPI mode. 
+For more information about the pin assignment, see Section 2.3 IO Pins and 
+ESP32-C5 Technical Reference Manual > Chapter GPIO Matrix and IO MUX. 
+4.2.1.6 CAN FD Controller 
+The CAN FD is a multi-master multi-cast communication protocol. The CAN FD controller facilitates the 
+communication based on this protocol. 
+
+Feature List • compliant with ISO11898-1:2015 • RX buffer FIFO with 128 words (6 CAN FD frames with 64-byte data payloads, 21 CAN/CAN FD frames with 8-byte data payloads)
+
+• 4 TX buffers (1 CAN FD frame in each TX buffer) • 32-bit APB interface • support of ISO and non-ISO CAN FD protocol • timestamping and time triggered transmission • three single-bit filters and one range filter • support interrupts • loopback, bus monitoring, ACK forbidden, self test, and restricted operation modes For details, see ESP32-C5 Technical Reference Manual > Chapter Controller Area Network Flexible Data-Rate.
+
+Pin Assignment The pins for the CAN FD Controller can be chosen from any GPIOs via the GPIO Matrix. For more information about the pin assignment, see Section 2.3 IO Pins and ESP32-C5 Technical Reference Manual > Chapter GPIO Matrix and IO MUX.
+
+4.2.1.7 LED PWM Controller The LED PWM controller can generate independent digital waveform on six channels.
+
+Feature List 
+• generating digital waveform with configurable periods and duty cycle. The resolution of duty cycle can 
+be up to 20 bits 
+• multiple clock sources, including 80 MHz PLL clock, external main crystal clock, and internal fast RC 
+oscillator 
+• operation when the CPU is in Light-sleep mode 
+• gradual increase or decrease of duty cycle, which is useful for the LED RGB color-gradient generator 
+• up to 16 duty cycle ranges for gamma curve generation, each can be independently configured in terms 
+of duty cycle direction (increase or decrease), step size, the number of steps, and step frequency 
+For details, see ESP32-C5 Technical Reference Manual > Chapter LED PWM Controller. 
+
+Pin Assignment The pins for the LED PWM controller can be chosen from any GPIOs via the GPIO Matrix. For more information about the pin assignment, see Section 2.3 IO Pins and ESP32-C5 Technical Reference Manual > Chapter GPIO Matrix and IO MUX.
+
+4.2.1.8 Pulse Count Controller 
+The Pulse Count controller (PCNT) in ESP32-C5 captures pulses and counts pulse edges in seven 
+modes. 
+
+Feature List 
+• four independent pulse counters (units) that count from 1 to 65535 
+• each unit consists of two independent channels sharing one pulse counter 
+• all channels have input pulse signals (e.g. sig_ch0_un) with their corresponding control signals (e.g. 
+ctrl_ch0_un) 
+• independently filter glitches of input pulse signals (sig_ch0_un and sig_ch1_un) and control signals 
+(ctrl_ch0_un and ctrl_ch1_un) on each unit 
+• each channel has the following parameters: 
+1. selection between counting on positive or negative edges of the input pulse signal 
+2. configuration to Increment, Decrement, or Disable counter mode for control of signal’s high and low 
+states 
+• support step counting 
+• maximum frequency of pulses: 40 MHz 
+For details, see ESP32-C5 Technical Reference Manual > Chapter Pulse Count Controller. 
+
+Pin Assignment The pins for the Pulse Count controller can be chosen from any GPIOs via the GPIO Matrix. For more information about the pin assignment, see Section 2.3 IO Pins and ESP32-C5 Technical Reference Manual > Chapter GPIO Matrix and IO MUX.
+
+4.2.1.9 Motor Control PWM ESP32-C5 integrates an MCPWM that can be used to drive digital motors and smart light.
+
+Feature List 
+• a clock divider (prescaler), three PWM timers, three PWM operators, and a dedicated capture 
+submodule. PWM timers are used to generate timing references. PWM operators generate desired 
+waveform based on the timing references 
+• a PWM operator can use the timing reference of any PWM timer 
+• a PWM operator can use the same timing reference with other PWM operators 
+• PWM operators can use different PWM timers’ values to produce independent PWM signals 
+• PWM timers can be synchronized 
+For details, see ESP32-C5 Technical Reference Manual > Chapter Motor Control PWM (MCPWM). 
+
+Pin Assignment The pins for the Motor Control PWM can be chosen from any GPIOs via the GPIO Matrix. For more information about the pin assignment, see Section 2.3 IO Pins and ESP32-C5 Technical Reference Manual > Chapter GPIO Matrix and IO MUX.
+
+4.2.1.10 Remote Control Peripheral 
+The Remote Control Peripheral (RMT) supports two channels of infrared remote transmission and two 
+channels of infrared remote reception. By controlling pulse waveform through software, it supports various 
+infrared and other single wire protocols. 
+Feature List 
+• four channels: 
+– TX channels 0 ~ 1 
+– RX channels 2 ~ 3 
+– four channels share a 192 x 32-bit RAM 
+• the transmitter supports: 
+– normal TX mode 
+– wrap TX mode 
+– modulation on TX pulses 
+– continuous TX mode 
+– multiple channels (programmable) transmitting data simultaneously 
+• the receiver supports: 
+– normal RX mode 
+– wrap RX mode 
+– RX filtering 
+– demodulation on RX pulses 
+For more details, see ESP32-C5 Technical Reference Manual > Chapter Remote Control Peripheral (RMT). 
+
+Pin Assignment The pins for the Remote Control Peripheral can be chosen from any GPIOs via the GPIO Matrix. For more information about the pin assignment, see Section 2.3 IO Pins and ESP32-C5 Technical Reference Manual > Chapter GPIO Matrix and IO MUX.
+
+4.2.1.11 Parallel IO Controller ESP32-C5 integrates a PARLIO controller for parallel data transfer. It has a transmitter and a receiver, connected with the GDMA controller. In full-duplex mode the PARLIO controller supports up to 4-bit parallel data transfer, while in half-duplex mode it supports up to 8-bit parallel data transfer.
+
+Feature List • multiple clock sources and clock division, with clock frequency up to 40 MHz
+
+• receiver/transmitter supports input and output clock inverse • 1/2/4/8-bit data transfer • changeable sample sequence for data to be transmitted and received in 1-bit, 2-bit, and 4-bit mode • support for multiple data sampling mode by the receiver • support for multiple GDMA EOF signal generation modes by the receiver • output external chip select signals with configurable delay cycles • support for transmitter clock gating For more details, see ESP32-C5 Technical Reference Manual > Chapter Parallel IO Controller.
+
+Pin Assignment The pins for the Parallel IO controller can be chosen from any GPIOs via the GPIO Matrix. For more information about the pin assignment, see Section 2.3 IO Pins and ESP32-C5 Technical Reference Manual > Chapter GPIO Matrix and IO MUX.
+
+4.2.1.12 BitScrambler 
+The ESP32-C5 has an extensive amount of DMA-capable peripherals. These can move data from memory to 
+an external device, and vice versa, without any interference from the CPU. This only works if the external 
+device needs or emits the data in question in the same format as the software expects it: if not, the CPU 
+needs to rewrite the format of the data. Examples include a need to swap bytes, reverse bytes, and shift the 
+data left or right. 
+As bitwise operations tend to be fairly CPU-expensive and the purpose of DMA is to not use the CPU in the 
+transfer, ESP32-C5 integrates one BitScrambler, which are dedicated peripherals to change the format of data 
+in between memory and the peripheral. The RX channel is dedicated to peripheral-to-memory transfers, and 
+the TX channel is dedicated to memory-to-peripheral transfers. The BitScrambler is capable of performing the 
+aforementioned operations, but as a flexible programmable state machine, it is capable of more advanced 
+things as well. 
+
+Feature List • one BitScrambler, one channel for RX (peripheral-to-memory), one channel for TX (memory-to-peripheral). The two channels support only half-duplex communications, and cannot work at the same time • support for memory-to-memory transfers • process up to 32 bits per DMA clock period • data path controlled by a BitScrambler program stored in the instruction memory • input registers able to read 0, 8, 16, or 32 bits per clock cycle • output registers: – able to write 0, 8, 16, or 32 bits per clock cycle
+
+– data sources for output register bits: 64 bits of input data, two counters, LUT RAM data, data output of last cycle, comparators – with some restrictions, each of the 32 output register bits can come from any bit on the data sources • 8 x 257-bit instruction memory, for storing eight instructions, controlling control flow and the data path • 2048 bytes of lookup table (LUT) memory, configurable as various word widths For more details, see ESP32-C5 Technical Reference Manual > Chapter BitScrambler.
+
+Pin Assignment The BitScrambler does not directly interact with IOs, so it has no pins assigned. For more information about the pin assignment, see Section 2.3 IO Pins and ESP32-C5 Technical Reference Manual > Chapter GPIO Matrix and IO MUX.
+
+4.2.1.13 SDIO Slave Controller The SDIO Slave controller in ESP32-C5 provides hardware support for the Secure Digital Input/Output (SDIO) device interface. It allows an SDIO host to access ESP32-C5 via an SDIO bus protocol.
+
+Feature List 
+• compatible with SDIO Physical Layer Specification V2.00 and SDIO Specifications V2.00 
+• support SPI, 1-bit SDIO, and 4-bit SDIO transfer modes 
+• clock range of 0 ~ 50 MHz 
+• configurable sample and drive clock edge 
+• integrated and SDIO-accessible registers for information interaction 
+• support SDIO interrupts 
+• automatic padding data and discarding the padded data on the SDIO bus 
+• block size up to 512 bytes 
+• interrupt vector between the host and slave for bidirectional interrupt 
+• support DMA for data transfer 
+• support wake-up from sleep when connection is retained 
+For more details about the SDIO Slave controller, refer to the ESP32-C5 Technical Reference Manual > Chapter 
+SDIO Slave Controller (SDIO). 
+
+Pin Assignment The pins for the SDIO Slave controller are multiplexed with GPIO7 ~ GPIO10, GPIO13, and GPIO14 via IO MUX. GPIO13 ~ GPIO14 are also multiplexed with the pins for the USB serial/JTAG controller. The SDIO Slave controller can be used together with the USB Serial/JTAG controller in single SPI mode, but not in quad SPI mode.
+
+For more information about the pin assignment, see Section 2.3 IO Pins and ESP32-C5 Technical Reference Manual > Chapter IO MUX and GPIO Matrix.
+
+Note: This peripheral is not supported by chip revision v0.0 and v0.1.
+
+4.2.2 Analog Signal Processing This subsection describes components on the chip that sense and process real-world data.
+
+4.2.2.1 Temperature Sensor ESP32-C5 provides a temperature sensor to monitor temperature changes inside the chip in real time. The sensor converts analog voltage to digital values and supports compensation for the temperature offset.
+
+Feature List 
+• software-triggered temperature measurement. Once triggered, the sensor continuously measures 
+temperature. Software can read the data any time. 
+• hardware-triggered automatic temperature monitoring 
+• two modes for automatic monitoring of temperature and support for triggering interrupts 
+• configurable temperature offset based on the application scenario for improved accuracy 
+• configurable temperature measurement range 
+• support for several Event Task Matrix (ETM) related events and tasks 
+For more details, see ESP32-C5 Technical Reference Manual > Chapter Temperature Sensor. 
+4.2.2.2 ADC Controller 
+ESP32-C5 integrates One 12-bit successive approximation ADC (SAR ADC) for measuring analog signals from 
+up to six channels. 
+
+Feature List • 12-bit resolution • analog inputs sampling from up to six pins • one-shot sampling mode and multi-channel sampling mode • multi-channel sampling mode supports: – configurable channel sampling sequence – two filters whose filter coefficients are configurable – two threshold monitors that can trigger an interrupt when the filtered value is below a low threshold or above a high threshold – continuous transfer of converted data to memory via GDMA interface
+
+• support for several Event Task Matrix (ETM) related events and tasks For more details, see ESP32-C5 Technical Reference Manual > Chapter ADC Controller.
+
+Pin Assignment The pins for the ADC controller are multiplexed with GPIO1 ~ GPIO6. For more information about the pin assignment, see Section 2.3 IO Pins and ESP32-C5 Technical Reference Manual > Chapter GPIO Matrix and IO MUX.
+
+4.2.2.3 Analog Voltage Comparator 
+ESP32-C5 provides an analog voltage comparator which contains two special pads. This peripheral can be 
+used to compare the voltages of the two pads or compare the voltage of one pad with a stable internal 
+voltage that is adjustable. 
+Feature List 
+• internal or external reference voltage 
+• supported internal reference voltage ranging from 0 to 0.7 * VDD_PST 
+• support for ETM 
+• interrupt triggered when the measured voltage reaches the reference voltage 
+For more details, see ESP32-C5 Technical Reference Manual > Chapter Analog Voltage Comparator. 
+Pin Assignment 
+The analog voltage comparator has dedicated pads, GPIO8 and GPIO9. GPIO9 is the test pad, and GPIO8 
+serves as the reference pad when using an external reference voltage. 
+For more information about the pin assignment, see Section 2.3 IO Pins and 
+ESP32-C5 Technical Reference Manual > Chapter GPIO Matrix and IO MUX. 
+
+4.3 Wireless Communication 
+This section describes the chip’s wireless communication capabilities, spanning radio technology, Wi-Fi, and 
+Bluetooth. 
+4.3.1 Radio 
+This subsection describes the fundamental radio technology embedded in the chip that facilitates wireless 
+communication and data exchange. 
+4.3.1.1 2.4 & 5 GHz Receiver 
+The 2.4 & 5 GHz receiver demodulates the 2.4 & 5 GHz RF signal to quadrature baseband signals and converts 
+them to the digital domain with two high-resolution, high-speed ADCs. To adapt to varying signal channel 
+conditions, ESP32-C5 integrates RF filters, Automatic Gain Control (AGC), DC offset cancelation circuits, and 
+baseband filters. 
+4.3.1.2 2.4 & 5 GHz Transmitter 
+The 2.4 & 5 GHz transmitter modulates the quadrature baseband signals to the 2.4 & 5 GHz RF signal, and 
+drives the antenna with a high-powered CMOS power amplifier. The use of digital calibration further improves 
+the linearity of the power amplifier. 
+Additional calibrations are integrated to cancel any radio imperfections, such as: 
+• carrier leakage 
+• I/Q amplitude/phase matching 
+• baseband nonlinearities 
+• RF nonlinearities 
+• antenna matching 
+These built-in calibration routines reduce the cost, time, and specialized equipment required for product 
+testing. 
+4.3.1.3 Clock Generator 
+The clock generator produces quadrature clock signals of 2.4 & 5 GHz for both the receiver and the 
+transmitter. All components of the clock generator are integrated into the chip, including inductors, varactors, 
+filters, regulators and dividers. 
+The clock generator has built-in calibration and self-test circuits. Quadrature clock phases and phase noise 
+are optimized on chip with patented calibration algorithms which ensure the best performance of the receiver 
+and the transmitter. 
+4.3.2 Wi-Fi 
+This subsection describes the chip’s Wi-Fi capabilities, which facilitate wireless communication at a high data 
+rate. 
+
+4.3.2.1 Wi-Fi Radio and Baseband 
+The ESP32-C5 Wi-Fi radio and baseband support the following features: 
+• compliant with IEEE 802.11a/b/g/n/ac/ax 
+• 1T1R in 2.4 GHz and 5 GHz dual band 
+• 802.11ax 
+– 20 MHz-only non-AP mode 
+– MCS0 ~ MCS9 in 2.4 GHz band 
+– MCS0 ~ MCS7 in 5 GHz band 
+– uplink and downlink OFDMA 
+– downlink MU-MIMO (multi-user, multiple input, multiple output) 
+– longer OFDM symbol, with 0.8, 1.6, and 3.2 µs guard interval 
+– DCM (dual carrier modulation), up to 16-QAM 
+– single-user/multi-user beamformee 
+– channel quality indication (CQI) 
+– RX STBC (single spatial stream) 
+• 802.11ac 
+– MCS0 ~ MCS7 that support 20 MHz bandwidth 
+– downlink fullband MU-MIMO (multi-user, multiple input, multiple output) 
+– single-user/multi-user beamformee 
+– RX STBC (single spatial stream) 
+– 0.4 µs guard interval 
+• 802.11a/b/g/n 
+– MCS0 ~ MCS7 that support 20 MHz and 40 MHz bandwidth 
+– MCS32 
+– data rate up to 150 Mbps 
+– 0.4 µs guard interval 
+• adjustable transmitting power 
+• antenna diversity 
+ESP32-C5 supports antenna diversity with an external RF switch. This switch is controlled by one or 
+more GPIOs, and used to select the best antenna to minimize the effects of channel imperfections. 
+
+4.3.2.2 Wi-Fi MAC 
+ESP32-C5 implements the full IEEE 802.11a/b/g/n/ac/ax Wi-Fi MAC protocol. It supports the Basic Service Set 
+(BSS) STA and SoftAP operations under the Enhanced Distributed Channel Access (EDCA). Power 
+management is handled automatically with minimal host interaction to minimize the active duty period. 
+The ESP32-C5 Wi-Fi MAC applies the following low-level protocol functions automatically: 
+• four virtual Wi-Fi interfaces 
+• infrastructure BSS in Station mode, SoftAP mode, Station + SoftAP mode, and promiscuous mode 
+• RTS protection, CTS-to-Self protection, immediate block ACK 
+• fragmentation and defragmentation 
+• TX/RX A-MPDU, TX/RX A-MSDU 
+• transmission opportunity (TXOP) 
+• Wi-Fi multimedia (WMM) 
+• GCMP, CCMP, TKIP, WAPI, WEP, BIP, WPA2-PSK, and WPA3-PSK 
+• automatic beacon monitoring (hardware TSF) 
+• 802.11mc FTM 
+• 802.11ax supports: 
+– target wake time (TWT) requester 
+– multiple BSSIDs 
+– triggered response scheduling 
+– Multi-User Request-to-Send (MU-RTS), Multi-User Block ACK Request (MU-BAR), and Multi-STA 
+Block ACK (M-BA) frame 
+– intra-PPDU power saving mechanism 
+– two network allocation vectors (NAV) 
+– BSS coloring 
+– spatial reuse 
+– uplink power headroom 
+– operating mode control 
+– buffer status report 
+– TXOP duration RTS threshold 
+– UL-OFDMA random access (UORA) 
+4.3.2.3 Networking Features 
+Espressif provides libraries for TCP/IP networking, ESP-WIFI-MESH networking, and other networking 
+protocols over Wi-Fi. TLS 1.0, 1.1, and 1.2 are also supported. 
+
+4.3.3 Bluetooth LE 
+This subsection describes the chip’s Bluetooth capabilities, which facilitate wireless communication for 
+low-power, short-range applications. 
+4.3.3.1 Bluetooth LE PHY 
+Bluetooth Low Energy PHY in ESP32-C5 supports: 
+• 1 Mbps PHY 
+• 2 Mbps PHY for higher data rates 
+• coded PHY for longer range (125 Kbps and 500 Kbps) 
+• HW listen before talk (LBT) 
+4.3.3.2 Bluetooth LE Link Controller 
+Bluetooth Low Energy Link Controller and Host in ESP32-C5 support: 
+• direction finding (AoA/AoD) 
+• periodic advertising with responses (PAwR) 
+• LE connection subrating（LE enhanced connection update） 
+• LE advertising extensions and multiple advertising sets 
+• allow devices to operate in Broadcaster, Observer, Central, and Peripheral roles concurrently 
+• adaptive frequency hopping and channel assessment 
+• LE channel selection algorithm #2 
+• LE power control 
+• advertising coding selection 
+• encrypted advertising data 
+• LE GATT security levels characteristic 
+• AdvDataInfo in periodic advertising 
+• LE channel classification 
+• enhanced attribute protocol 
+• advertising channel index 
+• GATT caching 
+• periodic advertising sync transfer 
+• high duty cycle non-connectable advertising 
+• LE data packet length extension 
+• LE secure connections 
+• LE privacy 1.2 
+
+• link layer extended scanner filter policies 
+• low duty cycle directed advertising 
+• link layer encryption 
+• LE ping 
+4.3.4 802.15.4 
+This subsection describes the chip’s compatibility with the 802.15.4 standard, which facilitates wireless 
+communication for low-power, short-range applications. 
+4.3.4.1 802.15.4 PHY 
+ESP32-C5’s 802.15.4 PHY supports: 
+• O-QPSK PHY in 2.4 GHz 
+• 250 Kbps data rate 
+• RSSI and LQI supported 
+4.3.4.2 802.15.4 MAC 
+ESP32-C5 supports most key features defined in IEEE Standard 802.15.4-2015, including: 
+• CSMA/CA 
+• active scan and energy detect 
+• HW frame filter 
+• HW auto acknowledge 
+• HW auto frame pending 
+• coordinated sampled listening (CSL) 
+
+5.1 Absolute Maximum Ratings Stresses above those listed in Table 5-1 Absolute Maximum Ratings may cause permanent damage to the device. These are stress ratings only and normal operation of the device at these or any other conditions beyond those indicated in Section 5.2 Recommended Power Supply Characteristics is not implied. Exposure to absolute-maximum-rated conditions for extended periods may affect device reliability.
+
+Table 5-1. Absolute Maximum Ratings
+
+Parameter Description Min Max Unit Input power pins 1 Allowed input voltage –0.3 3.6 V TST ORE Storage temperature –40 150 °C 1 For more information on input power pins, see Section 2.5.1 Power Pins.
+
+5.2 Recommended Power Supply Characteristics For recommended ambient temperature, see Section 1 ESP32-C5 Series Information. Table 5-2. Recommended Power Characteristics
+
+Parameter 1 Description Min Typ Max Unit 
+VDDA1, VDDA2, VDDA3, VDDA4, 
+VDDA5, VDDA6, VDDA7, VDDA8 
+
+Recommended input voltage 3.0 3.3 3.6 V
+
+VDDPST1, VDDPST3 Recommended input voltage 3.0 3.3 3.6 V 
+VDD_SPI (as input) — 3.0 3.3 3.6 V 
+VDDPST2 2, 3 Recommended input voltage 3.0 3.3 3.6 V 
+IV DD Cumulative input current 0.6 — — A 
+1 See in conjunction with Section 2.5 Power Supply. 
+2If VDDPST2 is used to power VDD_SPI (see Section 2.5.2 Power Scheme), the voltage drop on RSP I 
+should be accounted for. 
+3If writing to eFuses, the voltage on VDDPST2 should not exceed 3.3 V as the circuits responsible for 
+burning eFuses are sensitive to higher voltages. 
+
+5.3 VDD_SPI Output Characteristics
+
+| Parameter | 1 Description Typ Unit |
+| --- | --- |
+| RSP I | VDD_SPI powered by VDDPST2 via for RSP I Ω 3 2 3.3 V flash or PSRAM |
+
+Table 5-3. VDD_SPI Internal and Output Characteristics
+
+1 See in conjunction with Section 2.5.2 Power Scheme. 
+2 VDD3P3_RTC must be more than VDD_flash_min + I_flash_max * RSP I ; 
+where 
+• VDD_flash_min – minimum operating voltage of flash 
+• I_flash_max – maximum operating current of flash 
+
+5.4 DC Characteristics (3.3 V, 25 °C)
+
+Table 5-4. DC Characteristics (3.3 V, 25 °C) 
+Parameter Description Min Typ Max Unit 
+CIN Pin capacitance — 2 — pF 
+VIH High-level input voltage 0.75 × VDD 1 — VDD 1 + 0.3 V 
+VIL Low-level input voltage –0.3 — 0.25 × VDD 1 V 
+IIH High-level input current — — 50 nA 
+IIL Low-level input current — — 50 nA 
+VOH 
+2 High-level output voltage 0.8 × VDD 1 — — V 
+
+VOL 2 Low-level output voltage — — 0.1 × VDD 1 V
+
+High-level source current (VDD 1 = 3.3 V, VOH >= 2.64 V, PAD_DRIVER = 3)
+
+— 40 — mA
+
+IOH
+
+Low-level sink current (VDD 1 = 3.3 V, VOL = 0.495 V, PAD_DRIVER = 3)
+
+IOL
+
+— 28 — mA RP U Internal weak pull-up resistor — 45 — kΩ RPD Internal weak pull-down resistor — 45 — kΩ VIH_nRST
+
+Chip reset release voltage (CHIP_PU voltage is within the specified range)
+
+0.75 × VDD 1 — VDD 1 + 0.3 V
+
+VIL_nRST
+
+Chip reset voltage (CHIP_PU voltage is within the specified range)
+
+–0.3 — 0.25 × VDD 1 V
+
+1 VDD – voltage from a power pin of a respective power domain. 2 VOH and VOL are measured using high-impedance load.
+
+5.5 ADC Characteristics 
+The measurements in this section are taken with an external 100 nF capacitor connected to the ADC, using DC 
+signals as input, and at an ambient temperature of 25 °C with disabled Wi-Fi. 
+Table 5-5. ADC Characteristics 
+
+| | Symbol | | | Min | Max | | | Unit | | | | | | | | | | |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| | DNL | (Differential | 1 nonlinearity) | –5 | | 5 | | LSB | | | | | | | | | | |
+| | INL | (Integral nonlinearity) | | –5 | | 5 | | LSB | | | | | | | | | | |
+| | Sampling | rate | | — | 2000 | | | kSPS | 2 | | | | | | | | | |
+| | 1 | To get better | DNL results, you | can sample | multiple | | times | | and | | | | | | | | | |
+
+apply a filter, or calculate the average value. 2 kSPS means kilo samples-per-second.
+
+The calibrated ADC results after hardware calibration and software calibration are shown in Table 5-6. For 
+higher accuracy, you may implement your own calibration methods. 
+Table 5-6. ADC Calibration Results 
+
+| Parameter | | Description | | | | | | | Min | | Max | | | | Unit | | | |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| | | ATTEN0, effective | measurement | range | of 0 ~ | 1000 | | | –10 | | | 10 | | | | mV | | |
+| Total error | | ATTEN1, effective | measurement | range | of 0 ~ | 1300 | | | –10 | | | 10 | | | | mV | | |
+
+ATTEN0, effective measurement range of 0 ~ 1000 –10 10 mV ATTEN1, effective measurement range of 0 ~ 1300 –10 10 mV ATTEN2, effective measurement range of 0 ~ 1900 –12 12 mV ATTEN3, effective measurement range of 0 ~ 3300 –15 15 mV
+
+Total error
+
+5.6 Current Consumption
+
+5.6.1 RF Current Consumption in Active Mode 
+The current consumption measurements are taken with a 3.3 V supply at 25 °C ambient temperature. 
+TX current consumption is rated at a 100% duty cycle. 
+RX current consumption is rated when the peripherals are disabled and the CPU idle. 
+Table 5-7. Current Consumption for Wi-Fi (2.4 GHz) in Active Mode 
+
+| Work | Mode | RF Condition | Description | | | | | | | | Peak | | (mA) | | | | | |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| | | | 802.11b, | 1 Mbps, | DSSS | @ 20dBm | | | | | | | | 339 | | | | |
+| | | | 802.11g, | 54 Mbps, | OFDM | @ | 17dBm | | | | | | | 270 | | | | |
+| | | TX | 802.11n, | HT20, MCS7 | @ | 17dBm | | | | | | | | | 271 | | | |
+| Active | (RF working) | | 802.11n, | HT40, MCS7 | @ | 16dBm | | | | | | | | 259 | | | | |
+
+802.11ax, MCS9 @ 15dBm 246
+
+Active (RF working)
+
+RX
+
+802.11b/g/n, HT20 99 
+802.11n, HT40 107 
+802.11ax, HE20 100 
+ESP32-C5 Series Datasheet v1.2 
+
+Table 5-8. Current Consumption for Wi-Fi (5 GHz) in Active Mode
+
+Work Mode RF Condition Description Peak (mA)
+
+Active (RF working)
+
+TX
+
+802.11a, 6 Mbps, OFDM @ 17dBm 381 802.11n, HT20, MCS7 @ 15dBm 377 802.11n, HT40, MCS7 @ 15dBm 380 802.11ac, VHT20, MCS7 @ 15dBm 377 802.11ax, HE20, MCS7 @ 15dBm 377
+
+RX
+
+802.11a/n, HT20 130 
+802.11n, HT40 135 
+802.11ac, VHT20 127 
+802.11ax, HE20 130 
+
+Table 5-9. Current Consumption for Bluetooth LE in Active Mode
+
+Work Mode RF Condition Description Peak (mA)
+
+Active (RF working)
+
+TX
+
+Bluetooth LE @ 20dBm 338 
+Bluetooth LE @ 8dBm 195 
+Bluetooth LE @ 0dBm 181 
+Bluetooth LE @ –15dBm 109 
+RX Bluetooth LE 89 
+
+Table 5-10. Current Consumption for 802.15.4 in Active Mode
+
+Work Mode RF Condition Description Peak (mA)
+
+Active (RF working)
+
+TX
+
+802.15.4 @ 20dBm 325 
+802.15.4 @ 8dBm 192 
+802.15.4 @ 0dBm 180 
+802.15.4 @ –15dBm 111 
+RX 802.15.4 93 
+
+5.6.2 Current Consumption in Other Modes
+
+Table 5-11. Current Consumption in Modem-sleep Mode
+
+| | | | | | | |
+| --- | --- | --- | --- | --- | --- | --- |
+| | | CPU Frequency | | | | Typ (mA) |
+| | | | | | | |
+| Mode | | (MHz) | Description | | All Peripherals | All Peripherals 1 Clocks Enabled |
+| | | | | | Clocks Disabled | |
+
+240 
+WAITI 18 27 
+CPU while loop 26 35 
+Run CoreMark 34 43 
+160 
+WAITI 15 27 
+CPU while loop 20 32 
+Run CoreMark 26 37 
+Modem-sleep 2,3 
+80 
+WAITI 12 24 
+CPU while loop 15 26 
+Run CoreMark 18 29 
+40 
+
+WAITI 8 18 CPU while loop 10 19 Run CoreMark 12 21 1In practice, the current consumption might be different depending on which peripherals are enabled. 2In Modem-sleep mode, Wi-Fi is clock gated. 3In Modem-sleep mode, the consumption might be higher when accessing flash.
+
+Table 5-12. Current Consumption in Low-Power Modes
+
+Mode Description Typ (mA)
+
+CPU and wireless communication modules are powered down, peripheral clocks are disabled, and all GPIOs are high-impedance
+
+0.25
+
+Light-sleep
+
+CPU, wireless communication modules and peripherals are pow ered down, and all GPIOs are high-impedance
+
+0.06 
+Deep-sleep RTC timer and LP memory are powered on 0.012 
+Power off CHIP_PU is set to low level, the chip is powered off 0.002 
+
+5.7 Reliability
+
+Table 5-13. Reliability Qualifications
+
+Test Item Test Conditions Test Standard 
+HTOL (High Temperature 
+Operating Life) 
+
+125 °C, 1000 hours, 3.6 V 1 JESD22-A108 
+HBM (Human Body Mode) 2 ± 2000 V JS-001 
+CDM (Charge Device Mode) 3 ± 1000 V JS-002 
+
+ESD (Electro-Static Discharge Sensitivity)
+
+Current trigger ± 200 mA
+
+Latch up
+
+JESD78 Cont’d on next page
+
+Table 5-13 – cont’d from previous page Test Item Test Conditions Test Standard Voltage trigger 1.5 × VDDmax
+
+Preconditioning
+
+Bake 24 hours @125 °C Moisture soak (level 3: 192 hours @30 °C, 60% RH) IR reflow solder: 260 + 0 °C, 20 seconds, three times
+
+J-STD-020, JESD47, JESD22-A113
+
+TCT (Temperature Cycling Test)
+
+–65 °C / 150 °C, 500 cycles JESD22-A104
+
+uHAST (Highly 
+Accelerated Stress Test, 
+unbiased) 
+
+130 °C, 85% RH, 96 hours JESD22-A118
+
+HTSL (High Temperature Storage Life)
+
+150 °C, 1000 hours JESD22-A103
+
+LTSL (Low Temperature Storage Life)
+
+–40 °C, 1000 hours JESD22-A119 
+1 5G RF underwent a separate HTOL test under the conditions: 105°C, 1700 hours, 3.45 V. 
+2 JEDEC document JEP155 states that 500 V HBM allows safe manufacturing with a standard ESD control process. 
+3 JEDEC document JEP157 states that 250 V CDM allows safe manufacturing with a standard ESD control process. 
+
+6 RF Characteristics 
+This section contains tables with RF characteristics of the Espressif product. 
+The RF data is measured at the antenna port, where RF cable is connected, including the front-end loss. The 
+front-end circuit is a 0 Ω resistor. 
+Devices should operate in the center frequency range allocated by regional regulatory authorities. The target 
+center frequency range and the target transmit power are configurable by software. See ESP RF Test Tool and 
+Test Guide for instructions. 
+Unless otherwise stated, the RF tests are conducted with a 3.3 V (±5%) supply at 25 ºC ambient temperature. 
+
+6.1 2.4 GHz Wi-Fi Radio
+
+Table 6-1. 2.4 GHz Wi-Fi RF Characteristics
+
+| | Name | | | | Description | | | | | | | | |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| | Center | frequency | range of | operating | channel 2412 | ~ 2484 | | | MHz | | | | |
+| | Wi-Fi | wireless | standard | | IEEE | 802.11b/g/n/ax | | | | | | | |
+| 6.1.1 2.4 | GHz Wi-Fi | RF Transmitter | (TX) | Characteristics | | | | | | | | | |
+
+Table 6-2. 2.4 GHz TX Power with Spectral Mask and EVM Meeting 802.11 Standards
+
+Min Typ Max Rate (dBm) (dBm) (dBm) 802.11b, 1 Mbps, DSSS — 20.0 — 802.11b, 11 Mbps, CCK — 20.0 — 802.11g, 6 Mbps, OFDM — 19.0 — 802.11g, 54 Mbps, OFDM — 17.0 — 802.11n, HT20, MCS0 — 19.0 — 802.11n, HT20, MCS7 — 17.0 — 802.11n, HT40, MCS0 — 18.0 — 802.11n, HT40, MCS7 — 16.0 — 802.11ax, HE20, MCS0 — 19.0 — 802.11ax, HE20, MCS9 — 15.0 —
+
+Table 6-3. 2.4 GHz TX EVM Test 1
+
+Min Typ Limit 
+Rate (dB) (dB) (dB) 
+802.11b, 1 Mbps, DSSS — –25.0 –10.0 
+802.11b, 11 Mbps, CCK — –25.0 –10.0 
+Cont’d on next page 
+
+Table 6-3 – cont’d from previous page 
+Min Typ Limit 
+Rate (dB) (dB) (dB) 
+802.11g, 6 Mbps, OFDM — –25.0 –5.0 
+802.11g, 54 Mbps, OFDM — –30.0 –25.0 
+802.11n, HT20, MCS0 — –25.0 –5.0 
+802.11n, HT20, MCS7 — –31.5 –27.0 
+802.11n, HT40, MCS0 — –25.0 –5.0 
+802.11n, HT40, MCS7 — –32.0 –27.0 
+802.11ax, HE20, MCS0 — –25.0 –5.0 
+802.11ax, HE20, MCS9 — –34.5 –32.0 
+1 EVM is measured at the corresponding typical TX power provided in 
+Table 6-2 2.4 GHz TX Power with Spectral Mask and EVM Meeting 
+802.11 Standards above. 
+
+6.1.2 2.4 GHz Wi-Fi RF Receiver (RX) Characteristics For RX tests, the PER (packet error rate) limit is 8% for 802.11b, and 10% for 802.11g/n/ax. Table 6-4. 2.4 GHz RX Sensitivity
+
+Min Typ Max 
+Rate (dBm) (dBm) (dBm) 
+802.11b, 1 Mbps, DSSS — –101.0 — 
+802.11b, 2 Mbps, DSSS — –98.0 — 
+802.11b, 5.5 Mbps, CCK — –95.0 — 
+802.11b, 11 Mbps, CCK — –91.0 — 
+802.11g, 6 Mbps, OFDM — –96.0 — 
+802.11g, 9 Mbps, OFDM — –94.0 — 
+802.11g, 12 Mbps, OFDM — –93.0 — 
+802.11g, 18 Mbps, OFDM — –91.0 — 
+802.11g, 24 Mbps, OFDM — –88.0 — 
+802.11g, 36 Mbps, OFDM — –85.0 — 
+802.11g, 48 Mbps, OFDM — –81.0 — 
+802.11g, 54 Mbps, OFDM — –79.0 — 
+802.11n, HT20, MCS0 — –95.5 — 
+802.11n, HT20, MCS1 — –94.0 — 
+802.11n, HT20, MCS2 — –91.0 — 
+802.11n, HT20, MCS3 — –88.0 — 
+802.11n, HT20, MCS4 — –84.5 — 
+802.11n, HT20, MCS5 — –80.0 — 
+802.11n, HT20, MCS6 — –78.0 — 
+802.11n, HT20, MCS7 — –77.0 — 
+802.11n, HT40, MCS0 — –93.0 — 
+802.11n, HT40, MCS1 — –91.0 — 
+Cont’d on next page 
+
+Table 6-4 – cont’d from previous page 
+Min Typ Max 
+Rate (dBm) (dBm) (dBm) 
+802.11n, HT40, MCS2 — –88.0 — 
+802.11n, HT40, MCS3 — –84.0 — 
+802.11n, HT40, MCS4 — –82.0 — 
+802.11n, HT40, MCS5 — –77.0 — 
+802.11n, HT40, MCS6 — –75.0 — 
+802.11n, HT40, MCS7 — –74.0 — 
+802.11ax, HE20, MCS0 — –95.5 — 
+802.11ax, HE20, MCS1 — –92.5 — 
+802.11ax, HE20, MCS2 — –90.0 — 
+802.11ax, HE20, MCS3 — –87.0 — 
+802.11ax, HE20, MCS4 — –84.0 — 
+802.11ax, HE20, MCS5 — –80.0 — 
+802.11ax, HE20, MCS6 — –78.5 — 
+802.11ax, HE20, MCS7 — –76.5 — 
+802.11ax, HE20, MCS8 — –72.5 — 
+802.11ax, HE20, MCS9 — –70.5 — 
+
+Table 6-5. 2.4 GHz Maximum RX Level
+
+Min Typ Max Rate (dBm) (dBm) (dBm) 802.11b, 1 Mbps, DSSS — 5 — 802.11b, 11 Mbps, CCK — 5 — 802.11g, 6 Mbps, OFDM — 5 — 802.11g, 54 Mbps, OFDM — 0 — 802.11n, HT20, MCS0 — 5 — 802.11n, HT20, MCS7 — 0 — 802.11n, HT40, MCS0 — 5 — 802.11n, HT40, MCS7 — 0 — 802.11ax, HE20, MCS0 — 5 — 802.11ax, HE20, MCS9 — 0 —
+
+Table 6-6. 2.4 GHz RX Adjacent Channel Rejection
+
+Min Typ Max 
+Rate (dB) (dB) (dB) 
+802.11b, 1 Mbps, DSSS — 41 — 
+802.11b, 11 Mbps, CCK — 40 — 
+802.11g, 6 Mbps, OFDM — 37 — 
+802.11g, 54 Mbps, OFDM — 17 — 
+Cont’d on next page 
+
+Table 6-6 – cont’d from previous page 
+Min Typ Max 
+Rate (dB) (dB) (dB) 
+802.11n, HT20, MCS0 — 34 — 
+802.11n, HT20, MCS7 — 16 — 
+802.11n, HT40, MCS0 — 24 — 
+802.11n, HT40, MCS7 — 13 — 
+802.11ax, HE20, MCS0 — 38 — 
+802.11ax, HE20, MCS9 — 12 — 
+
+6.2 5 GHz Wi-Fi Radio
+
+Table 6-7. 5 GHz Wi-Fi RF Characteristics
+
+Name Description Center frequency range of operating channel 5180 ~ 5885 MHz Wi-Fi wireless standard IEEE 802.11a/n/ac/ax
+
+6.2.1 5 GHz Wi-Fi RF Transmitter (TX) Characteristics
+
+Table 6-8. 5 GHz TX Power with Spectral Mask and EVM Meeting 802.11 Standards
+
+Min Typ Max Rate (dBm) (dBm) (dBm) 802.11a, 6 Mbps, OFDM — 19.0 — 802.11a, 54 Mbps, OFDM — 17.0 — 802.11n, HT20, MCS0 — 19.0 — 802.11n, HT20, MCS7 — 16.0 — 802.11n, HT40, MCS0 — 18.0 — 802.11n, HT40, MCS7 — 15.0 — 802.11ac, VHT20, MCS0 — 19.0 — 802.11ac, VHT20, MCS7 — 16.0 — 802.11ax, HE20, MCS0 — 19.0 — 802.11ax, HE20, MCS7 — 16.0 —
+
+Table 6-9. 5 GHz TX EVM Test 1
+
+Min Typ Limit 
+Rate (dB) (dB) (dB) 
+802.11a, 6 Mbps, OFDM — –25.0 –5.0 
+802.11a, 54 Mbps, OFDM — –29.0 –25.0 
+802.11n, HT20, MCS0 — –25.0 –5.0 
+802.11n, HT20, MCS7 — –31.0 –27.0 
+Cont’d on next page 
+
+Table 6-9 – cont’d from previous page 
+Min Typ Limit 
+Rate (dB) (dB) (dB) 
+802.11n, HT40, MCS0 — –25.0 –5.0 
+802.11n, HT40, MCS7 — –31.0 –27.0 
+802.11ac, VHT20, MCS0 — –25.0 –5.0 
+802.11ac, VHT20, MCS7 — –31.0 –27.0 
+802.11ax, HE20, MCS0 — –25.0 –5.0 
+802.11ax, HE20, MCS7 — –31.5 –27.0 
+1 EVM is measured at the corresponding typical TX power provided 
+in Table 6-8 5 GHz TX Power with Spectral Mask and EVM Meeting 
+802.11 Standards above. 
+
+6.2.2 5 GHz Wi-Fi RF Receiver (RX) Characteristics For RX tests, the PER (packet error rate) limit is 10% for 802.11a/n/ac/ax. Table 6-10. 5 GHz RX Sensitivity
+
+Min Typ Max 
+Rate (dBm) (dBm) (dBm) 
+802.11a, 6 Mbps, OFDM — –95.0 — 
+802.11a, 9 Mbps, OFDM — –93.5 — 
+802.11a, 12 Mbps, OFDM — –92.0 — 
+802.11a, 18 Mbps, OFDM — –90.0 — 
+802.11a, 24 Mbps, OFDM — –87.0 — 
+802.11a, 36 Mbps, OFDM — –84.0 — 
+802.11a, 48 Mbps, OFDM — –79.0 — 
+802.11a, 54 Mbps, OFDM — –77.0 — 
+802.11n, HT20, MCS0 — –94.5 — 
+802.11n, HT20, MCS1 — –93.0 — 
+802.11n, HT20, MCS2 — –90.0 — 
+802.11n, HT20, MCS3 — –87.0 — 
+802.11n, HT20, MCS4 — –83.0 — 
+802.11n, HT20, MCS5 — –79.0 — 
+802.11n, HT20, MCS6 — –77.5 — 
+802.11n, HT20, MCS7 — –76.0 — 
+802.11n, HT40, MCS0 — –92.0 — 
+802.11n, HT40, MCS1 — –90.0 — 
+802.11n, HT40, MCS2 — –87.0 — 
+802.11n, HT40, MCS3 — –84.0 — 
+802.11n, HT40, MCS4 — –81.0 — 
+802.11n, HT40, MCS5 — –76.0 — 
+802.11n, HT40, MCS6 — –74.0 — 
+802.11n, HT40, MCS7 — –73.0 — 
+Cont’d on next page 
+
+Table 6-10 – cont’d from previous page 
+Min Typ Max 
+Rate (dBm) (dBm) (dBm) 
+802.11ac, VHT20, MCS0 — –95.0 — 
+802.11ac, VHT20, MCS1 — –93.0 — 
+802.11ac, VHT20, MCS2 — –90.0 — 
+802.11ac, VHT20, MCS3 — –87.0 — 
+802.11ac, VHT20, MCS4 — –83.5 — 
+802.11ac, VHT20, MCS5 — –79.0 — 
+802.11ac, VHT20, MCS6 — –77.5 — 
+802.11ac, VHT20, MCS7 — –76.0 — 
+802.11ax, HE20, MCS0 — –94.5 — 
+802.11ax, HE20, MCS1 — –91.5 — 
+802.11ax, HE20, MCS2 — –88.5 — 
+802.11ax, HE20, MCS3 — –86.0 — 
+802.11ax, HE20, MCS4 — –82.5 — 
+802.11ax, HE20, MCS5 — –79.0 — 
+802.11ax, HE20, MCS6 — –77.5 — 
+802.11ax, HE20, MCS7 — –75.0 — 
+
+Table 6-11. 5 GHz Maximum RX Level
+
+Min Typ Max Rate (dBm) (dBm) (dBm) 802.11a, 6 Mbps, OFDM — 5 — 802.11a, 54 Mbps, OFDM — 0 — 802.11n, HT20, MCS0 — 5 — 802.11n, HT20, MCS7 — 0 — 802.11n, HT40, MCS0 — 5 — 802.11n, HT40, MCS7 — 0 — 802.11ac, VHT20, MCS0 — 5 — 802.11ac, VHT20, MCS7 — 0 — 802.11ax, HE20, MCS0 — 5 — 802.11ax, HE20, MCS7 — 0 —
+
+Table 6-12. 5 GHz RX Adjacent Channel Rejection
+
+Min Typ Max 
+Rate (dB) (dB) (dB) 
+802.11a, 6 Mbps, OFDM — 29 — 
+802.11a, 54 Mbps, OFDM — 9 — 
+802.11n, HT20, MCS0 — 26 — 
+802.11n, HT20, MCS7 — 8 — 
+Cont’d on next page 
+
+Table 6-12 – cont’d from previous page 
+Min Typ Max 
+Rate (dB) (dB) (dB) 
+802.11n, HT40, MCS0 — 29 — 
+802.11n, HT40, MCS7 — 11 — 
+802.11ac, VHT20, MCS0 — 25 — 
+802.11ac, VHT20, MCS7 — 6 — 
+802.11ax, HE20, MCS0 — 25 — 
+802.11ax, HE20, MCS7 — 6 — 
+
+6.3 Bluetooth LE Radio
+
+Table 6-13. Bluetooth LE RF Characteristics Name Description Center frequency range of operating channel 2402 ~ 2480 MHz RF transmit power range –15~20 dBm
+
+6.3.1 Bluetooth LE RF Transmitter (TX) Characteristics
+
+Table 6-14. Bluetooth LE - Transmitter Characteristics - 1 Mbps Parameter Description Min Typ Max Unit
+
+Carrier frequency offset and drift
+
+Max. | fn| n=0, 1, 2, 3, ...k — 7.0 — kHz Max. | f0 − fn| n=2, 3, 4, ...k — 0.6 — kHz Max. | fn − fn− 5| n=6, 7, 8, ...k — 0.6 — kHz | f1 − f0| — 0.3 — kHz
+
+Modulation characteristics
+
+∆ F1avg — 250.0 — kHz 
+Min. ∆ F2max (for at least 
+99.9% of all ∆ F2max) 
+
+— 255.0 — kHz ∆ F2avg/∆ F1avg — 0.98 — —
+
+In-band emissions
+
+± 2 MHz offset — –33 — dBm ± 3 MHz offset — –40 — dBm > ± 3 MHz offset — –45 — dBm
+
+Table 6-15. Bluetooth LE - Transmitter Characteristics - 2 Mbps Parameter Description Min Typ Max Unit
+
+Carrier frequency offset and drift
+
+Max. | fn| n=0, 1, 2, 3, ...k — 7.0 — kHz Max. | f0 − fn| n=2, 3, 4, ...k — 0.6 — kHz Max. | fn − fn− 5| n=6, 7, 8, ...k — 0.7 — kHz | f1 − f0| — 0.3 — kHz
+
+Modulation characteristics
+
+∆ F1avg — 495.1 — kHz Cont’d on next page
+
+Table 6-15 – cont’d from previous page Parameter Description Min Typ Max Unit Min. ∆ F2max (for at least 99.9% of all ∆ F2max)
+
+— 515.0 — kHz ∆ F2avg/∆ F1avg — 0.99 — —
+
+In-band emissions
+
+± 4 MHz offset — –43 — dBm ± 5 MHz offset — –45 — dBm > ± 5 MHz offset — –45 — dBm
+
+Table 6-16. Bluetooth LE - Transmitter Characteristics - 125 Kbps
+
+Parameter Description Min Typ Max Unit
+
+Carrier frequency offset and drift
+
+Max. | fn| n=0, 1, 2, 3, ...k — 7.0 — kHz Max. | f0 − fn| n=1, 2, 3, ...k — 0.3 — kHz | f0 − f3| — 0.3 — kHz Max. | fn − fn− 3| n=7, 8, 9, ...k — 0.4 — kHz
+
+Modulation characteristics
+
+∆ F1avg — 251.2 — kHz 
+Min. ∆ F1max (for at least 
+99.9% of all ∆ F1max) 
+
+— 256.7 — kHz
+
+In-band emissions
+
+± 2 MHz offset — –31 — dBm ± 3 MHz offset — –40 — dBm > ± 3 MHz offset — –43 — dBm
+
+Table 6-17. Bluetooth LE - Transmitter Characteristics - 500 Kbps
+
+Parameter Description Min Typ Max Unit
+
+Carrier frequency offset and drift
+
+Max. | fn| n=0, 1, 2, 3, ...k — 7.0 — kHz Max. | f0 − fn| n=1, 2, 3, ...k — 0.5 — kHz | f0 − f3| — 0.2 — kHz Max. | fn − fn− 3| n=7, 8, 9, ...k — 0.5 — kHz
+
+Modulation characteristics
+
+∆ F2avg — 246.3 — kHz 
+Min. ∆ F2max (for at least 
+99.9% of all ∆ F2max) 
+
+— 253.3 — kHz
+
+In-band emissions
+
+± 2 MHz offset — –31 — dBm ± 3 MHz offset — –40 — dBm > ± 3 MHz offset — –43 — dBm
+
+6.3.2 Bluetooth LE RF Receiver (RX) Characteristics
+
+Table 6-18. Bluetooth LE - Receiver Characteristics - 1 Mbps
+
+Parameter Description Min Typ Max Unit Sensitivity @30.8% PER — — –99.0 — dBm Maximum received signal @30.8% PER — — 5 — dBm Cont’d on next page
+
+Table 6-18 – cont’d from previous page Parameter Description Min Typ Max Unit
+
+| Parameter | | Description | | | Min | Typ | | | Max | | Unit | |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| | Co-channel | F = F0 MHz | | | — | | | 9 | | — | dB | |
+| | | F = F0 + 1 MHz | | | — | | –4 | | | — | dB | |
+| | | F = F0 – 1 MHz | | | — | | –3 | | | — | dB | |
+| | | F = F0 + 2 MHz | | | — | –31 | | | | — | dB | |
+| | Adjacent channel | F = F0 – 2 MHz | | | — | –34 | | | | — | dB | |
+
+Adjacent channel
+
+| C/I and receiver | Adjacent channel | F = F0 + 3 MHz | | | — | –33 | | | | — | dB | |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| selectivity performance | | F = F0 – 3 MHz | | | — | –43 | | | | — | dB | |
+| | | F F0 + 4 MHz ≥ | | | — | –37 | | | | — | dB | |
+| | | F F0 – 4 MHz ≤ | | | — | –50 | | | | — | dB | |
+| | Image frequency | — | | | — | –28 | | | | — | dB | |
+| | Adjacent channel to | F = + 1 MHz Fimage | | | — | –27 | | | | — | dB | |
+| | image frequency | F = – 1 MHz Fimage | | | — | –30 | | | | — | dB | |
+| | | 30 MHz ~ 2000 MHz | | | — | –13 | | | | — | dBm | |
+| Out-of-band blocking | performance | 2003 MHz ~ 2399 | MHz | | — | –25 | | | | — | dBm | |
+| | | 2484 MHz ~ 2997 | MHz | | — | –20 | | | | — | dBm | |
+| | | 3000 MHz ~ 12.75 | GHz | | — | –20 | | | | — | dBm | |
+| Intermodulation | | — | | | — | | –41 | | | — | dBm | |
+
+F = F0 + 1 MHz — –4 — dB F = F0 – 1 MHz — –3 — dB F = F0 + 2 MHz — –31 — dB F = F0 – 2 MHz — –34 — dB
+
+Table 6-19. Bluetooth LE - Receiver Characteristics - 2 Mbps
+
+| Parameter | | Description | | | Min | Typ | | | Max | | Unit | |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Sensitivity @30.8% | PER | — | | | — | –96.5 | | | | — | dBm | |
+| Maximum received | signal @30.8% PER | — | | | — | | | 5 | | — | dBm | |
+| | Co-channel | F = F0 MHz | | | — | | | 8 | | — | dB | |
+| | | F = F0 + 2 MHz | | | — | | –8 | | | — | dB | |
+| | | F = F0 – 2 MHz | | | — | –10 | | | | — | dB | |
+| | | F = F0 + 4 MHz | | | — | –27 | | | | — | dB | |
+| | Adjacent channel | F = F0 – 4 MHz | | | — | –42 | | | | — | dB | |
+
+Adjacent channel
+
+| C/I and receiver | Adjacent channel | F = F0 + 6 MHz | | | — | –39 | | | | — | dB | |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| selectivity performance | | F = F0 – 6 MHz | | | — | –50 | | | | — | dB | |
+| | | F F0 + 8 MHz ≥ | | | — | –48 | | | | — | dB | |
+| | | F F0 – 8 MHz ≤ | | | — | –54 | | | | — | dB | |
+| | Image frequency | — | | | — | –27 | | | | — | dB | |
+| | Adjacent channel to | F = + 2 MHz Fimage | | | — | –26 | | | | — | dB | |
+| | image frequency | F = – 2 MHz Fimage | | | — | –28 | | | | — | dB | |
+| | | 30 MHz ~ 2000 MHz | | | — | –13 | | | | — | dBm | |
+| Out-of-band blocking | performance | 2003 MHz ~ 2399 | MHz | | — | –25 | | | | — | dBm | |
+| | | 2484 MHz ~ 2997 | MHz | | — | –20 | | | | — | dBm | |
+| | | 3000 MHz ~ 12.75 | GHz | | — | –20 | | | | — | dBm | |
+| Intermodulation | | — | | | — | –39 | | | | — | dBm | |
+
+F = F0 + 2 MHz — –8 — dB F = F0 – 2 MHz — –10 — dB F = F0 + 4 MHz — –27 — dB F = F0 – 4 MHz — –42 — dB
+
+Table 6-20. Bluetooth LE - Receiver Characteristics - 125 Kbps
+
+| Parameter | | | Description | | Min | Typ | Max | | Unit | |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Sensitivity | @30.8% PER | | — | | — | –107.0 | | — | dBm | |
+| Maximum | received signal | @30.8% PER | — | | — | | 5 | — | dBm | |
+| | | Co-channel | F = F0 MHz | | — | | 3 | — | dB | |
+| | | | F = F0 + 1 MHz | | — | –6 | | — | dB | |
+| | | | F = F0 – 1 MHz | | — | –7 | | — | dB | |
+| | | | F = F0 + 2 MHz | | — | –34 | | — | dB | |
+| | | Adjacent channel | F = F0 – 2 MHz | | — | –39 | | — | dB | |
+
+Adjacent channel
+
+| C/I and | receiver | Adjacent channel | F = F0 + 3 MHz | | — | –30 | | — | dB | |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| selectivity | performance | | F = F0 – 3 MHz | | — | –47 | | — | dB | |
+| | | | F F0 + 4 MHz ≥ | | — | –46 | | — | dB | |
+| | | | F F0 – 4 MHz ≤ | | — | –54 | | — | dB | |
+| | | Image frequency | — | | — | –28 | | — | dB | |
+| | | Adjacent channel to | F = + 1 MHz Fimage | | — | –34 | | — | dB | |
+| | | image frequency | F = – 1 MHz Fimage | | — | –31 | | — | dB | |
+
+F = F0 + 1 MHz — –6 — dB F = F0 – 1 MHz — –7 — dB F = F0 + 2 MHz — –34 — dB F = F0 – 2 MHz — –39 — dB
+
+Table 6-21. Bluetooth LE - Receiver Characteristics - 500 Kbps
+
+| Parameter | | | Description | | Min | Typ | Max | | Unit | |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Sensitivity | @30.8% PER | | — | | — | –103.5 | | — | dBm | |
+| Maximum | received signal | @30.8% PER | — | | — | | 5 | — | dBm | |
+| | | Co-channel | F = F0 MHz | | — | | 3 | — | dB | |
+| | | | F = F0 + 1 MHz | | — | –6 | | — | dB | |
+| | | | F = F0 – 1 MHz | | — | –7 | | — | dB | |
+| | | | F = F0 + 2 MHz | | — | –33 | | — | dB | |
+| | | Adjacent channel | F = F0 – 2 MHz | | — | –38 | | — | dB | |
+
+Adjacent channel
+
+| C/I and | receiver | Adjacent channel | F = F0 + 3 MHz | | — | –38 | | — | dB | |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| selectivity | performance | | F = F0 – 3 MHz | | — | –47 | | — | dB | |
+| | | | F F0 + 4 MHz ≥ | | — | –41 | | — | dB | |
+| | | | F F0 – 4 MHz ≤ | | — | –52 | | — | dB | |
+| | | Image frequency | — | | — | –23 | | — | dB | |
+| | | Adjacent channel to | F = + 1 MHz Fimage | | — | –29 | | — | dB | |
+| | | image frequency | F = – 1 MHz Fimage | | — | –29 | | — | dB | |
+
+F = F0 + 1 MHz — –6 — dB F = F0 – 1 MHz — –7 — dB F = F0 + 2 MHz — –33 — dB F = F0 – 2 MHz — –38 — dB
+
+6.4 802.15.4 Radio
+
+Table 6-22. 802.15.4 RF Characteristics
+
+Name Description Center frequency range of operating channel 2405 ~ 2480 MHz 1 Zigbee in the 2.4 GHz range supports 16 channels at 5 MHz spacing from channel 11 to channel 26.
+
+6.4.1 802.15.4 RF Transmitter (TX) Characteristics
+
+Table 6-23. 802.15.4 Transmitter Characteristics - 250 Kbps
+
+Parameter Min Typ Max Unit RF transmit power range –15.0 — 20.0 dBm EVM — 4.0% — —
+
+6.4.2 802.15.4 RF Receiver (RX) Characteristics
+
+Table 6-24. 802.15.4 Receiver Characteristics - 250 Kbps
+
+Parameter Description Min Typ Max Unit Sensitivity @1% PER — — –104.0 — dBm Maximum received signal @1% PER — — 5 — dBm
+
+Relative jamming level
+
+Adjacent channel
+
+F = F0 + 5 MHz — 28 — dB F = F0 – 5 MHz — 32 — dB
+
+Alternate channel
+
+F = F0 + 10 MHz — 48 — dB F = F0 – 10 MHz — 53 — dB
+
+7 Packaging
+
+7 Packaging • For information about tape, reel, and chip marking, please refer to ESP32-C5 Chip Packaging Information. • The pins of the chip are numbered in anti-clockwise order starting from Pin 1 in the top view. For pin numbers and pin names, see also Figure 2-1 ESP32-C5HR2 & ESP32-C5HR8 Pin Layout (Top View) and Figure 2-2 ESP32-C5HF4 Pin Layout (Top View). • The recommended land pattern source file (asc) is available for download. You can view the file with Autodesk Viewer.
+
+Figure 7-1. QFN48 (6×6 mm) Package
+
+Related Documentation and Resources
+
+Related Documentation and Resources 
+Related Documentation 
+• ESP32-C5 Hardware Design Guidelines – Guidelines on how to integrate the ESP32-C5 into your hardware prod 
+uct. 
+• ESP32-C5 Series SoC Errata – Descriptions of known errors in ESP32-C5 series of SoCs. 
+• ESP32-C5 Technical Reference Manual – Detailed information on how to use the ESP32-C5 memory and periph 
+erals. 
+• Technical Reference Manual LaTeX sources – Public repository containing the LaTeX sources for Espressif chip 
+TRMs. 
+https://github.com/espressif/esp-technical-reference-manual-latex 
+• Certificates 
+https://espressif.com/en/support/documents/certificates 
+• ESP32-C5 Product/Process Change Notifications (PCN) 
+https://espressif.com/en/support/documents/pcns?keys=ESP32-C5 
+• ESP32-C5 Advisories – Information on security, bugs, compatibility, component reliability. 
+https://espressif.com/en/support/documents/advisories?keys=ESP32-C5 
+• Documentation Updates and Update Notification Subscription 
+https://espressif.com/en/support/download/documents 
+Developer Zone 
+• ESP-IDF Programming Guide for ESP32-C5 – Extensive documentation for the ESP-IDF development framework. 
+• ESP-IDF and other development frameworks on GitHub. 
+https://github.com/espressif 
+• ESP32 BBS Forum – Engineer-to-Engineer (E2E) Community for Espressif products where you can post questions, 
+share knowledge, explore ideas, and help solve problems with fellow engineers. 
+https://esp32.com/ 
+• ESP-FAQ – A summary document of frequently asked questions released by Espressif. 
+https://espressif.com/projects/esp-faq/en/latest/index.html 
+• The ESP Journal – Best Practices, Articles, and Notes from Espressif folks. 
+https://blog.espressif.com/ 
+• See the tabs SDKs and Demos, Apps, Tools, AT Firmware. 
+https://espressif.com/en/support/download/sdks-demos 
+Products 
+• ESP32-C5 Series SoCs – Browse through all ESP32-C5 SoCs. 
+https://espressif.com/en/products/socs?id=ESP32-C5 
+• ESP32-C5 Series Modules – Browse through all ESP32-C5-based modules. 
+https://espressif.com/en/products/modules?id=ESP32-C5 
+• ESP32-C5 Series DevKits – Browse through all ESP32-C5-based devkits. 
+https://espressif.com/en/products/devkits?id=ESP32-C5 
+• ESP Product Selector – Find an Espressif hardware product suitable for your needs by comparing or applying filters. 
+https://products.espressif.com/#/product-selector?language=en 
+
+Related Documentation and Resources
+
+Contact Us • See the tabs Sales Questions, Technical Enquiries, Circuit Schematic & PCB Design Review, Get Samples (Online stores), Become Our Supplier, Comments & Suggestions. https://espressif.com/en/contact-us/sales-questions
+
+Appendix A – ESP32-C5 Consolidated Pin Overview
+
+e
+
+T g / a
+
+O / p
+
+ID ’d
+
+P t n
+
+S o
+
+F
+
+C
+
+T
+
+T
+
+T
+
+O
+
+O
+
+O
+
+O
+
+I /
+
+I /
+
+I /
+
+I /
+
+0
+
+9
+
+8
+
+7
+
+IO
+
+IO
+
+IO
+
+IO
+
+P
+
+P
+
+P
+
+P
+
+G
+
+G
+
+G
+
+G
+
+T
+
+T
+
+T / / /
+
+O
+
+O
+
+O / /
+
+I /
+
+I 1
+
+I 1
+
+I 1
+
+0
+
+1
+
+A
+
+A
+
+K
+
+T
+
+T
+
+A
+
+A
+
+L
+
+D
+
+D
+
+C
+
+0 _ _ _
+
+IO
+
+IO
+
+IO
+
+IO
+
+P
+
+D
+
+D
+
+D
+
+G
+
+S
+
+S
+
+S
+
+N
+
+R
+
+T
+
+D _
+
+T
+
+R
+
+A
+
+U _ w
+
+P ie
+
+L v r
+
+0 e
+
+IO
+
+w v
+
+P
+
+O ie
+
+G _ in
+
+P
+
+| | e p y T |
+| --- | --- |
+| | 2 |
+| n io t c | e p y T |
+| n u F X U M IO | 1 |
+| | e p y T |
+| | 0 |
+| n | 2 |
+| io t c n u F X U M IO P L | 1 |
+| | 0 |
+| n io t c n u | 1 |
+| F g lo a n A | 0 |
+| s g in t t e | t e s e R r e t f A |
+| S in P | t e s e R t A |
+| g in id v o r P in P | r e w o P |
+| in P | r r e e e p w w y o o T P P |
+| in P | 6 e A D D m a N D N V G |
+| in P | . o 1 2 N |
+
+| T / O / 1 I | | T / O / 1 I | T T T / / / O O O / / / 1 1 1 I I I |
+| --- | --- | --- | --- |
+| IQ P S F | | D IH P S F | K P L IW IC ID P P P S S S F F F |
+| T T / / O O / / I I | T / O / I | T / O / I | T T T / / / O O O / / / I I I |
+| 1 2 IO IO P P G G | 3 IO P G | 4 IO P G | 5 6 7 IO IO IO P P P G G G |
+| T / O / 1 I I | 1 I | 1 I | T T / / T O O / / / 1 O I I |
+| S 1 IO M T P G M | I D T M | K C T M | 1 A T A D 6 _ O IO IO D T P D M G S |
+| A D S _ C I2 _ P L | L C S _ C I2 _ P L | | |
+| N N R S S T D R _ _ T T R R A A U U _ _ P P L L | N S T C _ T R A U _ P L | D X R _ T R A U _ P L | D X T _ T R A U _ P L |
+| 1 2 IO IO P P G G _ _ P P L L | 3 IO P G _ P L | 4 IO P G _ P L | 5 6 IO IO P P G G _ _ P P L L |
+| 0 1 H H C C _ _ 1 1 C C D D A A | 2 H C _ 1 C D A | 3 H C _ 1 C D A | 4 5 H H C C _ _ 1 1 C C D D A A |
+| N _ K 2 3 _ L A T X | | | |
+| IE | IE | U P W , IE | IE IE IE |
+| IE | IE | | IE IE IE |
+| 1 1 T T S S P P D D D D V V | 1 T S P D D V | 1 T S P D D V | 1 1 1 T T T S S S P P P D D D D D D V V V |
+| IO IO | IO | IO | IO IO IO |
+| N _ K 2 3 S _ L M A T T X M | I D T M | K C T M | 6 7 O IO IO D T P P M G G |
+| 1 0 1 1 | 2 1 | 3 1 | 4 5 6 1 1 1 |
+
+| T / O / 1 I | | | |
+| --- | --- | --- | --- |
+| 0 S IC P S F | | | |
+| T T / / O O / / I I | T / O / I | T / O / I | T T / / O O / / I I |
+| 0 1 1 1 IO IO P P G G | 2 1 IO P G | 3 1 IO P G | 4 5 1 1 IO IO P P G G |
+| T / O / 1 I O | 1 I | T / O / 1 I | T / T O / / 1 I O |
+| D M C D _ X IO T 0 D S U | D X R 0 U | 3 A T A D _ IO D S | 2 A T A D 1 _ S IO IC D P S S |
+| | | | |
+| | | | |
+| | | | |
+| | | | |
+| | | - D _ B S U | + D _ B S U |
+| U P IE W | U P W , IE | IE | U P _ U B P S U W , , IE IE |
+| | | | U P _ U B P S U W |
+| 1 1 T T S S P P D D D D V V | 1 T S P D D V | 2 T S P D D V | I 2 P T S S P _ D D D D V V |
+| IO IO | IO | IO | r e IO IO w o P |
+| 0 D 1 X IO T 0 P G U | D X R 0 U | 3 1 IO P G | 2 T 1 4 S 1 S P IO IC D P P D G V S |
+| 0 9 1 2 | 1 2 | 2 2 | 4 5 3 2 2 2 |
+
+| | | | |
+| --- | --- | --- | --- |
+| | | | |
+| T / O / I | T / O / I | T / O / I | T T T / / / O O O / / / I I I |
+| 5 1 IO P G | 6 1 IO P G | 7 1 IO P G | 0 8 9 1 2 1 IO IO IO P P P G G G |
+| T / O | T / O | T / O / 1 I | T T T / / / O O O / / 1 / 1 I I I |
+| 1 S IC P S | 0 S IC P S | IQ P S | 9 P 1 D IO IW IH P P P S G S |
+| | | | |
+| | | | |
+| | | | |
+| | | | |
+| | | | I P S _ D D V |
+| U P W , IE | U P W , IE | U P W , IE | U U P P W W , , IE IE |
+| U P W | U P W | U P W | U U P P W W |
+| I P S _ D D V | I P S _ D D V | I P S _ D D V | I I P P S S _ _ D D D D V — V |
+| r e IO w o P | IO | IO | IO / r e IO IO w o P |
+| 2 T 1 S S P IC D P D V S | C N / 0 S IC P S | C N / IQ P S | C N / C C I N N P / / S P D _ IW IH D P P D S V S |
+| 4 5 2 2 | 6 2 | 7 2 | 8 9 0 2 2 3 |
+
+| | | |
+| --- | --- | --- |
+| | | |
+| T T / / O O / / I I | T / O / I | T T T / / / O O O / / / I I I |
+| 0 9 2 1 IO IO P P G G | 1 2 IO P G | 3 2 4 2 2 2 IO IO IO P P P G G G |
+| T T / / O O / / 1 I I | T / O | T T T / / / O O O / 1 / / I I I |
+| 9 1 D IO IH P P G S | K L IC P S | 3 4 2 2 IO IO ID P P P S G G |
+| | | |
+| | | |
+| | | |
+| | | |
+| I P S _ D D V | | |
+| U P W , IE | U P W , IE | U P W , IE IE IE |
+| U P W | U P W | U P W |
+| I P S _ D D — V | I P S _ D D V | I 3 3 P T T S S S _ P P D D D D D D V V V |
+| IO / r e IO w o P | IO | IO IO IO |
+| C N / C I N P / S D _ IH D P D V S | C N / K L IC P S | C 3 4 N 2 2 / IO IO ID P P P S G G |
+| 9 0 2 3 | 1 3 | 4 3 2 3 3 3 |
+
+| | | | e g a p t x e |
+| --- | --- | --- | --- |
+| | | | n n o ’d t n o C |
+| T T / / O O / / I I | T / O / I | T / O / I | T / O / I |
+| 5 4 2 2 IO IO P P G G | 6 2 IO P G | 7 2 IO P G | 8 2 IO P G |
+| T T / / O O / / I I | T / O / I | T / O / I | T / O / I |
+| 5 4 2 2 IO IO P P G G | 6 2 IO P G | 7 2 IO P G | 8 2 IO P G |
+| | | | |
+| | | | |
+| | | | |
+| | | | |
+| | | | |
+| IE IE | IE | U P W , IE | U P W , IE |
+| IE | IE | U P W , IE | U P W , IE |
+| 3 3 T T S S P P D D D D V V | 3 T S P D D V | 3 T S P D D V | 3 T S P D D V |
+| IO IO | IO | IO | r e IO w o P |
+| 5 4 2 2 IO IO P P G G | 6 2 IO P G | 7 2 IO P G | 3 T 8 S 2 P IO D P D G V |
+| 4 5 3 3 | 6 3 | 7 3 | 8 9 3 3 |
+
+L
+
+P v .
+
+r
+
+1 e
+
+7 v le b
+
+O a
+
+T in
+
+0
+
+P
+
+1
+
+P
+
+P
+
+P _
+
+K
+
+M
+
+M
+
+2
+
+O
+
+O
+
+3
+
+d
+
+C
+
+C _ _ _
+
+L
+
+e
+
+D
+
+D
+
+A
+
+A
+
+A
+
+T
+
+t
+
+P
+
+P
+
+X
+
+IE
+
+IE
+
+IE
+
+n o
+
+C
+
+IE
+
+5
+
+C -
+
+2
+
+1
+
+1
+
+1
+
+1
+
+1
+
+T
+
+T
+
+T
+
+T
+
+T
+
+3
+
+S
+
+S
+
+S
+
+S
+
+S
+
+P
+
+P
+
+P
+
+P
+
+P
+
+D
+
+D
+
+D
+
+D
+
+D
+
+P
+
+D
+
+D
+
+D
+
+D
+
+D
+
+V
+
+V
+
+V
+
+V
+
+V
+
+S
+
+E
+
+–
+
+IO
+
+IO
+
+IO
+
+P
+
+P
+
+P
+
+P
+
+A
+
+A
+
+A
+
+A ix
+
+P _
+
+K
+
+d
+
+1
+
+U
+
+2
+
+T
+
+P
+
+N
+
+P
+
+3
+
+S
+
+8
+
+7
+
+n
+
+9
+
+7
+
+P
+
+A
+
+A
+
+IP
+
+IO
+
+IO
+
+IO
+
+L
+
+L
+
+L
+
+D
+
+D
+
+D
+
+D
+
+A
+
+A
+
+A
+
+e
+
+N
+
+H
+
+P
+
+P
+
+P
+
+D
+
+D
+
+D
+
+T
+
+T
+
+T
+
+G
+
+G
+
+G
+
+G
+
+C
+
+V
+
+V
+
+V
+
+X
+
+X
+
+X
+
+p p
+
+8
+
+6
+
+7
+
+9
+
+8
+
+6
+
+5
+
+3
+
+2
+
+7
+
+4
+
+1
+
+1
+
+1
+
+A
+
+Espressif Systems 88
+
+ESP32-C5 Series Datasheet v1.2
+
+Submit Documentation Feedback
+
+Appendix A – ESP32-C5 Consolidated Pin Overview
+
+| | e p y T |
+| --- | --- |
+| | 2 |
+| n io t c | e p y T |
+| n u F X U M IO | 1 |
+| | e p y T |
+| | 0 |
+| n | 2 |
+| io t c n u F X U M IO P L e g | 1 |
+| a p s u io v e r p m | 0 |
+| o r f ’d t n o n C io t c n u | 1 |
+| F g lo a n A | 0 |
+| s g in t t e S | t e s e R r e t f A |
+| in P | t e s e R t A |
+| g in id v o r P in P | r e w o P |
+| in P | r r e e e p w w y o o T P P |
+| in P | 1 2 e A A D D m a D D N V V |
+| in P | . 1 o 0 4 4 N |
+
+.
+
+s
+
+IO
+
+P
+
+G
+
+P
+
+IO
+
+P
+
+R
+
+4 .
+
+. 3
+
+R .
+
+2
+
+P
+
+P
+
+P
+
+P
+
+P
+
+P
+
+A
+
+S e e
+
+G
+
+G s
+
+2
+
+5
+
+4
+
+2
+
+3
+
+5 ,
+
+A
+
+A
+
+A
+
+A _ _ ls
+
+D
+
+D
+
+D
+
+D
+
+D
+
+D
+
+T
+
+T i
+
+N
+
+N
+
+N
+
+N
+
+D
+
+D
+
+D
+
+D t a
+
+G
+
+G
+
+V
+
+V
+
+V
+
+V
+
+A
+
+5
+
+3
+
+2
+
+4
+
+8
+
+6
+
+1
+
+7
+
+F
+
+4
+
+4
+
+4
+
+4
+
+4
+
+4
+
+4
+
+4 *
+
+Espressif Systems 89
+
+ESP32-C5 Series Datasheet v1.2
+
+Submit Documentation Feedback
+
+Revision History
+
+| Revision | History | |
+| --- | --- | --- |
+| Date | Version Release | notes |
+| 2026-05-08 | v1.2 | Added ESP32-C5HR2 related information throughout the document • Updated the feature list in Section 4.2.1.6 CAN FD Controller • |
+| 2026-03-04 | According v1.1 | to PCN20251201, Added Figure 2-2 ESP32-C5HF4 Pin Layout (Top View), and updated • ESP32-C5HF4 pin related information throughout the document Added Section 4.1.4.10 Key Manager, and updated key manager related • information throughout the document |
+| 2025-11-05 | v1.0 | Removed content related to crystal frequency selection throughout the • document In Chapter Features, added descriptions for the RF module • Added Section 5.7 Reliability • |
+| 2025-09-10 | In Chapter v0.6 ESP32-C5NF4 | 1.2 Comparison, updated the ordering code ESP32-C5NR4 and to ESP32-C5HR4 and ESP32-C5HF4 |
+| 2025-05-19 | v0.5 Preliminary | release |
+
+Disclaimer and Copyright Notice 
+Information in this document, including URL references, is subject to change without notice. 
+ALL THIRD PARTY’S INFORMATION IN THIS DOCUMENT IS PROVIDED AS IS WITH NO WARRANTIES TO ITS AUTHENTICITY AND 
+ACCURACY. 
+NO WARRANTY IS PROVIDED TO THIS DOCUMENT FOR ITS MERCHANTABILITY, NON-INFRINGEMENT, FITNESS FOR ANY PARTICULAR 
+PURPOSE, NOR DOES ANY WARRANTY OTHERWISE ARISING OUT OF ANY PROPOSAL, SPECIFICATION OR SAMPLE. 
+All liability, including liability for infringement of any proprietary rights, relating to use of information in this document is disclaimed. No 
+licenses express or implied, by estoppel or otherwise, to any intellectual property rights are granted herein. 
+The Wi-Fi Alliance Member logo is a trademark of the Wi-Fi Alliance. The Bluetooth logo is a registered trademark of Bluetooth SIG. 
+All trade names, trademarks and registered trademarks mentioned in this document are property of their respective owners, and are 
+hereby acknowledged. 
+Copyright © 2026 Espressif Systems (Shanghai) Co., Ltd. All rights reserved. 
+www.espressif.com 
+

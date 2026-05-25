@@ -1,0 +1,826 @@
+{
+  "id": "esp32-c5",
+  "name": "ESP32-C5",
+  "tagline": "双频 Wi-Fi 6 (2.4 + 5 GHz) + BLE 5 + 802.15.4",
+  "cpu": "RISC-V 32-bit",
+  "defaultVariant": "default",
+  "variants": [
+    {
+      "id": "default",
+      "label": "QFN-40 (5×5 mm)",
+      "layout": {
+        "type": "QFN",
+        "pinCount": 40,
+        "pinsPerSide": 10,
+        "centerPin": 41,
+        "packageName": "QFN-40+1"
+      },
+      "pins": [
+        {
+          "number": 1,
+          "name": "VDDA6",
+          "type": "Power",
+          "supply": "",
+          "resetAt": "",
+          "resetAfter": "",
+          "iomux": [],
+          "lpio": [],
+          "analog": []
+        },
+        {
+          "number": 2,
+          "name": "GND",
+          "type": "Power",
+          "supply": "",
+          "resetAt": "",
+          "resetAfter": "",
+          "iomux": [],
+          "lpio": [],
+          "analog": []
+        },
+        {
+          "number": 3,
+          "name": "VDDA7",
+          "type": "Power",
+          "supply": "",
+          "resetAt": "",
+          "resetAfter": "",
+          "iomux": [],
+          "lpio": [],
+          "analog": []
+        },
+        {
+          "number": 4,
+          "name": "XTAL_N",
+          "type": "Analog",
+          "supply": "",
+          "resetAt": "",
+          "resetAfter": "",
+          "iomux": [],
+          "lpio": [],
+          "analog": []
+        },
+        {
+          "number": 5,
+          "name": "XTAL_P",
+          "type": "Analog",
+          "supply": "",
+          "resetAt": "",
+          "resetAfter": "",
+          "iomux": [],
+          "lpio": [],
+          "analog": []
+        },
+        {
+          "number": 6,
+          "name": "VDDA8",
+          "type": "Power",
+          "supply": "",
+          "resetAt": "",
+          "resetAfter": "",
+          "iomux": [],
+          "lpio": [],
+          "analog": []
+        },
+        {
+          "number": 7,
+          "name": "CHIP_PU",
+          "type": "Analog",
+          "supply": "VDDPST1",
+          "resetAt": "",
+          "resetAfter": "",
+          "iomux": [],
+          "lpio": [],
+          "analog": []
+        },
+        {
+          "number": 8,
+          "name": "VDDPST1",
+          "type": "Power",
+          "supply": "",
+          "resetAt": "",
+          "resetAfter": "",
+          "iomux": [],
+          "lpio": [],
+          "analog": []
+        },
+        {
+          "number": 9,
+          "name": "XTAL_32K_P",
+          "type": "IO",
+          "supply": "VDDPST1",
+          "resetAt": "",
+          "resetAfter": "",
+          "iomux": [
+            {
+              "f": "F0",
+              "name": "GPIO0",
+              "type": "I/O/T"
+            },
+            {
+              "f": "F1",
+              "name": "GPIO0",
+              "type": "I/O/T"
+            }
+          ],
+          "lpio": [],
+          "analog": []
+        },
+        {
+          "number": 10,
+          "name": "XTAL_32K_N",
+          "type": "IO",
+          "supply": "VDDPST1",
+          "resetAt": "",
+          "resetAfter": "",
+          "iomux": [
+            {
+              "f": "F0",
+              "name": "GPIO1",
+              "type": "I/O/T"
+            },
+            {
+              "f": "F1",
+              "name": "GPIO1",
+              "type": "I/O/T"
+            }
+          ],
+          "lpio": [],
+          "analog": []
+        },
+        {
+          "number": 11,
+          "name": "MTMS",
+          "type": "IO",
+          "supply": "VDDPST1",
+          "resetAt": "IE",
+          "resetAfter": "IE",
+          "iomux": [
+            {
+              "f": "F0",
+              "name": "MTMS",
+              "type": "I1"
+            },
+            {
+              "f": "F1",
+              "name": "GPIO2",
+              "type": "I/O/T"
+            },
+            {
+              "f": "F2",
+              "name": "FSPIQ",
+              "type": "I1/O/T"
+            }
+          ],
+          "lpio": [],
+          "analog": []
+        },
+        {
+          "number": 12,
+          "name": "MTDI",
+          "type": "IO",
+          "supply": "VDDPST1",
+          "resetAt": "IE",
+          "resetAfter": "IE",
+          "iomux": [
+            {
+              "f": "F0",
+              "name": "MTDI",
+              "type": "I1"
+            },
+            {
+              "f": "F1",
+              "name": "GPIO3",
+              "type": "I/O/T"
+            }
+          ],
+          "lpio": [],
+          "analog": []
+        },
+        {
+          "number": 13,
+          "name": "MTCK",
+          "type": "IO",
+          "supply": "VDDPST1",
+          "resetAt": "",
+          "resetAfter": "",
+          "iomux": [
+            {
+              "f": "F0",
+              "name": "MTCK",
+              "type": "I1"
+            },
+            {
+              "f": "F1",
+              "name": "GPIO4",
+              "type": "I/O/T"
+            },
+            {
+              "f": "F2",
+              "name": "FSPIHD",
+              "type": "I1/O/T"
+            }
+          ],
+          "lpio": [],
+          "analog": []
+        },
+        {
+          "number": 14,
+          "name": "MTDO",
+          "type": "IO",
+          "supply": "VDDPST1",
+          "resetAt": "IE",
+          "resetAfter": "IE",
+          "iomux": [
+            {
+              "f": "F0",
+              "name": "MTDO",
+              "type": "O/T"
+            },
+            {
+              "f": "F1",
+              "name": "GPIO5",
+              "type": "I/O/T"
+            },
+            {
+              "f": "F2",
+              "name": "FSPIWP",
+              "type": "I1/O/T"
+            }
+          ],
+          "lpio": [],
+          "analog": []
+        },
+        {
+          "number": 15,
+          "name": "GPIO6",
+          "type": "IO",
+          "supply": "VDDPST1",
+          "resetAt": "IE",
+          "resetAfter": "IE",
+          "iomux": [
+            {
+              "f": "F0",
+              "name": "GPIO6",
+              "type": "I/O/T"
+            },
+            {
+              "f": "F1",
+              "name": "GPIO6",
+              "type": "I/O/T"
+            },
+            {
+              "f": "F2",
+              "name": "FSPICLK",
+              "type": "I1/O/T"
+            }
+          ],
+          "lpio": [],
+          "analog": []
+        },
+        {
+          "number": 16,
+          "name": "GPIO7",
+          "type": "IO",
+          "supply": "VDDPST1",
+          "resetAt": "IE",
+          "resetAfter": "IE",
+          "iomux": [
+            {
+              "f": "F0",
+              "name": "SDIO_DATA1",
+              "type": "I1/O/T"
+            },
+            {
+              "f": "F1",
+              "name": "GPIO7",
+              "type": "I/O/T"
+            },
+            {
+              "f": "F2",
+              "name": "FSPID",
+              "type": "I1/O/T"
+            }
+          ],
+          "lpio": [],
+          "analog": []
+        },
+        {
+          "number": 17,
+          "name": "GPIO8",
+          "type": "IO",
+          "supply": "VDDPST1",
+          "resetAt": "IE",
+          "resetAfter": "",
+          "iomux": [
+            {
+              "f": "F0",
+              "name": "SDIO_DATA0",
+              "type": "I1/O/T"
+            },
+            {
+              "f": "F1",
+              "name": "GPIO8",
+              "type": "I/O/T"
+            }
+          ],
+          "lpio": [],
+          "analog": []
+        },
+        {
+          "number": 18,
+          "name": "GPIO9",
+          "type": "IO",
+          "supply": "VDDPST1",
+          "resetAt": "IE",
+          "resetAfter": "",
+          "iomux": [
+            {
+              "f": "F0",
+              "name": "SDIO_CLK",
+              "type": "I1"
+            },
+            {
+              "f": "F1",
+              "name": "GPIO9",
+              "type": "I/O/T"
+            }
+          ],
+          "lpio": [],
+          "analog": []
+        },
+        {
+          "number": 19,
+          "name": "GPIO10",
+          "type": "IO",
+          "supply": "VDDPST1",
+          "resetAt": "IE",
+          "resetAfter": "",
+          "iomux": [
+            {
+              "f": "F0",
+              "name": "SDIO_CMD",
+              "type": "I1/O/T"
+            },
+            {
+              "f": "F1",
+              "name": "GPIO10",
+              "type": "I/O/T"
+            },
+            {
+              "f": "F2",
+              "name": "FSPICS0",
+              "type": "I1/O/T"
+            }
+          ],
+          "lpio": [],
+          "analog": []
+        },
+        {
+          "number": 20,
+          "name": "U0TXD",
+          "type": "IO",
+          "supply": "VDDPST1",
+          "resetAt": "",
+          "resetAfter": "",
+          "iomux": [
+            {
+              "f": "F0",
+              "name": "U0TXD",
+              "type": "O"
+            },
+            {
+              "f": "F1",
+              "name": "GPIO11",
+              "type": "I/O/T"
+            }
+          ],
+          "lpio": [],
+          "analog": []
+        },
+        {
+          "number": 21,
+          "name": "U0RXD",
+          "type": "IO",
+          "supply": "VDDPST1",
+          "resetAt": "",
+          "resetAfter": "",
+          "iomux": [
+            {
+              "f": "F0",
+              "name": "U0RXD",
+              "type": "I1"
+            },
+            {
+              "f": "F1",
+              "name": "GPIO12",
+              "type": "I/O/T"
+            }
+          ],
+          "lpio": [],
+          "analog": []
+        },
+        {
+          "number": 22,
+          "name": "GPIO13",
+          "type": "IO",
+          "supply": "VDDPST2",
+          "resetAt": "IE",
+          "resetAfter": "",
+          "iomux": [
+            {
+              "f": "F0",
+              "name": "SDIO_DATA3",
+              "type": "I1/O/T"
+            },
+            {
+              "f": "F1",
+              "name": "GPIO13",
+              "type": "I/O/T"
+            }
+          ],
+          "lpio": [],
+          "analog": []
+        },
+        {
+          "number": 23,
+          "name": "GPIO14",
+          "type": "IO",
+          "supply": "VDDPST2",
+          "resetAt": "USB_PU",
+          "resetAfter": "",
+          "iomux": [
+            {
+              "f": "F0",
+              "name": "SDIO_DATA2",
+              "type": "I1/O/T"
+            },
+            {
+              "f": "F1",
+              "name": "GPIO14",
+              "type": "I/O/T"
+            }
+          ],
+          "lpio": [],
+          "analog": []
+        },
+        {
+          "number": 24,
+          "name": "VDDPST2",
+          "type": "Power",
+          "supply": "",
+          "resetAt": "",
+          "resetAfter": "",
+          "iomux": [],
+          "lpio": [],
+          "analog": []
+        },
+        {
+          "number": 25,
+          "name": "SPICS1",
+          "type": "IO",
+          "supply": "VDD_SPI",
+          "resetAt": "WPU",
+          "resetAfter": "",
+          "iomux": [
+            {
+              "f": "F0",
+              "name": "SPICS1",
+              "type": "O/T"
+            },
+            {
+              "f": "F1",
+              "name": "GPIO15",
+              "type": "I/O/T"
+            }
+          ],
+          "lpio": [],
+          "analog": []
+        },
+        {
+          "number": 26,
+          "name": "SPICS0/NC",
+          "type": "IO",
+          "supply": "VDD_SPI",
+          "resetAt": "WPU",
+          "resetAfter": "",
+          "iomux": [
+            {
+              "f": "F0",
+              "name": "SPICS0",
+              "type": "O/T"
+            },
+            {
+              "f": "F1",
+              "name": "GPIO16",
+              "type": "I/O/T"
+            }
+          ],
+          "lpio": [],
+          "analog": []
+        },
+        {
+          "number": 27,
+          "name": "SPIQ/NC",
+          "type": "IO",
+          "supply": "VDD_SPI",
+          "resetAt": "WPU",
+          "resetAfter": "",
+          "iomux": [
+            {
+              "f": "F0",
+              "name": "SPIQ",
+              "type": "I1/O/T"
+            },
+            {
+              "f": "F1",
+              "name": "GPIO17",
+              "type": "I/O/T"
+            }
+          ],
+          "lpio": [],
+          "analog": []
+        },
+        {
+          "number": 28,
+          "name": "SPIWP/NC",
+          "type": "IO",
+          "supply": "VDD_SPI",
+          "resetAt": "WPU",
+          "resetAfter": "",
+          "iomux": [
+            {
+              "f": "F0",
+              "name": "SPIWP",
+              "type": "I1/O/T"
+            },
+            {
+              "f": "F1",
+              "name": "GPIO18",
+              "type": "I/O/T"
+            }
+          ],
+          "lpio": [],
+          "analog": []
+        },
+        {
+          "number": 29,
+          "name": "VDD_SPI/NC",
+          "type": "Power",
+          "supply": "",
+          "resetAt": "",
+          "resetAfter": "",
+          "iomux": [
+            {
+              "f": "F0",
+              "name": "GPIO19",
+              "type": "I/O/T"
+            },
+            {
+              "f": "F1",
+              "name": "GPIO19",
+              "type": "I/O/T"
+            }
+          ],
+          "lpio": [],
+          "analog": []
+        },
+        {
+          "number": 30,
+          "name": "SPIHD/NC",
+          "type": "IO",
+          "supply": "VDD_SPI",
+          "resetAt": "WPU",
+          "resetAfter": "",
+          "iomux": [
+            {
+              "f": "F0",
+              "name": "SPIHD",
+              "type": "I1/O/T"
+            },
+            {
+              "f": "F1",
+              "name": "GPIO20",
+              "type": "I/O/T"
+            }
+          ],
+          "lpio": [],
+          "analog": []
+        },
+        {
+          "number": 31,
+          "name": "SPICLK/NC",
+          "type": "IO",
+          "supply": "VDD_SPI",
+          "resetAt": "WPU",
+          "resetAfter": "",
+          "iomux": [
+            {
+              "f": "F0",
+              "name": "SPICLK",
+              "type": "O/T"
+            },
+            {
+              "f": "F1",
+              "name": "GPIO21",
+              "type": "I/O/T"
+            }
+          ],
+          "lpio": [],
+          "analog": []
+        },
+        {
+          "number": 32,
+          "name": "SPID/NC",
+          "type": "IO",
+          "supply": "VDD_SPI",
+          "resetAt": "WPU",
+          "resetAfter": "",
+          "iomux": [
+            {
+              "f": "F0",
+              "name": "SPID",
+              "type": "I1/O/T"
+            },
+            {
+              "f": "F1",
+              "name": "GPIO22",
+              "type": "I/O/T"
+            }
+          ],
+          "lpio": [],
+          "analog": []
+        },
+        {
+          "number": 33,
+          "name": "GPIO23",
+          "type": "IO",
+          "supply": "VDDPST3",
+          "resetAt": "IE",
+          "resetAfter": "",
+          "iomux": [
+            {
+              "f": "F0",
+              "name": "GPIO23",
+              "type": "I/O/T"
+            },
+            {
+              "f": "F1",
+              "name": "GPIO23",
+              "type": "I/O/T"
+            }
+          ],
+          "lpio": [],
+          "analog": []
+        },
+        {
+          "number": 34,
+          "name": "GPIO24",
+          "type": "IO",
+          "supply": "VDDPST3",
+          "resetAt": "IE",
+          "resetAfter": "",
+          "iomux": [
+            {
+              "f": "F0",
+              "name": "GPIO24",
+              "type": "I/O/T"
+            },
+            {
+              "f": "F1",
+              "name": "GPIO24",
+              "type": "I/O/T"
+            }
+          ],
+          "lpio": [],
+          "analog": []
+        },
+        {
+          "number": 35,
+          "name": "GPIO25",
+          "type": "IO",
+          "supply": "VDDPST3",
+          "resetAt": "IE",
+          "resetAfter": "IE",
+          "iomux": [
+            {
+              "f": "F0",
+              "name": "GPIO25",
+              "type": "I/O/T"
+            },
+            {
+              "f": "F1",
+              "name": "GPIO25",
+              "type": "I/O/T"
+            }
+          ],
+          "lpio": [],
+          "analog": []
+        },
+        {
+          "number": 36,
+          "name": "GPIO26",
+          "type": "IO",
+          "supply": "VDDPST3",
+          "resetAt": "IE",
+          "resetAfter": "IE",
+          "iomux": [
+            {
+              "f": "F0",
+              "name": "GPIO26",
+              "type": "I/O/T"
+            },
+            {
+              "f": "F1",
+              "name": "GPIO26",
+              "type": "I/O/T"
+            }
+          ],
+          "lpio": [],
+          "analog": []
+        },
+        {
+          "number": 37,
+          "name": "GPIO27",
+          "type": "IO",
+          "supply": "VDDPST3",
+          "resetAt": "",
+          "resetAfter": "",
+          "iomux": [
+            {
+              "f": "F0",
+              "name": "GPIO27",
+              "type": "I/O/T"
+            },
+            {
+              "f": "F1",
+              "name": "GPIO27",
+              "type": "I/O/T"
+            }
+          ],
+          "lpio": [],
+          "analog": []
+        },
+        {
+          "number": 38,
+          "name": "GPIO28",
+          "type": "IO",
+          "supply": "VDDPST3",
+          "resetAt": "",
+          "resetAfter": "",
+          "iomux": [
+            {
+              "f": "F0",
+              "name": "GPIO28",
+              "type": "I/O/T"
+            },
+            {
+              "f": "F1",
+              "name": "GPIO28",
+              "type": "I/O/T"
+            }
+          ],
+          "lpio": [],
+          "analog": []
+        },
+        {
+          "number": 39,
+          "name": "VDDPST3",
+          "type": "Power",
+          "supply": "",
+          "resetAt": "",
+          "resetAfter": "",
+          "iomux": [],
+          "lpio": [],
+          "analog": []
+        },
+        {
+          "number": 40,
+          "name": "VDDA1",
+          "type": "Power",
+          "supply": "",
+          "resetAt": "",
+          "resetAfter": "",
+          "iomux": [],
+          "lpio": [],
+          "analog": []
+        },
+        {
+          "number": 41,
+          "name": "VDDA2",
+          "type": "Power",
+          "supply": "",
+          "resetAt": "",
+          "resetAfter": "",
+          "iomux": [],
+          "lpio": [],
+          "analog": []
+        }
+      ]
+    }
+  ],
+  "datasheetUrl": "https://www.espressif.com/sites/default/files/documentation/esp32-c5_datasheet_en.pdf",
+  "verified": true,
+  "notes": "ESP32-C5 是 Espressif 首款支持双频 Wi-Fi 6 的 SoC，QFN-40 封装。",
+  "displayOrder": 60
+}

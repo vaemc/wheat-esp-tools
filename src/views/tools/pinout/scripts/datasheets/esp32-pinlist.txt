@@ -1,0 +1,131 @@
+ESP32 Pin List Version 2.0 Copyright © 2016
+
+Release Notes
+
+| 2016.06 | V1.0 First release. |
+| --- | --- |
+| 2016.07 | Updated IO_MUX. V2.0 Added Notes, Ethernet_MAC, GPIO_Matrix, and Strapping. |
+
+Date Version Release notes
+
+| A Quick Guide to This List | |
+| --- | --- |
+| Note 1 | |
+| In the “IO_MUX” page, the red-filled areas mark the differences from ESP31B. The blue-filled areas mark the new features as compared to the ESP31B. | |
+| Note 2 | |
+| The following pins are input-only. These pins do not feature an output driver or internal pull-up/pull-down circuitry: SENSOR_VP (GPIO36), SENSOR_CAPP (GPIO37), SENSOR_CAPN (GPIO38), SENSOR_VN (GPIO39), VDET_1 (GPIO36), VDET_2 (GPIO36). | |
+| Note 3 | |
+| The pins are split into 4 power-domains: VANA (analog power supply), VRTC (RTC power supply), VIO (power supply of digital IOs and CPU cores), VSDIO (power supply of SDIO IOs). VSDIO is the output of the internal SDIO-LDO. The voltage of SDIO-LDO is configurable to be 1.8V or to be the same as VRTC. The strapping pin and efuse bits decide the default voltage of the SDIO-LDO. Software can change the voltage of the SDIO-LDO by configuring register bits. | |
+| Note 4 | |
+| The functional pins in the VRTC domain are with the analog functions, including 32kHz crystal oscillator, ADC pre-amplifier, ADC, DAC, and capacitive touch sensor. Please refer to the columns "Analog Function 1~3" in the page "IO_MUX". | |
+| Note 5 | |
+| These VRTC pins support the RTC_GPIO function, and can work during deep-sleep. For example, a RTC-GPIO may be used to wake up the chip from deep-sleep. | |
+| Note 6 | |
+| The GPIO pins support up to 6 digital functions as shown in the columns "Function 1~6" of the page "IO_MUX". The function select registers shall be set as "N-1", where N is the function number. Below are some definitions: SD_* is for the signals of the SDIO slave HS1_* is for the signals of the Port 1 of SDIO host HS2_* is for the signals of the Port 2 of SDIO host MT* is for the signals of the JTAG U0* is for the signals of UART0 module. U1* is for the signals of UART1 module. U2* is for the signals of UART2 module. SPI* is for the signals of SPI01 module. HSPI* is for the signals of SPI2 module. VSPI* is for the signals of SPI3 module. | |
+
+| Note 7 | |
+| --- | --- |
+| Each digital "function" column is accompanied by a column of "Type". Please refer to the following to understand the significance of "type" with respect to each "function" it is associated with. For any function "Function-N", type signifies: "I": input only. If a function other than "Function-N" is assigned, the input signal of "Function-N" is still from this pin. "I1": input only. If a function other than "Function-N" is assigned, the input signal for "Function-N" is always "1". "I0": input only. If a function other than "Function-N" is assigned, the input signal for "Function-N" is always "0". "O": output only. "T": high-impendence. "I/O/T": combinations of input, output, and high-impendence according to the function signal. "I1/O/T": combinations of input, output, and high-impendence according to the function signal. If a function is not selected, the input signal of the function is "1". For example, pin 30 can act as HS1_CMD or SD_CMD, where HS1_CMD is with the type "I1/O/T". If pin 30 is selected as "HS1_CMD", the input and output of this pin are controlled by the SDIO Host. If pin 30 is not selected as "HS1_CMD", the input signal to SDIO Host is always "1". | |
+| Note 8 | |
+| Each digital output pin is associated with its configurable drive-strength. The column "Drive Strength" in the page "IO_MUX" lists the default values. | |
+| Note 9 | |
+| The column "At reset" in the page "IO_MUX" lists the status of each pin during reset, including input enable (ie=1), internal pull-up (wpu) and internal pull-down (wpd). During reset, all pins are output disabled. | |
+| Note 10 | |
+| The column "After Reset" in the page "IO_MUX" lists the status of each pin immediately after reset, including input enable (ie=1), internal pull-up (wpu) and internal pull-down (wpd). After reset, each pin is set to its "Function 1". The output enable are controlled by its digital Function 1. | |
+| Note 11 | |
+| The page “Ethernet_MAC” is for the signal mapping inside Ethernet MAC. The Ethernet MAC supports MII and RMII interfaces, and supports both internal PLL clock and the external clock source. For MII interface, the Ethernet MAC is with/without the TX_ERR signal. MDC, MDIO, CRS and COL are slow signals, and can be mapped to any GPIO pins through GPIO-Matrix. | |
+| Note 12 | |
+| The page "GPIO_Matrix" is for the GPIO-Matrix. The signals of the on-chip functional modules can be mapped to any GPIO pins. Some signals can be mapped to a pin by both IO-MUX and GPIO-Matrix, as shown in the column of "The same input signal from IO_MUX Core" in the page "GPIO_Matrix". | |
+
+IO_MUX
+
+Pin No. Pin Name Pin Name Pin Name Power Domain Analog Function1
+
+Analog Function2
+
+Analog Function3 RTC_GPIO Function1 Type Function2 Type Function3 Type Function4 Type Function5 Type Function6 Type Drive Strength (2’d2: 24mA) At Reset After Reset
+
+1 VDDA VANA in 
+2 LNA_IN VANA in 
+3 VDD3P3 VANA in 
+4 VDD3P3 VANA in 
+5 SENSOR_VP VRTC ADC_H ADC1_CH0 RTC_GPIO0 GPIO36 I GPIO36 I ie=0 
+6 SENSOR_CAPP VRTC ADC_H ADC1_CH1 RTC_GPIO1 GPIO37 I GPIO37 I ie=0 
+7 SENSOR_CAPN VRTC ADC_H ADC1_CH2 RTC_GPIO2 GPIO38 I GPIO38 I ie=0 
+8 SENSOR_VN VRTC ADC_H ADC1_CH3 RTC_GPIO3 GPIO39 I GPIO39 I ie=0 
+9 CHIP_PU VRTC 
+10 VDET_1 VRTC ADC1_CH6 RTC_GPIO4 GPIO34 I GPIO34 I ie=0 
+11 VDET_2 VRTC ADC1_CH7 RTC_GPIO5 GPIO35 I GPIO35 I ie=0 
+12 32K_XP VRTC XTAL_32K_P ADC1_CH4 TOUCH9 RTC_GPIO9 GPIO32 I/O/T GPIO32 I/O/T 2'd2 ie=0 
+
+13 32K_XN VRTC XTAL_32K_N ADC1_CH5 TOUCH8 RTC_GPIO8 GPIO33 I/O/T GPIO33 I/O/T 2'd2 ie=0 14 GPIO25 VRTC DAC_1 ADC2_CH8 RTC_GPIO6 GPIO25 I/O/T GPIO25 I/O/T EMAC_RXD0 I 2'd2 ie=0 15 GPIO26 VRTC DAC_2 ADC2_CH9 RTC_GPIO7 GPIO26 I/O/T GPIO26 I/O/T EMAC_RXD1 I 2'd2 ie=0 16 GPIO27 VRTC ADC2_CH7 TOUCH7 RTC_GPIO17 GPIO27 I/O/T GPIO27 I/O/T EMAC_RX_DV I 2'd2 ie=1 17 MTMS VRTC ADC2_CH6 TOUCH6 RTC_GPIO16 MTMS I0 HSPICLK I/O/T GPIO14 I/O/T HS2_CLK O SD_CLK I0 EMAC_TXD2 O 2'd2 ie=1 18 MTDI VRTC ADC2_CH5 TOUCH5 RTC_GPIO15 MTDI I1 HSPIQ I/O/T GPIO12 I/O/T HS2_DATA2 I1/O/T SD_DATA2 I1/O/T EMAC_TXD3 O 2'd2 wpd, ie=1 wpd, ie=1 19 VDD3P3_RTC VRTC supply in 20 MTCK VRTC ADC2_CH4 TOUCH4 RTC_GPIO14 MTCK I1 HSPID I/O/T GPIO13 I/O/T HS2_DATA3 I1/O/T SD_DATA3 I1/O/T EMAC_RX_ER I 2'd2 ie=1 21 MTDO VRTC ADC2_CH3 TOUCH3 RTC_GPIO13 MTDO O/T HSPICS0 I/O/T GPIO15 I/O/T HS2_CMD I1/O/T SD_CMD I1/O/T EMAC_RXD3 I 2'd2 wpu, ie=1 wpu, ie=1 22 GPIO2 VRTC ADC2_CH2 TOUCH2 RTC_GPIO12 GPIO2 I/O/T HSPIWP I/O/T GPIO2 I/O/T HS2_DATA0 I1/O/T SD_DATA0 I1/O/T 2'd2 wpd, ie=1 wpd, ie=1 23 GPIO0 VRTC ADC2_CH1 TOUCH1 RTC_GPIO11 GPIO0 I/O/T CLK_OUT1 O GPIO0 I/O/T EMAC_TX_CLK I 2'd2 wpu, ie=1 wpu, ie=1 24 GPIO4 VRTC ADC2_CH0 TOUCH0 RTC_GPIO10 GPIO4 I/O/T HSPIHD I/O/T GPIO4 I/O/T HS2_DATA1 I1/O/T SD_DATA1 I1/O/T EMAC_TX_ER O 2'd2 wpd, ie=1 wpd, ie=1
+
+GPIO20 VSDIO GPIO20 I/O/T GPIO20 I/O/T 2'd2 ie=1 25 GPIO16 VSDIO GPIO16 I/O/T GPIO16 I/O/T HS1_DATA4 I1/O/T U2RXD I1 EMAC_CLK_OUT O 2'd2 ie=1 26 VDD_SDIO VSDIO supply out/in 27 GPIO17 VSDIO GPIO17 I/O/T GPIO17 I/O/T HS1_DATA5 I1/O/T U2TXD O EMAC_CLK_OUT_180 O 2'd2 ie=1 28 SD_DATA_2 VSDIO SD_DATA2 I1/O/T SPIHD I/O/T GPIO9 I/O/T HS1_DATA2 I1/O/T U1RXD I1 2'd2 wpu, ie=1 wpu, ie=1 29 SD_DATA_3 VSDIO SD_DATA3 I0/O/T SPIWP I/O/T GPIO10 I/O/T HS1_DATA3 I1/O/T U1TXD O 2'd2 wpu, ie=1 wpu, ie=1 30 SD_CMD VSDIO SD_CMD I1/O/T SPICS0 I/O/T GPIO11 I/O/T HS1_CMD I1/O/T U1RTS O 2'd2 wpu, ie=1 wpu, ie=1 31 SD_CLK VSDIO SD_CLK I0 SPICLK I/O/T GPIO6 I/O/T HS1_CLK O U1CTS I1 2'd2 wpu, ie=1 wpu, ie=1 32 SD_DATA_0 VSDIO SD_DATA0 I1/O/T SPIQ I/O/T GPIO7 I/O/T HS1_DATA0 I1/O/T U2RTS O 2'd2 wpu, ie=1 wpu, ie=1 33 SD_DATA_1 VSDIO SD_DATA1 I1/O/T SPID I/O/T GPIO8 I/O/T HS1_DATA1 I1/O/T U2CTS I1 2'd2 wpu, ie=1 wpu, ie=1 34 GPIO5 VIO GPIO5 I/O/T VSPICS0 I/O/T GPIO5 I/O/T HS1_DATA6 I1/O/T EMAC_RX_CLK I 2'd2 wpu, ie=1 wpu, ie=1 35 GPIO18 VIO GPIO18 I/O/T VSPICLK I/O/T GPIO18 I/O/T HS1_DATA7 I1/O/T 2'd2 ie=1 36 GPIO23 VIO GPIO23 I/O/T VSPID I/O/T GPIO23 I/O/T HS1_STROBE I0 2'd2 ie=1
+
+37 VDD3P3_CPU VIO supply in 38 GPIO19 VIO GPIO19 I/O/T VSPIQ I/O/T GPIO19 I/O/T U0CTS I1 EMAC_TXD0 O 2'd2 ie=1 39 GPIO22 VIO GPIO22 I/O/T VSPIWP I/O/T GPIO22 I/O/T U0RTS O EMAC_TXD1 O 2'd2 ie=1 40 U0RXD VIO U0RXD I1 CLK_OUT2 O GPIO3 I/O/T 2'd2 wpu, ie=1 wpu, ie=1 41 U0TXD VIO U0TXD O CLK_OUT3 O GPIO1 I/O/T EMAC_RXD2 I 2'd2 wpu, ie=1 wpu, ie=1 42 GPIO21 VIO GPIO21 I/O/T VSPIHD I/O/T GPIO21 I/O/T EMAC_TX_EN O 2'd2 ie=1 43 VDDA VANA in 44 XTAL_N VANA 45 XTAL_P VANA 46 VDDA VANA 47 CAP2 VANA 48 CAP1 VANA Total Number 8 14 26
+
+| | | PIN Name | | | | Function6 | | | MII (int_osc) | | | | | MII (ext_osc) | | | | RMII (int_osc) | | | RMII (ext_osc) | | |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| | | | GPIO0 | | | EMAC_TX_CLK | | | TX_CLK (I) | | | | | TX_CLK (I) | | | | CLK_OUT(O) | | | EXT_OSC_CLK(I) | | |
+| | | | GPIO5 | | | EMAC_RX_CLK | | | RX_CLK (I) | | | | | RX_CLK (I) | | | | | | | | | |
+| | | GPIO21 | | | | EMAC_TX_EN | | | TX_EN(O) | | | | | | TX_EN(O) | | | TX_EN(O) | | | TX_EN(O) | | |
+| | | GPIO19 | | | | EMAC_TXD0 | | | TXD[0](O) | | | | | | TXD[0](O) | | | TXD[0](O) | | | TXD[0](O) | | |
+| | | GPIO22 | | | | EMAC_TXD1 | | | TXD[1](O) | | | | | | TXD[1](O) | | | TXD[1](O) | | | TXD[1](O) | | |
+| | | | MTMS | | | EMAC_TXD2 | | | TXD[2](O) | | | | | | TXD[2](O) | | | | | | | | |
+| | | | MTDI | | | EMAC_TXD3 | | | TXD[3](O) | | | | | | TXD[3](O) | | | | | | | | |
+| | | | MTCK | | | EMAC_RX_ER | | | RX_ER(I) | | | | | | RX_ER(I) | | | | | | | | |
+| | | GPIO27 | | | | EMAC_RX_DV | | | RX_DV(I) | | | | | | RX_DV(I) | | | CRS_DV(I) | | | CRS_DV(I) | | |
+| | | GPIO25 | | | | EMAC_RXD0 | | | RXD[0](I) | | | | | | RXD[0](I) | | | RXD[0](I) | | | RXD[0](I) | | |
+| | | GPIO26 | | | | EMAC_RXD1 | | | RXD[1](I) | | | | | | RXD[1](I) | | | RXD[1](I) | | | RXD[1](I) | | |
+| | | U0TXD | | | | EMAC_RXD2 | | | RXD[2](I) | | | | | | RXD[2](I) | | | | | | | | |
+| | | | MTDO | | | EMAC_RXD3 | | | RXD[3](I) | | | | | | RXD[3](I) | | | | | | | | |
+| | | GPIO16 | | | | EMAC_CLK_OUT | | | CLK_OUT(O) | | | | | | | | | CLK_OUT(O) | | | | | |
+| | | GPIO17 | | | | EMAC_CLK_OUT_180 | | | CLK_OUT_180(O) | | | | | | | | | CLK_OUT_180(O) | | | | | |
+| | | | GPIO4 | | | EMAC_TX_ER | | | TX_ERR(O) | | | | | TX_ERR(O) | | | | | | | | | |
+| | In GPIO Matrix | | | | | | | | | MDC(O) | | | | | MDC(O) | | | MDC(O) | | | MDC(O) | | |
+| | In GPIO Matrix | | | | | | | | MDIO(IO) | | | | | | MDIO(IO) | | | MDIO(IO) | | | MDIO(IO) | | |
+| | In GPIO Matrix | | | | | | | | | CRS(I) | | | | | CRS(I) | | | | | | | | |
+| | In GPIO Matrix | | | | | | | | | COL(I) | | | | | COL(I) | | | | | | | | |
+
+Ethernet_MAC Note: 1. The GPIO Matrix in blue cells can be any GPIO. 2. The TX_ERR (O) in orange cells is optional.
+
+| | | | | GPIO_Matrix | | | |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Signal Signal No. No. | Input Signals | Default value if unassigned | The same input signal from IO_MUX Core | | Signal No. | Output Signals | Output enable of output signals |
+| 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 61 62 63 64 65 66 67 68 69 70 71 72 73 74 75 76 77 78 79 80 81 82 83 84 | SPICLK_in SPIQ_in SPID_in SPIHD_in SPIWP_in SPICS0_in SPICS1_in SPICS2_in HSPICLK_in HSPIQ_in HSPID_in HSPICS0_in HSPIHD_in HSPIWP_in U0RXD_in U0CTS_in U0DSR_in U1RXD_in U1CTS_in I2S0O_BCK_in I2S1O_BCK_in I2S0O_WS_in I2S1O_WS_in I2S0I_BCK_in I2S0I_WS_in I2CEXT0_SCL_in I2CEXT0_SDA_in pwm0_sync0_in pwm0_sync1_in pwm0_sync2_in pwm0_f0_in pwm0_f1_in pwm0_f2_in pcnt_sig_ch0_in0 pcnt_sig_ch1_in0 pcnt_ctrl_ch0_in0 pcnt_ctrl_ch1_in0 pcnt_sig_ch0_in1 pcnt_sig_ch1_in1 pcnt_ctrl_ch0_in1 pcnt_ctrl_ch1_in1 pcnt_sig_ch0_in2 pcnt_sig_ch1_in2 pcnt_ctrl_ch0_in2 pcnt_ctrl_ch1_in2 pcnt_sig_ch0_in3 pcnt_sig_ch1_in3 pcnt_ctrl_ch0_in3 pcnt_ctrl_ch1_in3 pcnt_sig_ch0_in4 pcnt_sig_ch1_in4 pcnt_ctrl_ch0_in4 pcnt_ctrl_ch1_in4 HSPICS1_in HSPICS2_in VSPICLK_in VSPIQ_in VSPID_in VSPIHD_in VSPIWP_in VSPICS0_in VSPICS1_in VSPICS2_in pcnt_sig_ch0_in5 pcnt_sig_ch1_in5 pcnt_ctrl_ch0_in5 pcnt_ctrl_ch1_in5 pcnt_sig_ch0_in6 pcnt_sig_ch1_in6 pcnt_ctrl_ch0_in6 pcnt_ctrl_ch1_in6 pcnt_sig_ch0_in7 pcnt_sig_ch1_in7 pcnt_ctrl_ch0_in7 pcnt_ctrl_ch1_in7 rmt_sig_in0 rmt_sig_in1 | 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 | yes yes yes yes yes yes no no yes yes yes yes yes yes yes yes no yes yes no no no no no no no no no no no no no no no no no no no no no no no no no no no no no no no no no no no no no yes yes yes yes yes yes no no no no no no no no no no no no no no no no | | 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 61 62 63 64 65 66 67 68 69 70 71 72 73 74 75 76 77 78 79 80 81 82 83 84 | SPICLK_out SPIQ_out SPID_out SPIHD_out SPIWP_out SPICS0_out SPICS1_out SPICS2_out HSPICLK_out HSPIQ_out HSPID_out HSPICS0_out HSPIHD_out HSPIWP_out U0TXD_out U0RTS_out U0DTR_out U1TXD_out U1RTS_out I2S0O_BCK_out I2S1O_BCK_out I2S0O_WS_out I2S1O_WS_out I2S0I_BCK_out I2S0I_WS_out I2CEXT0_SCL_out I2CEXT0_SDA_out sdio_tohost_int_out pwm0_out0a pwm0_out0b pwm0_out1a pwm0_out1b pwm0_out2a pwm0_out2b HSPICS1_out HSPICS2_out VSPICLK_out_mux VSPIQ_out VSPID_out VSPIHD_out VSPIWP_out VSPICS0_out VSPICS1_out VSPICS2_out ledc_hs_sig_out0 ledc_hs_sig_out1 ledc_hs_sig_out2 ledc_hs_sig_out3 ledc_hs_sig_out4 ledc_hs_sig_out5 ledc_hs_sig_out6 ledc_hs_sig_out7 ledc_ls_sig_out0 ledc_ls_sig_out1 ledc_ls_sig_out2 ledc_ls_sig_out3 ledc_ls_sig_out4 ledc_ls_sig_out5 | SPICLK_oe SPIQ_oe SPID_oe SPIHD_oe SPIWP_oe SPICS0_oe SPICS1_oe SPICS2_oe HSPICLK_oe HSPIQ_oe HSPID_oe HSPICS0_oe HSPIHD_oe HSPIWP_oe 1'd1 1'd1 1'd1 1'd1 1'd1 1'd1 1'd1 1'd1 1'd1 1'd1 1'd1 1'd1 1'd1 1'd1 1'd1 1'd1 1'd1 1'd1 1'd1 1'd1 1'd1 1'd1 1'd1 1'd1 1'd1 1'd1 1'd1 1'd1 1'd1 1'd1 1'd1 1'd1 1'd1 1'd1 1'd1 1'd1 1'd1 1'd1 1'd1 1'd1 HSPICS1_oe HSPICS2_oe VSPICLK_oe VSPIQ_oe VSPID_oe VSPIHD_oe VSPIWP_oe VSPICS0_oe VSPICS1_oe VSPICS2_oe 1'd1 1'd1 1'd1 1'd1 1'd1 1'd1 1'd1 1'd1 1'd1 1'd1 1'd1 1'd1 1'd1 1'd1 |
+
+85 rmt_sig_in2 0 no 85 ledc_ls_sig_out6 1'd1 86 rmt_sig_in3 0 no 86 ledc_ls_sig_out7 1'd1 87 rmt_sig_in4 0 no 87 rmt_sig_out0 1'd1 88 rmt_sig_in5 0 no 88 rmt_sig_out1 1'd1 89 rmt_sig_in6 0 no 89 rmt_sig_out2 1'd1 90 rmt_sig_in7 0 no 90 rmt_sig_out3 1'd1 91 91 rmt_sig_out4 1'd1 92 92 rmt_sig_out5 1'd1 93 93 rmt_sig_out6 1'd1 94 94 rmt_sig_out7 1'd1 95 I2CEXT1_SCL_in 1 no 95 I2CEXT1_SCL_out 1'd1 96 I2CEXT1_SDA_in 1 no 96 I2CEXT1_SDA_out 1'd1 97 host_card_detect_n_1 0 no 97 host_ccmd_od_pullup_en_n 1'd1 98 host_card_detect_n_2 0 no 98 host_rst_n_1 1'd1 99 host_card_write_prt_1 0 no 99 host_rst_n_2 1'd1 100 host_card_write_prt_2 0 no 100 gpio_sd0_out 1'd1 101 host_card_int_n_1 0 no 101 gpio_sd1_out 1'd1 102 host_card_int_n_2 0 no 102 gpio_sd2_out 1'd1 103 pwm1_sync0_in 0 no 103 gpio_sd3_out 1'd1 104 pwm1_sync1_in 0 no 104 gpio_sd4_out 1'd1 105 pwm1_sync2_in 0 no 105 gpio_sd5_out 1'd1 106 pwm1_f0_in 0 no 106 gpio_sd6_out 1'd1 107 pwm1_f1_in 0 no 107 gpio_sd7_out 1'd1 108 pwm1_f2_in 0 no 108 pwm1_out0a 1'd1 109 pwm0_cap0_in 0 no 109 pwm1_out0b 1'd1 110 pwm0_cap1_in 0 no 110 pwm1_out1a 1'd1 111 pwm0_cap2_in 0 no 111 pwm1_out1b 1'd1 112 pwm1_cap0_in 0 no 112 pwm1_out2a 1'd1 113 pwm1_cap1_in 0 no 113 pwm1_out2b 1'd1 114 pwm1_cap2_in 0 no 114 pwm2_out1h 1'd1 115 pwm2_flta 1 no 115 pwm2_out1l 1'd1 116 pwm2_fltb 1 no 116 pwm2_out2h 1'd1 117 pwm2_cap1_in 0 no 117 pwm2_out2l 1'd1 118 pwm2_cap2_in 0 no 118 pwm2_out3h 1'd1 119 pwm2_cap3_in 0 no 119 pwm2_out3l 1'd1 120 pwm3_flta 1 no 120 pwm2_out4h 1'd1 121 pwm3_fltb 1 no 121 pwm2_out4l 1'd1 122 pwm3_cap1_in 0 no 122 1'd1 123 pwm3_cap2_in 0 no 123 1'd1 124 pwm3_cap3_in 0 no 124 1'd1 140 I2S0I_DATA_in0 0 no 140 I2S0O_DATA_out0 1'd1 141 I2S0I_DATA_in1 0 no 141 I2S0O_DATA_out1 1'd1 142 I2S0I_DATA_in2 0 no 142 I2S0O_DATA_out2 1'd1 143 I2S0I_DATA_in3 0 no 143 I2S0O_DATA_out3 1'd1 144 I2S0I_DATA_in4 0 no 144 I2S0O_DATA_out4 1'd1 145 I2S0I_DATA_in5 0 no 145 I2S0O_DATA_out5 1'd1 146 I2S0I_DATA_in6 0 no 146 I2S0O_DATA_out6 1'd1 147 I2S0I_DATA_in7 0 no 147 I2S0O_DATA_out7 1'd1 148 I2S0I_DATA_in8 0 no 148 I2S0O_DATA_out8 1'd1 149 I2S0I_DATA_in9 0 no 149 I2S0O_DATA_out9 1'd1 150 I2S0I_DATA_in10 0 no 150 I2S0O_DATA_out10 1'd1 151 I2S0I_DATA_in11 0 no 151 I2S0O_DATA_out11 1'd1 152 I2S0I_DATA_in12 0 no 152 I2S0O_DATA_out12 1'd1 153 I2S0I_DATA_in13 0 no 153 I2S0O_DATA_out13 1'd1 154 I2S0I_DATA_in14 0 no 154 I2S0O_DATA_out14 1'd1 155 I2S0I_DATA_in15 0 no 155 I2S0O_DATA_out15 1'd1 156 156 I2S0O_DATA_out16 1'd1 157 157 I2S0O_DATA_out17 1'd1 158 158 I2S0O_DATA_out18 1'd1 159 159 I2S0O_DATA_out19 1'd1 160 160 I2S0O_DATA_out20 1'd1 161 161 I2S0O_DATA_out21 1'd1 162 162 I2S0O_DATA_out22 1'd1 163 163 I2S0O_DATA_out23 1'd1 164 I2S1I_BCK_in 0 no 164 I2S1I_BCK_out 1'd1 165 I2S1I_WS_in 0 no 165 I2S1I_WS_out 1'd1 166 I2S1I_DATA_in0 0 no 166 I2S1O_DATA_out0 1'd1 167 I2S1I_DATA_in1 0 no 167 I2S1O_DATA_out1 1'd1 168 I2S1I_DATA_in2 0 no 168 I2S1O_DATA_out2 1'd1 169 I2S1I_DATA_in3 0 no 169 I2S1O_DATA_out3 1'd1 170 I2S1I_DATA_in4 0 no 170 I2S1O_DATA_out4 1'd1 171 I2S1I_DATA_in5 0 no 171 I2S1O_DATA_out5 1'd1 172 I2S1I_DATA_in6 0 no 172 I2S1O_DATA_out6 1'd1 173 I2S1I_DATA_in7 0 no 173 I2S1O_DATA_out7 1'd1 174 I2S1I_DATA_in8 0 no 174 I2S1O_DATA_out8 1'd1 175 I2S1I_DATA_in9 0 no 175 I2S1O_DATA_out9 1'd1 176 I2S1I_DATA_in10 0 no 176 I2S1O_DATA_out10 1'd1 177 I2S1I_DATA_in11 0 no 177 I2S1O_DATA_out11 1'd1 178 I2S1I_DATA_in12 0 no 178 I2S1O_DATA_out12 1'd1 179 I2S1I_DATA_in13 0 no 179 I2S1O_DATA_out13 1'd1
+
+Input Signals Default value if unassigned
+
+The same input signal from IO_MUX Core
+
+Signal No. Output Signals Output enable of output signals
+
+Signal No.
+
+| Signal No. | Input Signals | Default value if unassigned | The same input signal from IO_MUX Core | | Signal No. | Output Signals | Output enable of output signals |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 180 181 182 183 184 185 186 187 188 189 190 191 192 193 194 195 196 197 198 199 | I2S1I_DATA_in14 I2S1I_DATA_in15 I2S0I_H_SYNC I2S0I_V_SYNC I2S0I_H_ENABLE I2S1I_H_SYNC I2S1I_V_SYNC I2S1I_H_ENABLE U2RXD_in U2CTS_in | 0 0 0 0 0 0 0 0 0 0 | no no no no no no no no yes yes | | 180 181 182 183 184 185 186 187 188 189 190 191 192 193 194 195 196 197 198 199 | I2S1O_DATA_out14 I2S1O_DATA_out15 I2S1O_DATA_out16 I2S1O_DATA_out17 I2S1O_DATA_out18 I2S1O_DATA_out19 I2S1O_DATA_out20 I2S1O_DATA_out21 I2S1O_DATA_out22 I2S1O_DATA_out23 pwm3_out1h pwm3_out1l pwm3_out2h pwm3_out2l pwm3_out3h pwm3_out3l pwm3_out4h pwm3_out4l U2TXD_out U2RTS_out | 1'd1 1'd1 1'd1 1'd1 1'd1 1'd1 1'd1 1'd1 1'd1 1'd1 1'd1 1'd1 1'd1 1'd1 1'd1 1'd1 1'd1 1'd1 1'd1 1'd1 |
+| 200 | emac_mdc_i | 0 | no | | 200 | emac_mdc_o | emac_mdc_oe |
+| 201 | emac_mdi_i | 0 | no | | 201 | emac_mdo_o | emac_mdo_o_e |
+| 202 | emac_crs_i | 0 | no | | 202 | emac_crs_o | emac_crs_oe |
+| 203 | emac_col_i | 0 | no | | 203 | emac_col_o | emac_col_oe |
+| 204 205 206 207 208 209 210 211 212 213 214 215 224 225 226 227 228 | pcmfsync_in pcmclk_in pcmdin | 0 0 0 | no no no | | 204 205 206 207 208 209 210 211 212 213 214 215 224 225 226 227 228 | bt_audio0_irq bt_audio1_irq bt_audio2_irq ble_audio0_irq ble_audio1_irq ble_audio2_irq pcmfsync_out pcmclk_out pcmdout ble_audio_sync0_p ble_audio_sync1_p ble_audio_sync2_p sig_in_func224 sig_in_func225 sig_in_func226 sig_in_func227 sig_in_func228 | 1'd1 1'd1 1'd1 1'd1 1'd1 1'd1 pcmfsync_en pcmclk_en pcmdout_en 1'd1 1'd1 1'd1 1'd1 1'd1 1'd1 1'd1 1'd1 |
+| | | | | | | | |
+
+| | | | Strapping Pins | | | |
+| --- | --- | --- | --- | --- | --- | --- |
+| | | Voltage of Internal LDO (VDD_SDIO) | | | | |
+| Pin | Default | | 3.3V | | 1.8V | |
+| MTDI/GPIO12 | Pull-down | | 0 | | 1 | |
+| | | | Booting Mode | | | |
+| Pin | Default | | SPI Flash Boot | | Download Boot | |
+| GPIO0 GPIO2 | Pull-up Pull-down | | 1 Don't-care | | 0 0 | |
+| | | Debugging Log on U0TXD During Booting | | | | |
+| Pin | Default | | U0TXD Toggling | | U0TXD Silent | |
+| MTDO/GPIO15 | Pull-up | | 1 | | 0 | |
+| | | | Timing of SDIO Slave | | | |
+| Pin | Default | Falling-edge Input Falling-edge Output | Falling-edge Input Rising-edge Output | Rising-edge Input Falling-edge Output | Rising-edge Input Rising-edge Output | |
+| MTDO/GPIO15 GPIO5 Note: Firmware can configure register bits to change the setting of "Voltage of Internal LDO" and "Timing of SDIO Slave" after booting. | Pull-up Pull-up | 0 0 | 0 1 | 1 0 | 1 1 | |
+

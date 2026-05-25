@@ -1,0 +1,1350 @@
+{
+  "id": "esp32",
+  "name": "ESP32",
+  "tagline": "Xtensa Dual-Core, Wi-Fi 4 + Bluetooth Classic/LE",
+  "cpu": "Xtensa LX6 (双核)",
+  "defaultVariant": "default",
+  "variants": [
+    {
+      "id": "default",
+      "label": "QFN-48 (6×6 mm)",
+      "layout": {
+        "type": "QFN",
+        "pinCount": 48,
+        "pinsPerSide": 12,
+        "centerPin": null,
+        "packageName": "QFN-48"
+      },
+      "pins": [
+        {
+          "number": 1,
+          "name": "VDDA",
+          "type": "Power",
+          "supply": "VANA",
+          "resetAt": "",
+          "resetAfter": "",
+          "iomux": [],
+          "lpio": [],
+          "analog": []
+        },
+        {
+          "number": 2,
+          "name": "LNA_IN",
+          "type": "Analog",
+          "supply": "VANA",
+          "resetAt": "",
+          "resetAfter": "",
+          "iomux": [],
+          "lpio": [],
+          "analog": []
+        },
+        {
+          "number": 3,
+          "name": "VDD3P3",
+          "type": "Power",
+          "supply": "VANA",
+          "resetAt": "",
+          "resetAfter": "",
+          "iomux": [],
+          "lpio": [],
+          "analog": []
+        },
+        {
+          "number": 4,
+          "name": "VDD3P3",
+          "type": "Power",
+          "supply": "VANA",
+          "resetAt": "",
+          "resetAfter": "",
+          "iomux": [],
+          "lpio": [],
+          "analog": []
+        },
+        {
+          "number": 5,
+          "name": "SENSOR_VP",
+          "type": "IO",
+          "supply": "VRTC",
+          "resetAt": "",
+          "resetAfter": "",
+          "iomux": [
+            {
+              "f": "F0",
+              "name": "GPIO36",
+              "type": "I"
+            },
+            {
+              "f": "F1",
+              "name": "GPIO36",
+              "type": "I"
+            }
+          ],
+          "lpio": [],
+          "analog": [
+            "ADC_H",
+            "ADC1_CH0",
+            "RTC_GPIO0"
+          ]
+        },
+        {
+          "number": 6,
+          "name": "SENSOR_CAPP",
+          "type": "IO",
+          "supply": "VRTC",
+          "resetAt": "",
+          "resetAfter": "",
+          "iomux": [
+            {
+              "f": "F0",
+              "name": "GPIO37",
+              "type": "I"
+            },
+            {
+              "f": "F1",
+              "name": "GPIO37",
+              "type": "I"
+            }
+          ],
+          "lpio": [],
+          "analog": [
+            "ADC_H",
+            "ADC1_CH1",
+            "RTC_GPIO1"
+          ]
+        },
+        {
+          "number": 7,
+          "name": "SENSOR_CAPN",
+          "type": "IO",
+          "supply": "VRTC",
+          "resetAt": "",
+          "resetAfter": "",
+          "iomux": [
+            {
+              "f": "F0",
+              "name": "GPIO38",
+              "type": "I"
+            },
+            {
+              "f": "F1",
+              "name": "GPIO38",
+              "type": "I"
+            }
+          ],
+          "lpio": [],
+          "analog": [
+            "ADC_H",
+            "ADC1_CH2",
+            "RTC_GPIO2"
+          ]
+        },
+        {
+          "number": 8,
+          "name": "SENSOR_VN",
+          "type": "IO",
+          "supply": "VRTC",
+          "resetAt": "",
+          "resetAfter": "",
+          "iomux": [
+            {
+              "f": "F0",
+              "name": "GPIO39",
+              "type": "I"
+            },
+            {
+              "f": "F1",
+              "name": "GPIO39",
+              "type": "I"
+            }
+          ],
+          "lpio": [],
+          "analog": [
+            "ADC_H",
+            "ADC1_CH3",
+            "RTC_GPIO3"
+          ]
+        },
+        {
+          "number": 9,
+          "name": "CHIP_PU",
+          "type": "Analog",
+          "supply": "VRTC",
+          "resetAt": "",
+          "resetAfter": "",
+          "iomux": [],
+          "lpio": [],
+          "analog": []
+        },
+        {
+          "number": 10,
+          "name": "VDET_1",
+          "type": "IO",
+          "supply": "VRTC",
+          "resetAt": "",
+          "resetAfter": "",
+          "iomux": [
+            {
+              "f": "F0",
+              "name": "GPIO34",
+              "type": "I"
+            },
+            {
+              "f": "F1",
+              "name": "GPIO34",
+              "type": "I"
+            }
+          ],
+          "lpio": [],
+          "analog": [
+            "ADC1_CH6",
+            "RTC_GPIO4"
+          ]
+        },
+        {
+          "number": 11,
+          "name": "VDET_2",
+          "type": "IO",
+          "supply": "VRTC",
+          "resetAt": "",
+          "resetAfter": "",
+          "iomux": [
+            {
+              "f": "F0",
+              "name": "GPIO35",
+              "type": "I"
+            },
+            {
+              "f": "F1",
+              "name": "GPIO35",
+              "type": "I"
+            }
+          ],
+          "lpio": [],
+          "analog": [
+            "ADC1_CH7",
+            "RTC_GPIO5"
+          ]
+        },
+        {
+          "number": 12,
+          "name": "32K_XP",
+          "type": "IO",
+          "supply": "VRTC",
+          "resetAt": "",
+          "resetAfter": "",
+          "iomux": [
+            {
+              "f": "F0",
+              "name": "GPIO32",
+              "type": "I/O/T"
+            },
+            {
+              "f": "F1",
+              "name": "GPIO32",
+              "type": "I/O/T"
+            }
+          ],
+          "lpio": [],
+          "analog": [
+            "XTAL_32K_P",
+            "ADC1_CH4",
+            "TOUCH9",
+            "RTC_GPIO9"
+          ]
+        },
+        {
+          "number": 13,
+          "name": "32K_XN",
+          "type": "IO",
+          "supply": "VRTC",
+          "resetAt": "",
+          "resetAfter": "",
+          "iomux": [
+            {
+              "f": "F0",
+              "name": "GPIO33",
+              "type": "I/O/T"
+            },
+            {
+              "f": "F1",
+              "name": "GPIO33",
+              "type": "I/O/T"
+            }
+          ],
+          "lpio": [],
+          "analog": [
+            "XTAL_32K_N",
+            "ADC1_CH5",
+            "TOUCH8",
+            "RTC_GPIO8"
+          ]
+        },
+        {
+          "number": 14,
+          "name": "GPIO25",
+          "type": "IO",
+          "supply": "VRTC",
+          "resetAt": "",
+          "resetAfter": "",
+          "iomux": [
+            {
+              "f": "F0",
+              "name": "GPIO25",
+              "type": "I/O/T"
+            },
+            {
+              "f": "F1",
+              "name": "GPIO25",
+              "type": "I/O/T"
+            },
+            {
+              "f": "F2",
+              "name": "EMAC_RXD0",
+              "type": "I"
+            }
+          ],
+          "lpio": [],
+          "analog": [
+            "DAC_1",
+            "ADC2_CH8",
+            "RTC_GPIO6"
+          ]
+        },
+        {
+          "number": 15,
+          "name": "GPIO26",
+          "type": "IO",
+          "supply": "VRTC",
+          "resetAt": "",
+          "resetAfter": "",
+          "iomux": [
+            {
+              "f": "F0",
+              "name": "GPIO26",
+              "type": "I/O/T"
+            },
+            {
+              "f": "F1",
+              "name": "GPIO26",
+              "type": "I/O/T"
+            },
+            {
+              "f": "F2",
+              "name": "EMAC_RXD1",
+              "type": "I"
+            }
+          ],
+          "lpio": [],
+          "analog": [
+            "DAC_2",
+            "ADC2_CH9",
+            "RTC_GPIO7"
+          ]
+        },
+        {
+          "number": 16,
+          "name": "GPIO27",
+          "type": "IO",
+          "supply": "VRTC",
+          "resetAt": "",
+          "resetAfter": "",
+          "iomux": [
+            {
+              "f": "F0",
+              "name": "GPIO27",
+              "type": "I/O/T"
+            },
+            {
+              "f": "F1",
+              "name": "GPIO27",
+              "type": "I/O/T"
+            },
+            {
+              "f": "F2",
+              "name": "EMAC_RX_DV",
+              "type": "I"
+            }
+          ],
+          "lpio": [],
+          "analog": [
+            "ADC2_CH7",
+            "TOUCH7",
+            "RTC_GPIO17"
+          ]
+        },
+        {
+          "number": 17,
+          "name": "MTMS",
+          "type": "IO",
+          "supply": "VRTC",
+          "resetAt": "",
+          "resetAfter": "",
+          "iomux": [
+            {
+              "f": "F0",
+              "name": "MTMS",
+              "type": "I0"
+            },
+            {
+              "f": "F1",
+              "name": "HSPICLK",
+              "type": "I/O/T"
+            },
+            {
+              "f": "F2",
+              "name": "GPIO14",
+              "type": "I/O/T"
+            },
+            {
+              "f": "F3",
+              "name": "HS2_CLK",
+              "type": "O"
+            },
+            {
+              "f": "F4",
+              "name": "SD_CLK",
+              "type": "I0"
+            },
+            {
+              "f": "F5",
+              "name": "EMAC_TXD2",
+              "type": "O"
+            }
+          ],
+          "lpio": [],
+          "analog": [
+            "ADC2_CH6",
+            "TOUCH6",
+            "RTC_GPIO16"
+          ]
+        },
+        {
+          "number": 18,
+          "name": "MTDI",
+          "type": "IO",
+          "supply": "VRTC",
+          "resetAt": "",
+          "resetAfter": "",
+          "iomux": [
+            {
+              "f": "F0",
+              "name": "MTDI",
+              "type": "I1"
+            },
+            {
+              "f": "F1",
+              "name": "HSPIQ",
+              "type": "I/O/T"
+            },
+            {
+              "f": "F2",
+              "name": "GPIO12",
+              "type": "I/O/T"
+            },
+            {
+              "f": "F3",
+              "name": "HS2_DATA2",
+              "type": "I1/O/T"
+            },
+            {
+              "f": "F4",
+              "name": "SD_DATA2",
+              "type": "I1/O/T"
+            },
+            {
+              "f": "F5",
+              "name": "EMAC_TXD3",
+              "type": "O"
+            }
+          ],
+          "lpio": [],
+          "analog": [
+            "ADC2_CH5",
+            "TOUCH5",
+            "RTC_GPIO15"
+          ]
+        },
+        {
+          "number": 19,
+          "name": "VDD3P3_RTC",
+          "type": "Power",
+          "supply": "VRTC",
+          "resetAt": "",
+          "resetAfter": "",
+          "iomux": [],
+          "lpio": [],
+          "analog": []
+        },
+        {
+          "number": 20,
+          "name": "MTCK",
+          "type": "IO",
+          "supply": "VRTC",
+          "resetAt": "",
+          "resetAfter": "",
+          "iomux": [
+            {
+              "f": "F0",
+              "name": "MTCK",
+              "type": "I1"
+            },
+            {
+              "f": "F1",
+              "name": "HSPID",
+              "type": "I/O/T"
+            },
+            {
+              "f": "F2",
+              "name": "GPIO13",
+              "type": "I/O/T"
+            },
+            {
+              "f": "F3",
+              "name": "HS2_DATA3",
+              "type": "I1/O/T"
+            },
+            {
+              "f": "F4",
+              "name": "SD_DATA3",
+              "type": "I1/O/T"
+            },
+            {
+              "f": "F5",
+              "name": "EMAC_RX_ER",
+              "type": "I"
+            }
+          ],
+          "lpio": [],
+          "analog": [
+            "ADC2_CH4",
+            "TOUCH4",
+            "RTC_GPIO14"
+          ]
+        },
+        {
+          "number": 21,
+          "name": "MTDO",
+          "type": "IO",
+          "supply": "VRTC",
+          "resetAt": "",
+          "resetAfter": "",
+          "iomux": [
+            {
+              "f": "F0",
+              "name": "MTDO",
+              "type": "O/T"
+            },
+            {
+              "f": "F1",
+              "name": "HSPICS0",
+              "type": "I/O/T"
+            },
+            {
+              "f": "F2",
+              "name": "GPIO15",
+              "type": "I/O/T"
+            },
+            {
+              "f": "F3",
+              "name": "HS2_CMD",
+              "type": "I1/O/T"
+            },
+            {
+              "f": "F4",
+              "name": "SD_CMD",
+              "type": "I1/O/T"
+            },
+            {
+              "f": "F5",
+              "name": "EMAC_RXD3",
+              "type": "I"
+            }
+          ],
+          "lpio": [],
+          "analog": [
+            "ADC2_CH3",
+            "TOUCH3",
+            "RTC_GPIO13"
+          ]
+        },
+        {
+          "number": 22,
+          "name": "GPIO2",
+          "type": "IO",
+          "supply": "VRTC",
+          "resetAt": "",
+          "resetAfter": "",
+          "iomux": [
+            {
+              "f": "F0",
+              "name": "GPIO2",
+              "type": "I/O/T"
+            },
+            {
+              "f": "F1",
+              "name": "HSPIWP",
+              "type": "I/O/T"
+            },
+            {
+              "f": "F2",
+              "name": "GPIO2",
+              "type": "I/O/T"
+            },
+            {
+              "f": "F3",
+              "name": "HS2_DATA0",
+              "type": "I1/O/T"
+            },
+            {
+              "f": "F4",
+              "name": "SD_DATA0",
+              "type": "I1/O/T"
+            }
+          ],
+          "lpio": [],
+          "analog": [
+            "ADC2_CH2",
+            "TOUCH2",
+            "RTC_GPIO12"
+          ]
+        },
+        {
+          "number": 23,
+          "name": "GPIO0",
+          "type": "IO",
+          "supply": "VRTC",
+          "resetAt": "",
+          "resetAfter": "",
+          "iomux": [
+            {
+              "f": "F0",
+              "name": "GPIO0",
+              "type": "I/O/T"
+            },
+            {
+              "f": "F1",
+              "name": "CLK_OUT1",
+              "type": "O"
+            },
+            {
+              "f": "F2",
+              "name": "GPIO0",
+              "type": "I/O/T"
+            },
+            {
+              "f": "F3",
+              "name": "EMAC_TX_CLK",
+              "type": "I"
+            }
+          ],
+          "lpio": [],
+          "analog": [
+            "ADC2_CH1",
+            "TOUCH1",
+            "RTC_GPIO11"
+          ]
+        },
+        {
+          "number": 24,
+          "name": "GPIO4",
+          "type": "IO",
+          "supply": "VRTC",
+          "resetAt": "",
+          "resetAfter": "",
+          "iomux": [
+            {
+              "f": "F0",
+              "name": "GPIO4",
+              "type": "I/O/T"
+            },
+            {
+              "f": "F1",
+              "name": "HSPIHD",
+              "type": "I/O/T"
+            },
+            {
+              "f": "F2",
+              "name": "GPIO4",
+              "type": "I/O/T"
+            },
+            {
+              "f": "F3",
+              "name": "HS2_DATA1",
+              "type": "I1/O/T"
+            },
+            {
+              "f": "F4",
+              "name": "SD_DATA1",
+              "type": "I1/O/T"
+            },
+            {
+              "f": "F5",
+              "name": "EMAC_TX_ER",
+              "type": "O"
+            }
+          ],
+          "lpio": [],
+          "analog": [
+            "ADC2_CH0",
+            "TOUCH0",
+            "RTC_GPIO10"
+          ]
+        },
+        {
+          "number": 25,
+          "name": "GPIO16",
+          "type": "IO",
+          "supply": "VSDIO",
+          "resetAt": "",
+          "resetAfter": "",
+          "iomux": [
+            {
+              "f": "F0",
+              "name": "GPIO16",
+              "type": "I/O/T"
+            },
+            {
+              "f": "F1",
+              "name": "GPIO16",
+              "type": "I/O/T"
+            },
+            {
+              "f": "F2",
+              "name": "HS1_DATA4",
+              "type": "I1/O/T"
+            },
+            {
+              "f": "F3",
+              "name": "U2RXD",
+              "type": "I1"
+            },
+            {
+              "f": "F4",
+              "name": "EMAC_CLK_OUT",
+              "type": "O"
+            }
+          ],
+          "lpio": [],
+          "analog": []
+        },
+        {
+          "number": 26,
+          "name": "VDD_SDIO",
+          "type": "Power",
+          "supply": "VSDIO",
+          "resetAt": "",
+          "resetAfter": "",
+          "iomux": [],
+          "lpio": [],
+          "analog": []
+        },
+        {
+          "number": 27,
+          "name": "GPIO17",
+          "type": "IO",
+          "supply": "VSDIO",
+          "resetAt": "",
+          "resetAfter": "",
+          "iomux": [
+            {
+              "f": "F0",
+              "name": "GPIO17",
+              "type": "I/O/T"
+            },
+            {
+              "f": "F1",
+              "name": "GPIO17",
+              "type": "I/O/T"
+            },
+            {
+              "f": "F2",
+              "name": "HS1_DATA5",
+              "type": "I1/O/T"
+            },
+            {
+              "f": "F3",
+              "name": "U2TXD",
+              "type": "O"
+            },
+            {
+              "f": "F4",
+              "name": "EMAC_CLK_OUT_180",
+              "type": "O"
+            }
+          ],
+          "lpio": [],
+          "analog": []
+        },
+        {
+          "number": 28,
+          "name": "SD_DATA_2",
+          "type": "IO",
+          "supply": "VSDIO",
+          "resetAt": "",
+          "resetAfter": "",
+          "iomux": [
+            {
+              "f": "F0",
+              "name": "SD_DATA2",
+              "type": "I1/O/T"
+            },
+            {
+              "f": "F1",
+              "name": "SPIHD",
+              "type": "I/O/T"
+            },
+            {
+              "f": "F2",
+              "name": "GPIO9",
+              "type": "I/O/T"
+            },
+            {
+              "f": "F3",
+              "name": "HS1_DATA2",
+              "type": "I1/O/T"
+            },
+            {
+              "f": "F4",
+              "name": "U1RXD",
+              "type": "I1"
+            }
+          ],
+          "lpio": [],
+          "analog": []
+        },
+        {
+          "number": 29,
+          "name": "SD_DATA_3",
+          "type": "IO",
+          "supply": "VSDIO",
+          "resetAt": "",
+          "resetAfter": "",
+          "iomux": [
+            {
+              "f": "F0",
+              "name": "SD_DATA3",
+              "type": "I0/O/T"
+            },
+            {
+              "f": "F1",
+              "name": "SPIWP",
+              "type": "I/O/T"
+            },
+            {
+              "f": "F2",
+              "name": "GPIO10",
+              "type": "I/O/T"
+            },
+            {
+              "f": "F3",
+              "name": "HS1_DATA3",
+              "type": "I1/O/T"
+            },
+            {
+              "f": "F4",
+              "name": "U1TXD",
+              "type": "O"
+            }
+          ],
+          "lpio": [],
+          "analog": []
+        },
+        {
+          "number": 30,
+          "name": "SD_CMD",
+          "type": "IO",
+          "supply": "VSDIO",
+          "resetAt": "",
+          "resetAfter": "",
+          "iomux": [
+            {
+              "f": "F0",
+              "name": "SD_CMD",
+              "type": "I1/O/T"
+            },
+            {
+              "f": "F1",
+              "name": "SPICS0",
+              "type": "I/O/T"
+            },
+            {
+              "f": "F2",
+              "name": "GPIO11",
+              "type": "I/O/T"
+            },
+            {
+              "f": "F3",
+              "name": "HS1_CMD",
+              "type": "I1/O/T"
+            },
+            {
+              "f": "F4",
+              "name": "U1RTS",
+              "type": "O"
+            }
+          ],
+          "lpio": [],
+          "analog": []
+        },
+        {
+          "number": 31,
+          "name": "SD_CLK",
+          "type": "IO",
+          "supply": "VSDIO",
+          "resetAt": "",
+          "resetAfter": "",
+          "iomux": [
+            {
+              "f": "F0",
+              "name": "SD_CLK",
+              "type": "I0"
+            },
+            {
+              "f": "F1",
+              "name": "SPICLK",
+              "type": "I/O/T"
+            },
+            {
+              "f": "F2",
+              "name": "GPIO6",
+              "type": "I/O/T"
+            },
+            {
+              "f": "F3",
+              "name": "HS1_CLK",
+              "type": "O"
+            },
+            {
+              "f": "F4",
+              "name": "U1CTS",
+              "type": "I1"
+            }
+          ],
+          "lpio": [],
+          "analog": []
+        },
+        {
+          "number": 32,
+          "name": "SD_DATA_0",
+          "type": "IO",
+          "supply": "VSDIO",
+          "resetAt": "",
+          "resetAfter": "",
+          "iomux": [
+            {
+              "f": "F0",
+              "name": "SD_DATA0",
+              "type": "I1/O/T"
+            },
+            {
+              "f": "F1",
+              "name": "SPIQ",
+              "type": "I/O/T"
+            },
+            {
+              "f": "F2",
+              "name": "GPIO7",
+              "type": "I/O/T"
+            },
+            {
+              "f": "F3",
+              "name": "HS1_DATA0",
+              "type": "I1/O/T"
+            },
+            {
+              "f": "F4",
+              "name": "U2RTS",
+              "type": "O"
+            }
+          ],
+          "lpio": [],
+          "analog": []
+        },
+        {
+          "number": 33,
+          "name": "SD_DATA_1",
+          "type": "IO",
+          "supply": "VSDIO",
+          "resetAt": "",
+          "resetAfter": "",
+          "iomux": [
+            {
+              "f": "F0",
+              "name": "SD_DATA1",
+              "type": "I1/O/T"
+            },
+            {
+              "f": "F1",
+              "name": "SPID",
+              "type": "I/O/T"
+            },
+            {
+              "f": "F2",
+              "name": "GPIO8",
+              "type": "I/O/T"
+            },
+            {
+              "f": "F3",
+              "name": "HS1_DATA1",
+              "type": "I1/O/T"
+            },
+            {
+              "f": "F4",
+              "name": "U2CTS",
+              "type": "I1"
+            }
+          ],
+          "lpio": [],
+          "analog": []
+        },
+        {
+          "number": 34,
+          "name": "GPIO5",
+          "type": "IO",
+          "supply": "VIO",
+          "resetAt": "",
+          "resetAfter": "",
+          "iomux": [
+            {
+              "f": "F0",
+              "name": "GPIO5",
+              "type": "I/O/T"
+            },
+            {
+              "f": "F1",
+              "name": "VSPICS0",
+              "type": "I/O/T"
+            },
+            {
+              "f": "F2",
+              "name": "GPIO5",
+              "type": "I/O/T"
+            },
+            {
+              "f": "F3",
+              "name": "HS1_DATA6",
+              "type": "I1/O/T"
+            },
+            {
+              "f": "F4",
+              "name": "EMAC_RX_CLK",
+              "type": "I"
+            }
+          ],
+          "lpio": [],
+          "analog": []
+        },
+        {
+          "number": 35,
+          "name": "GPIO18",
+          "type": "IO",
+          "supply": "VIO",
+          "resetAt": "",
+          "resetAfter": "",
+          "iomux": [
+            {
+              "f": "F0",
+              "name": "GPIO18",
+              "type": "I/O/T"
+            },
+            {
+              "f": "F1",
+              "name": "VSPICLK",
+              "type": "I/O/T"
+            },
+            {
+              "f": "F2",
+              "name": "GPIO18",
+              "type": "I/O/T"
+            },
+            {
+              "f": "F3",
+              "name": "HS1_DATA7",
+              "type": "I1/O/T"
+            }
+          ],
+          "lpio": [],
+          "analog": []
+        },
+        {
+          "number": 36,
+          "name": "GPIO23",
+          "type": "IO",
+          "supply": "VIO",
+          "resetAt": "",
+          "resetAfter": "",
+          "iomux": [
+            {
+              "f": "F0",
+              "name": "GPIO23",
+              "type": "I/O/T"
+            },
+            {
+              "f": "F1",
+              "name": "VSPID",
+              "type": "I/O/T"
+            },
+            {
+              "f": "F2",
+              "name": "GPIO23",
+              "type": "I/O/T"
+            },
+            {
+              "f": "F3",
+              "name": "HS1_STROBE",
+              "type": "I0"
+            }
+          ],
+          "lpio": [],
+          "analog": []
+        },
+        {
+          "number": 37,
+          "name": "VDD3P3_CPU",
+          "type": "Power",
+          "supply": "VIO",
+          "resetAt": "",
+          "resetAfter": "",
+          "iomux": [],
+          "lpio": [],
+          "analog": []
+        },
+        {
+          "number": 38,
+          "name": "GPIO19",
+          "type": "IO",
+          "supply": "VIO",
+          "resetAt": "",
+          "resetAfter": "",
+          "iomux": [
+            {
+              "f": "F0",
+              "name": "GPIO19",
+              "type": "I/O/T"
+            },
+            {
+              "f": "F1",
+              "name": "VSPIQ",
+              "type": "I/O/T"
+            },
+            {
+              "f": "F2",
+              "name": "GPIO19",
+              "type": "I/O/T"
+            },
+            {
+              "f": "F3",
+              "name": "U0CTS",
+              "type": "I1"
+            },
+            {
+              "f": "F4",
+              "name": "EMAC_TXD0",
+              "type": "O"
+            }
+          ],
+          "lpio": [],
+          "analog": []
+        },
+        {
+          "number": 39,
+          "name": "GPIO22",
+          "type": "IO",
+          "supply": "VIO",
+          "resetAt": "",
+          "resetAfter": "",
+          "iomux": [
+            {
+              "f": "F0",
+              "name": "GPIO22",
+              "type": "I/O/T"
+            },
+            {
+              "f": "F1",
+              "name": "VSPIWP",
+              "type": "I/O/T"
+            },
+            {
+              "f": "F2",
+              "name": "GPIO22",
+              "type": "I/O/T"
+            },
+            {
+              "f": "F3",
+              "name": "U0RTS",
+              "type": "O"
+            },
+            {
+              "f": "F4",
+              "name": "EMAC_TXD1",
+              "type": "O"
+            }
+          ],
+          "lpio": [],
+          "analog": []
+        },
+        {
+          "number": 40,
+          "name": "U0RXD",
+          "type": "IO",
+          "supply": "VIO",
+          "resetAt": "",
+          "resetAfter": "",
+          "iomux": [
+            {
+              "f": "F0",
+              "name": "U0RXD",
+              "type": "I1"
+            },
+            {
+              "f": "F1",
+              "name": "CLK_OUT2",
+              "type": "O"
+            },
+            {
+              "f": "F2",
+              "name": "GPIO3",
+              "type": "I/O/T"
+            }
+          ],
+          "lpio": [],
+          "analog": []
+        },
+        {
+          "number": 41,
+          "name": "U0TXD",
+          "type": "IO",
+          "supply": "VIO",
+          "resetAt": "",
+          "resetAfter": "",
+          "iomux": [
+            {
+              "f": "F0",
+              "name": "U0TXD",
+              "type": "O"
+            },
+            {
+              "f": "F1",
+              "name": "CLK_OUT3",
+              "type": "O"
+            },
+            {
+              "f": "F2",
+              "name": "GPIO1",
+              "type": "I/O/T"
+            },
+            {
+              "f": "F3",
+              "name": "EMAC_RXD2",
+              "type": "I"
+            }
+          ],
+          "lpio": [],
+          "analog": []
+        },
+        {
+          "number": 42,
+          "name": "GPIO21",
+          "type": "IO",
+          "supply": "VIO",
+          "resetAt": "",
+          "resetAfter": "",
+          "iomux": [
+            {
+              "f": "F0",
+              "name": "GPIO21",
+              "type": "I/O/T"
+            },
+            {
+              "f": "F1",
+              "name": "VSPIHD",
+              "type": "I/O/T"
+            },
+            {
+              "f": "F2",
+              "name": "GPIO21",
+              "type": "I/O/T"
+            },
+            {
+              "f": "F3",
+              "name": "EMAC_TX_EN",
+              "type": "O"
+            }
+          ],
+          "lpio": [],
+          "analog": []
+        },
+        {
+          "number": 43,
+          "name": "VDDA",
+          "type": "Power",
+          "supply": "VANA",
+          "resetAt": "",
+          "resetAfter": "",
+          "iomux": [],
+          "lpio": [],
+          "analog": []
+        },
+        {
+          "number": 44,
+          "name": "XTAL_N",
+          "type": "Analog",
+          "supply": "VANA",
+          "resetAt": "",
+          "resetAfter": "",
+          "iomux": [],
+          "lpio": [],
+          "analog": []
+        },
+        {
+          "number": 45,
+          "name": "XTAL_P",
+          "type": "Analog",
+          "supply": "VANA",
+          "resetAt": "",
+          "resetAfter": "",
+          "iomux": [],
+          "lpio": [],
+          "analog": []
+        },
+        {
+          "number": 46,
+          "name": "VDDA",
+          "type": "Power",
+          "supply": "VANA",
+          "resetAt": "",
+          "resetAfter": "",
+          "iomux": [],
+          "lpio": [],
+          "analog": []
+        },
+        {
+          "number": 47,
+          "name": "CAP2",
+          "type": "Analog",
+          "supply": "VANA",
+          "resetAt": "",
+          "resetAfter": "",
+          "iomux": [],
+          "lpio": [],
+          "analog": []
+        },
+        {
+          "number": 48,
+          "name": "CAP1",
+          "type": "Analog",
+          "supply": "VANA",
+          "resetAt": "",
+          "resetAfter": "",
+          "iomux": [],
+          "lpio": [],
+          "analog": []
+        }
+      ]
+    }
+  ],
+  "datasheetUrl": "https://www.espressif.com/sites/default/files/documentation/esp32_datasheet_en.pdf",
+  "verified": true,
+  "notes": "原始 ESP32 系列，48-pin QFN 封装。引脚数据基于 Espressif 官方 “ESP32 Pin List v2.0”。",
+  "displayOrder": 30
+}
