@@ -62,17 +62,6 @@ const { chip, layout, pins } = storeToRefs(store);
           {{ t("pinout.footerCount", { n: pins.length }) }}
         </span>
       </span>
-      <span class="footer-right">
-        {{ t("pinout.footerSource")
-        }}<a
-          :href="chip.datasheetUrl"
-          target="_blank"
-          rel="noopener"
-          class="footer-link"
-        >
-          {{ t("pinout.datasheetLink") }}
-        </a>
-      </span>
     </footer>
   </div>
 </template>
@@ -281,24 +270,6 @@ kbd {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-}
-
-.footer-right {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.footer-link {
-  color: var(--pinout-accent);
-  text-decoration: none;
-  border-bottom: 1px dashed rgba(56, 189, 248, 0.45);
-  padding-bottom: 1px;
-}
-
-.footer-link:hover {
-  color: #7dd3fc;
-  border-bottom-color: #7dd3fc;
 }
 
 .mono {
