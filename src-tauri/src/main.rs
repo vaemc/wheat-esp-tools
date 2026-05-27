@@ -36,6 +36,27 @@ struct NvsKeyValue {
     key: String,
     value_type: String,
     value: String,
+    /// 是否为二进制类型（前端用于禁止内联编辑，避免乱码写回）
+    is_binary: bool,
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
+struct NvsEdit {
+    /// "update" | "delete" | "add"
+    op: String,
+    namespace: String,
+    key: String,
+    /// 仅当 op = update | add 时使用；与 NvsKeyValue.value_type 同义
+    value_type: Option<String>,
+    /// 用户输入的字符串值（按 value_type 解析）
+    value: Option<String>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
+struct NvsRebuildSummary {
+    save_path: String,
+    written_size: u64,
+    entries: usize,
 }
 
 fn format_nvs_value(value: &DataValue) -> String {
@@ -61,9 +82,169 @@ fn entry_to_row(entry: &NvsEntry) -> Option<NvsKeyValue> {
             key: entry.key.clone(),
             value_type: value.encoding_str().to_string(),
             value: format_nvs_value(value),
+            is_binary: matches!(value, DataValue::Binary(_)),
         }),
         EntryContent::File { .. } => None,
     }
+}
+
+/// 将整数字符串（10 进制 / 0x.. / 0b..）解析为 i128，再按目标类型再做一次范围检查
+fn parse_signed(s: &str) -> Result<i128, String> {
+    let v = s.trim();
+    let (neg, body) = match v.strip_prefix('-') {
+        Some(rest) => (true, rest),
+        None => (false, v),
+    };
+    let n = if let Some(hex) = body.strip_prefix("0x").or_else(|| body.strip_prefix("0X")) {
+        i128::from_str_radix(hex, 16).map_err(|e| format!("无效的十六进制数: {e}"))?
+    } else if let Some(bin) = body.strip_prefix("0b").or_else(|| body.strip_prefix("0B")) {
+        i128::from_str_radix(bin, 2).map_err(|e| format!("无效的二进制数: {e}"))?
+    } else {
+        body.parse::<i128>()
+            .map_err(|e| format!("无效的整数: {e}"))?
+    };
+    Ok(if neg { -n } else { n })
+}
+
+fn parse_unsigned(s: &str) -> Result<u128, String> {
+    let v = s.trim();
+    let body = v.strip_prefix('+').unwrap_or(v);
+    if body.starts_with('-') {
+        return Err("不允许的负数".into());
+    }
+    if let Some(hex) = body.strip_prefix("0x").or_else(|| body.strip_prefix("0X")) {
+        u128::from_str_radix(hex, 16).map_err(|e| format!("无效的十六进制数: {e}"))
+    } else if let Some(bin) = body.strip_prefix("0b").or_else(|| body.strip_prefix("0B")) {
+        u128::from_str_radix(bin, 2).map_err(|e| format!("无效的二进制数: {e}"))
+    } else {
+        body.parse::<u128>().map_err(|e| format!("无效的整数: {e}"))
+    }
+}
+
+fn parse_hex_bytes(s: &str) -> Result<Vec<u8>, String> {
+    let raw = s.trim();
+    let body = raw.strip_prefix("0x").or_else(|| raw.strip_prefix("0X")).unwrap_or(raw);
+    // 允许中间空白 / 冒号 / 短横，便于粘贴 "AA:BB CC-DD"
+    let cleaned: String = body
+        .chars()
+        .filter(|c| !c.is_whitespace() && *c != ':' && *c != '-' && *c != ',')
+        .collect();
+    if cleaned.len() % 2 != 0 {
+        return Err("十六进制字符串长度必须为偶数".into());
+    }
+    let mut out = Vec::with_capacity(cleaned.len() / 2);
+    let bytes = cleaned.as_bytes();
+    for chunk in bytes.chunks(2) {
+        let hex = std::str::from_utf8(chunk).map_err(|e| format!("无效的字符: {e}"))?;
+        out.push(u8::from_str_radix(hex, 16).map_err(|e| format!("无效的十六进制: {e}"))?);
+    }
+    Ok(out)
+}
+
+/// 把 (value_type, raw_value) 转成 DataValue
+fn parse_data_value(value_type: &str, raw_value: &str) -> Result<DataValue, String> {
+    let t = value_type.trim().to_ascii_lowercase();
+    match t.as_str() {
+        "u8" => {
+            let v = parse_unsigned(raw_value)?;
+            if v > u8::MAX as u128 {
+                return Err("u8 超出范围".into());
+            }
+            Ok(DataValue::U8(v as u8))
+        }
+        "i8" => {
+            let v = parse_signed(raw_value)?;
+            if v < i8::MIN as i128 || v > i8::MAX as i128 {
+                return Err("i8 超出范围".into());
+            }
+            Ok(DataValue::I8(v as i8))
+        }
+        "u16" => {
+            let v = parse_unsigned(raw_value)?;
+            if v > u16::MAX as u128 {
+                return Err("u16 超出范围".into());
+            }
+            Ok(DataValue::U16(v as u16))
+        }
+        "i16" => {
+            let v = parse_signed(raw_value)?;
+            if v < i16::MIN as i128 || v > i16::MAX as i128 {
+                return Err("i16 超出范围".into());
+            }
+            Ok(DataValue::I16(v as i16))
+        }
+        "u32" => {
+            let v = parse_unsigned(raw_value)?;
+            if v > u32::MAX as u128 {
+                return Err("u32 超出范围".into());
+            }
+            Ok(DataValue::U32(v as u32))
+        }
+        "i32" => {
+            let v = parse_signed(raw_value)?;
+            if v < i32::MIN as i128 || v > i32::MAX as i128 {
+                return Err("i32 超出范围".into());
+            }
+            Ok(DataValue::I32(v as i32))
+        }
+        "u64" => Ok(DataValue::U64(parse_unsigned(raw_value)? as u64)),
+        "i64" => Ok(DataValue::I64(parse_signed(raw_value)? as i64)),
+        "string" | "str" | "sz" => Ok(DataValue::String(raw_value.to_string())),
+        "binary" | "blob" | "blob_data" | "bin" => {
+            // 允许 "0xAABB" 或纯十六进制
+            Ok(DataValue::Binary(parse_hex_bytes(raw_value)?))
+        }
+        other => Err(format!("不支持的 NVS 类型: {other}")),
+    }
+}
+
+fn apply_edits(partition: &mut NvsPartition, edits: &[NvsEdit]) -> Result<(), String> {
+    for edit in edits {
+        match edit.op.as_str() {
+            "delete" => {
+                partition.entries.retain(|e| {
+                    !(e.namespace == edit.namespace && e.key == edit.key)
+                });
+            }
+            "update" => {
+                let value_type = edit.value_type.as_deref().ok_or("update 缺少 value_type")?;
+                let raw_value = edit.value.as_deref().ok_or("update 缺少 value")?;
+                let dv = parse_data_value(value_type, raw_value)
+                    .map_err(|e| format!("[{}/{}] {}", edit.namespace, edit.key, e))?;
+                let mut hit = false;
+                for entry in &mut partition.entries {
+                    if entry.namespace == edit.namespace && entry.key == edit.key {
+                        entry.set_data(dv.clone());
+                        hit = true;
+                        break;
+                    }
+                }
+                if !hit {
+                    return Err(format!(
+                        "未找到要更新的键: {}/{}",
+                        edit.namespace, edit.key
+                    ));
+                }
+            }
+            "add" => {
+                let value_type = edit.value_type.as_deref().ok_or("add 缺少 value_type")?;
+                let raw_value = edit.value.as_deref().ok_or("add 缺少 value")?;
+                let dv = parse_data_value(value_type, raw_value)
+                    .map_err(|e| format!("[{}/{}] {}", edit.namespace, edit.key, e))?;
+                if edit.namespace.is_empty() || edit.key.is_empty() {
+                    return Err("新增条目必须填写 namespace 与 key".into());
+                }
+                if edit.key.len() > 15 {
+                    return Err(format!("键长度超过 15: {}", edit.key));
+                }
+                partition
+                    .entries
+                    .push(NvsEntry::new_data(edit.namespace.clone(), edit.key.clone(), dv));
+            }
+            other => return Err(format!("未知的编辑操作: {other}")),
+        }
+    }
+    Ok(())
 }
 
 #[tauri::command]
@@ -76,6 +257,95 @@ fn parse_nvs_partition(path: &str) -> Result<Vec<NvsKeyValue>, String> {
         .iter()
         .filter_map(entry_to_row)
         .collect())
+}
+
+/// 在原 NVS 二进制基础上应用编辑，重新生成等大小的分区文件。
+///
+/// - source_path: 之前从设备读取或本地打开的原 NVS bin（应用未改动条目时保留所有原数据）
+/// - edits: 用户在表格里的修改 / 删除 / 新增
+/// - size: 目标分区大小（必须为 4096 倍数；通常等于读取时检测到的分区大小）
+/// - save_path: 写入目标 .bin 路径
+#[tauri::command]
+fn rebuild_nvs_partition(
+    source_path: &str,
+    edits: Vec<NvsEdit>,
+    size: u64,
+    save_path: &str,
+) -> Result<NvsRebuildSummary, String> {
+    if size == 0 || size % 0x1000 != 0 {
+        return Err("分区大小必须是 4096 (0x1000) 的整数倍".into());
+    }
+
+    let bytes = fs::read(source_path).map_err(|e| format!("读取源 NVS 失败: {e}"))?;
+    let mut partition =
+        NvsPartition::try_from_bytes(bytes).map_err(|e| format!("解析源 NVS 分区失败: {e}"))?;
+
+    apply_edits(&mut partition, &edits)?;
+
+    let entries_count = partition
+        .entries
+        .iter()
+        .filter(|e| !e.namespace.is_empty() && !e.key.is_empty())
+        .count();
+
+    let blob = partition
+        .generate_partition(size as usize)
+        .map_err(|e| format!("生成 NVS 二进制失败: {e}"))?;
+
+    if let Some(parent) = Path::new(save_path).parent() {
+        if !parent.as_os_str().is_empty() {
+            fs::create_dir_all(parent).map_err(|e| format!("创建目录失败: {e}"))?;
+        }
+    }
+    let written = blob.len() as u64;
+    fs::write(save_path, blob).map_err(|e| format!("写入文件失败: {e}"))?;
+
+    Ok(NvsRebuildSummary {
+        save_path: save_path.to_string(),
+        written_size: written,
+        entries: entries_count,
+    })
+}
+
+/// 从 ESP-IDF 标准 NVS CSV 直接生成新的 NVS 二进制。
+///
+/// CSV 列：key,type,encoding,value （第一行为 namespace 行）
+#[tauri::command]
+fn generate_nvs_from_csv(
+    csv_path: &str,
+    size: u64,
+    save_path: &str,
+) -> Result<NvsRebuildSummary, String> {
+    if size == 0 || size % 0x1000 != 0 {
+        return Err("分区大小必须是 4096 (0x1000) 的整数倍".into());
+    }
+    let csv = fs::read_to_string(csv_path).map_err(|e| format!("读取 CSV 失败: {e}"))?;
+    let partition =
+        NvsPartition::try_from_str(csv).map_err(|e| format!("解析 NVS CSV 失败: {e}"))?;
+
+    let entries_count = partition
+        .entries
+        .iter()
+        .filter(|e| !e.namespace.is_empty() && !e.key.is_empty())
+        .count();
+
+    let blob = partition
+        .generate_partition(size as usize)
+        .map_err(|e| format!("生成 NVS 二进制失败: {e}"))?;
+
+    if let Some(parent) = Path::new(save_path).parent() {
+        if !parent.as_os_str().is_empty() {
+            fs::create_dir_all(parent).map_err(|e| format!("创建目录失败: {e}"))?;
+        }
+    }
+    let written = blob.len() as u64;
+    fs::write(save_path, blob).map_err(|e| format!("写入文件失败: {e}"))?;
+
+    Ok(NvsRebuildSummary {
+        save_path: save_path.to_string(),
+        written_size: written,
+        entries: entries_count,
+    })
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
@@ -246,6 +516,8 @@ fn main() {
             open_directory_in_explorer,
             get_file_info,
             parse_nvs_partition,
+            rebuild_nvs_partition,
+            generate_nvs_from_csv,
             start_ble_advertisement_scan
         ])
         .run(tauri::generate_context!())
