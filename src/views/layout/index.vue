@@ -31,7 +31,17 @@
       </a-layout-header>
       <a-layout-content class="app-main-content">
         <div class="app-main-scroll">
-          <router-view :key="route.fullPath" />
+          <!--
+            页面切换时通过 keep-alive 缓存组件实例，保留每个页面的本地状态
+            （读取的 NVS 数据、烧录列表、引脚视图筛选等都不会因切走再回来而丢失）。
+            注意：之前的 :key="route.fullPath" 会让每次切换都强制重建视图，与
+                  keep-alive 互斥，所以这里去掉。
+          -->
+          <router-view v-slot="{ Component }">
+            <keep-alive>
+              <component :is="Component" />
+            </keep-alive>
+          </router-view>
         </div>
       </a-layout-content>
       <footer class="app-terminal">

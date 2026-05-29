@@ -1,6 +1,6 @@
 # Wheat ESP Tools
 
-A desktop toolkit for ESP series chips — firmware flashing, merging, partition table editing, NVS reading, and BLE advertisement scanning. Built with [Tauri](https://tauri.app/) and [Vue 3](https://vuejs.org/), with [esptool](https://github.com/espressif/esptool) built in — no separate CLI installation required.
+A desktop toolkit for ESP series chips — firmware flashing, merging, partition table editing, NVS read/write, chip pinout reference, and BLE advertisement scanning. Built with [Tauri](https://tauri.app/) and [Vue 3](https://vuejs.org/), with [esptool](https://github.com/espressif/esptool) built in — no separate CLI installation required.
 
 [简体中文](./README.md) | English
 
@@ -17,6 +17,7 @@ A desktop toolkit for ESP series chips — firmware flashing, merging, partition
 - [Bluetooth BLE](#bluetooth-ble)
 - [Firmware Management](#firmware-management)
 - [NVS Partition Reader](#nvs-partition-reader)
+- [Chip Pinout](#chip-pinout)
 - [Terminal Output](#terminal-output)
 - [Data Directories](#data-directories)
 - [Feature Status](#feature-status)
@@ -31,7 +32,8 @@ A desktop toolkit for ESP series chips — firmware flashing, merging, partition
 | **Flash & Merge** | Multi-firmware batch flash, merge into a single `.bin`, full Flash erase/read |
 | **Partition Table** | Auto-align CSV offsets, read partition table from device with visualization |
 | **Firmware** | Recent project configs (ESP-IDF / PlatformIO), local firmware quick flash |
-| **NVS** | Read NVS partition from device or local file, parse key-value pairs |
+| **NVS** | Read NVS partition from device or local file, parse and edit key-value pairs, write back to device, generate from CSV |
+| **Chip Pinout** | Interactive ESP32-family pinout with category filtering and pin details |
 | **BLE** | Scan nearby BLE advertisements with multi-criteria filtering |
 | **Device Info** | Auto-read chip model, MAC, Flash size after selecting a serial port |
 
@@ -280,7 +282,7 @@ Manages `.bin` files in the app's `firmware/` folder:
 
 ![](images/en-nvs.png)
 
-Read and parse ESP NVS (Non-Volatile Storage) key-value data.
+Read, edit, and write back ESP NVS (Non-Volatile Storage) key-value data.
 
 ### Read from Device
 
@@ -290,19 +292,71 @@ Read and parse ESP NVS (Non-Volatile Storage) key-value data.
    - Read partition table from Flash `0x8000`
    - Auto-detect NVS partition offset and size
    - Read NVS binary and parse entries
-4. The table shows namespace, key, type, and value (click cells to copy).
+4. The table shows namespace, key, type, and value.
 
 ### Open Local File
 
 Click **Open local file** to parse a `.bin` NVS partition image without a connected device.
 
+### Generate from CSV
+
+Click **Generate from CSV** and select an ESP-IDF standard NVS CSV file to produce a `.bin` partition image (no direct flash). Output is saved to the app's `nvs/` folder.
+
+### Edit & Write Back
+
+After reading or opening an NVS image, you can edit entries in the table:
+
+- **Value**: Non-binary entries support inline editing
+- **Delete / Undo**: Mark keys for deletion; undo is supported
+- **Revert**: Revert a single row or all pending changes
+
+When edits are ready:
+
+| Action | Description |
+|--------|-------------|
+| **Export .bin** | Rebuild the modified NVS into a new binary file |
+| **Save & flash to device** | Rebuild and write back to the device's NVS partition (only available after **Read from device**) |
+
+A confirmation dialog shows target offset, size, and pending entry count before flashing. Binary-type entries cannot be edited inline.
+
 ### Search
 
-Filter by namespace, key, or value content.
+Filter by namespace, key, or value content. Unmodified cells can be clicked to copy.
 
-> **Note**: Empty or encrypted partitions may yield no parseable entries.
+> **Note**: Empty or encrypted partitions may yield no parseable entries. Write-back overwrites the target NVS partition — verify offset and size before proceeding.
 
-Backups are saved to the app's `nvs/` folder.
+Backups from read, export, and CSV generation are saved to the app's `nvs/` folder.
+
+---
+
+## Chip Pinout
+
+![](images/en-pinout.png)
+
+Interactive pin-function viewer for the ESP32 chip family. Data is sourced from Espressif official datasheets — no device connection required.
+
+### Supported Chips
+
+ESP32, ESP32-S3, ESP32-C3, ESP32-C5, ESP32-C6, ESP32-P4 (some chips support multiple package variants).
+
+### Basic Usage
+
+1. Select the target chip and package from the **Chip** dropdown at the top.
+2. **Hover** any pin to preview details in the right panel; **click** to lock selection.
+3. Use **Search** to filter by pin or function name (e.g. `GPIO15`, `UART`, `ADC`).
+4. Click a category in the **Function Legend** on the left to highlight all matching pins.
+
+### Pin Details
+
+The right panel shows for the selected pin:
+
+- Function categories (GPIO, UART, SPI, ADC, etc.)
+- Boot / Strapping notes (reset sampling timing and caveats)
+- Reset state before and after release
+- IO MUX / LP IO MUX alternate functions
+- Analog capabilities (ADC, DAC, etc.)
+
+The footer shows CPU model, package, and total pin count, with a link to the full datasheet.
 
 ---
 
@@ -326,7 +380,7 @@ The app creates these folders at runtime:
 |-----------|----------|
 | `firmware/` | Merged firmware, full Flash dumps, local firmware library |
 | `partitions/` | Partition table binaries read from device |
-| `nvs/` | NVS partition backups read from device |
+| `nvs/` | NVS partition backups from device read, edited export, or CSV generation |
 
 ---
 
@@ -341,6 +395,9 @@ The app creates these folders at runtime:
 | Partition table offset alignment | ✅ Done |
 | Read partition table from device | ✅ Done |
 | NVS partition read & parse | ✅ Done |
+| NVS edit / export / write back to device | ✅ Done |
+| NVS generate from CSV | ✅ Done |
+| ESP32-family chip pinout | ✅ Done |
 | Recent projects / local firmware | ✅ Done |
 | BLE advertisement scan | ✅ Done |
 | BLE multi-criteria filtering | ✅ Done |

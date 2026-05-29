@@ -98,7 +98,6 @@
         :loading="loading"
         :data-source="filteredRows"
         :columns="columns"
-        :scroll="{ y: 420 }"
         :row-class-name="rowClassName"
         row-key="rowKey"
       >
