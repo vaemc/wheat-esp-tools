@@ -53,7 +53,6 @@ import LocalFirmwarePanel from "./components/LocalFirmwarePanel.vue";
   font-size: 13px;
 }
 :deep(.item-list) {
-  max-height: 380px;
   overflow: auto;
 }
 :deep(.item-list .ant-list-item) {
