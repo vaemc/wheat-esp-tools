@@ -16,9 +16,14 @@
     </template>
     <template #bodyCell="{ column, record }">
       <template v-if="column.key === 'rssi'">
-        <span class="rssi-text" :style="{ color: rssiColor(record.rssi) }">
+        <span
+          v-if="record.rssi != null"
+          class="rssi-text"
+          :style="{ color: rssiColor(record.rssi) }"
+        >
           {{ record.rssi }}
         </span>
+        <span v-else class="muted">{{ $t("ble.classicRssiUnknown") }}</span>
       </template>
       <template v-else-if="column.key === 'name'">
         <span
@@ -31,11 +36,30 @@
       <template v-else-if="column.key === 'address'">
         <p v-copy class="mono addr">{{ record.address }}</p>
       </template>
-      <template v-else-if="column.key === 'services'">
-        <span v-if="record.services.length" class="svc-inline">
-          {{ formatServicesShort(record.services) }}
+      <template v-else-if="column.key === 'class'">
+        <span class="class-cell">
+          <span class="mono">{{ record.class_of_device }}</span>
+          <span class="class-tag">{{ record.class_category }}</span>
         </span>
-        <span v-else class="muted">—</span>
+      </template>
+      <template v-else-if="column.key === 'status'">
+        <a-space :size="4" wrap>
+          <a-tag v-if="record.connected" color="green">
+            {{ $t("ble.classicConnected") }}
+          </a-tag>
+          <a-tag v-if="record.paired" color="blue">
+            {{ $t("ble.classicPaired") }}
+          </a-tag>
+          <a-tag v-if="record.authenticated" color="geekblue">
+            {{ $t("ble.classicAuthenticated") }}
+          </a-tag>
+          <span
+            v-if="!record.connected && !record.paired && !record.authenticated"
+            class="muted"
+          >
+            —
+          </span>
+        </a-space>
       </template>
       <template v-else-if="column.key === 'lastSeen'">
         <span class="seen-text">{{ formatAgoShort(record.lastSeen, tick) }}</span>
@@ -44,47 +68,46 @@
 
     <template #expandedRowRender="{ record }">
       <div class="detail-panel">
-        <div v-if="mfgRows(record).length" class="detail-block">
-          <div class="detail-label">{{ $t("ble.manufacturer") }}</div>
-          <div
-            v-for="row in mfgRows(record)"
-            :key="row.id"
-            class="detail-row"
-          >
-            <span class="detail-key">{{ row.label }}</span>
-            <code class="detail-val">{{ row.hex }}</code>
+        <div class="detail-block">
+          <div class="detail-label">{{ $t("ble.classicClassOfDevice") }}</div>
+          <div class="detail-row">
+            <span class="detail-key">{{ $t("ble.classicCod") }}</span>
+            <code class="detail-val mono">{{ record.class_of_device }}</code>
+          </div>
+          <div class="detail-row">
+            <span class="detail-key">{{ $t("ble.classicCategory") }}</span>
+            <span class="detail-val">{{ record.class_category }}</span>
           </div>
         </div>
 
-        <div v-if="record.services.length" class="detail-block">
-          <div class="detail-label">{{ $t("ble.services") }}</div>
-          <a-space wrap :size="4">
-            <a-tag
-              v-for="svc in record.services"
-              :key="svc"
-              color="geekblue"
-              class="mono"
-            >
-              {{ svc }}
-            </a-tag>
-          </a-space>
-        </div>
-
-        <div v-if="svcDataRows(record).length" class="detail-block">
-          <div class="detail-label">{{ $t("ble.serviceData") }}</div>
-          <div
-            v-for="row in svcDataRows(record)"
-            :key="row.uuid"
-            class="detail-row"
-          >
-            <span class="detail-key mono">{{ row.uuid }}</span>
-            <code class="detail-val">{{ row.hex }}</code>
+        <div class="detail-block">
+          <div class="detail-label">{{ $t("ble.colRssi") }}</div>
+          <div class="detail-row">
+            <span class="detail-key">{{ $t("ble.colRssi") }}</span>
+            <span class="detail-val">
+              {{
+                record.rssi != null
+                  ? `${record.rssi} dBm`
+                  : $t("ble.classicRssiUnknown")
+              }}
+            </span>
           </div>
         </div>
 
-        <div v-if="record.adv.length" class="detail-block">
-          <div class="detail-label">{{ $t("ble.rawAdv") }}</div>
-          <code class="detail-val block">{{ bytesToHex(record.adv) }}</code>
+        <div class="detail-block">
+          <div class="detail-label">{{ $t("ble.classicLinkState") }}</div>
+          <div class="detail-row">
+            <span class="detail-key">{{ $t("ble.classicConnected") }}</span>
+            <span class="detail-val">{{ yesNo(record.connected) }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-key">{{ $t("ble.classicPaired") }}</span>
+            <span class="detail-val">{{ yesNo(record.paired) }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-key">{{ $t("ble.classicAuthenticated") }}</span>
+            <span class="detail-val">{{ yesNo(record.authenticated) }}</span>
+          </div>
         </div>
 
         <div class="detail-meta">
@@ -97,19 +120,13 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
-import type { BleDeviceRecord } from "../types";
+import type { ClassicBtDeviceRecord } from "../types";
 import PlaceholderHint from "@/components/PlaceholderHint.vue";
 import { useRelativeTimeTick } from "../composables/useRelativeTimeTick";
-import {
-  bytesToHex,
-  displayName,
-  formatManufacturerId,
-  rssiColor,
-  secondsSince,
-} from "../utils/bleFormat";
+import { displayName, rssiColor, secondsSince } from "../utils/bleFormat";
 
-const props = defineProps<{
-  devices: BleDeviceRecord[];
+defineProps<{
+  devices: ClassicBtDeviceRecord[];
   emptyText: string;
   tableHeight: number;
 }>();
@@ -122,17 +139,10 @@ const columns = computed(() => [
   { title: t("ble.colRssi"), key: "rssi", width: 52, align: "center" as const },
   { title: t("ble.colName"), key: "name", minWidth: 96, ellipsis: true },
   { title: "MAC", key: "address", width: 128, ellipsis: true },
-  { title: t("ble.colServices"), key: "services", ellipsis: true },
+  { title: t("ble.classicColClass"), key: "class", ellipsis: true },
+  { title: t("ble.classicColStatus"), key: "status", width: 140 },
   { title: t("ble.colLastSeen"), key: "lastSeen", width: 72, align: "right" as const },
 ]);
-
-function shortUuid(uuid: string): string {
-  const u = uuid.replace(/^0x/i, "").toUpperCase();
-  if (u.length <= 8) {
-    return `0x${u}`;
-  }
-  return `0x${u.slice(0, 4)}…${u.slice(-4)}`;
-}
 
 function formatAgoShort(lastSeen: number, _tick: number): string {
   void _tick;
@@ -143,30 +153,11 @@ function formatAgoShort(lastSeen: number, _tick: number): string {
   return t("ble.secondsAgo", { n: sec });
 }
 
-function formatServicesShort(services: string[]): string {
-  if (services.length === 0) {
-    return "—";
-  }
-  const head = services.slice(0, 2).map(shortUuid).join(" ");
-  return services.length > 2 ? `${head} +${services.length - 2}` : head;
+function yesNo(v: boolean): string {
+  return v ? t("ble.classicYes") : t("ble.classicNo");
 }
 
-function mfgRows(record: BleDeviceRecord) {
-  return Object.entries(record.manufacturer_data).map(([id, bytes]) => ({
-    id,
-    label: formatManufacturerId(id),
-    hex: bytesToHex(bytes),
-  }));
-}
-
-function svcDataRows(record: BleDeviceRecord) {
-  return Object.entries(record.service_data).map(([uuid, bytes]) => ({
-    uuid,
-    hex: bytesToHex(bytes),
-  }));
-}
-
-function onExpand(expanded: boolean, record: BleDeviceRecord) {
+function onExpand(expanded: boolean, record: ClassicBtDeviceRecord) {
   if (expanded) {
     expandedKeys.value = [record.address];
   } else {
@@ -217,10 +208,15 @@ function onExpand(expanded: boolean, record: BleDeviceRecord) {
   cursor: pointer;
   color: rgba(255, 255, 255, 0.85);
 }
-.svc-inline {
-  font-family: Consolas, "Courier New", monospace;
+.class-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.class-tag {
   font-size: 10px;
-  color: rgba(255, 255, 255, 0.65);
+  color: rgba(255, 255, 255, 0.55);
 }
 .muted {
   color: rgba(255, 255, 255, 0.35);
@@ -245,7 +241,7 @@ function onExpand(expanded: boolean, record: BleDeviceRecord) {
 }
 .detail-row {
   display: grid;
-  grid-template-columns: 140px 1fr;
+  grid-template-columns: 120px 1fr;
   gap: 6px;
   margin-bottom: 4px;
   align-items: start;
@@ -255,16 +251,8 @@ function onExpand(expanded: boolean, record: BleDeviceRecord) {
   color: rgba(255, 255, 255, 0.7);
 }
 .detail-val {
-  font-family: Consolas, "Courier New", monospace;
-  font-size: 11px;
+  font-size: 12px;
   color: rgba(255, 255, 255, 0.9);
-  word-break: break-all;
-}
-.detail-val.block {
-  display: block;
-  padding: 4px 6px;
-  background: rgba(0, 0, 0, 0.25);
-  border-radius: 4px;
 }
 .detail-meta {
   font-size: 11px;

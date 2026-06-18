@@ -2,22 +2,40 @@ import { computed, onUnmounted, reactive, ref } from "vue";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import { invoke } from "@tauri-apps/api/tauri";
 import { appWindow } from "@tauri-apps/api/window";
-import type { BleDevicePayload, BleDeviceRecord, BleFilterState } from "../types";
+import type {
+  ClassicBtDevicePayload,
+  ClassicBtDeviceRecord,
+  ClassicBtFilterState,
+} from "../types";
 
-const STALE_TTL_SEC = 10;
-const PRUNE_INTERVAL_MS = 1000;
+const STALE_TTL_SEC = 30;
+const PRUNE_INTERVAL_MS = 2000;
+/** 经典蓝牙由 DeviceWatcher 维护，不按 TTL 剔除（与 BleScanner.py 一致） */
+const CLASSIC_PRUNE_ENABLED = false;
 
-function defaultFilter(): BleFilterState {
+function defaultFilter(): ClassicBtFilterState {
   return {
     name: "",
     address: "",
-    adv: "",
-    uuid: "",
+    pairedOnly: false,
+    connectedOnly: false,
     rssiMin: -100,
   };
 }
 
-function matchesFilter(device: BleDeviceRecord, filter: BleFilterState): boolean {
+function mergeRssi(
+  prev: number | null | undefined,
+  next: number | null | undefined
+): number | null {
+  if (next == null) return prev ?? null;
+  if (prev == null) return next;
+  return Math.max(prev, next);
+}
+
+function matchesFilter(
+  device: ClassicBtDeviceRecord,
+  filter: ClassicBtFilterState
+): boolean {
   const nameQ = filter.name.trim().toLowerCase();
   if (nameQ && !device.local_name.toLowerCase().includes(nameQ)) {
     return false;
@@ -28,52 +46,36 @@ function matchesFilter(device: BleDeviceRecord, filter: BleFilterState): boolean
     return false;
   }
 
-  const uuidQ = filter.uuid.trim().toLowerCase();
-  if (uuidQ) {
-    const hit = device.services.some((s) => s.toLowerCase().includes(uuidQ));
-    if (!hit) {
-      return false;
-    }
+  if (filter.pairedOnly && !device.paired) {
+    return false;
   }
 
-  const advQ = filter.adv.trim().toLowerCase().replace(/\s/g, "");
-  if (advQ) {
-    const advHex = bytesToHex(device.adv).toLowerCase().replace(/\s/g, "");
-    const mfgHex = Object.values(device.manufacturer_data)
-      .flatMap((b) => b)
-      .map((x) => x.toString(16).padStart(2, "0"))
-      .join("");
-    const svcHex = Object.values(device.service_data)
-      .flatMap((b) => b)
-      .map((x) => x.toString(16).padStart(2, "0"))
-      .join("");
-    const blob = (advHex + mfgHex + svcHex).toLowerCase();
-    if (!blob.includes(advQ)) {
-      return false;
-    }
+  if (filter.connectedOnly && !device.connected) {
+    return false;
   }
 
-  if (device.rssi < filter.rssiMin) {
+  if (device.rssi != null && device.rssi < filter.rssiMin) {
     return false;
   }
 
   return true;
 }
 
-function bytesToHex(bytes: number[]): string {
-  return bytes.map((b) => b.toString(16).padStart(2, "0")).join("");
-}
-
-export function useBleScanner() {
+export function useClassicBtScanner() {
   const scanning = ref(false);
-  const devices = ref(new Map<string, BleDeviceRecord>());
+  const devices = ref(new Map<string, ClassicBtDeviceRecord>());
   const filter = reactive(defaultFilter());
 
   let unlisten: UnlistenFn | null = null;
   let pruneTimer: ReturnType<typeof setInterval> | null = null;
 
   const deviceList = computed(() =>
-    [...devices.value.values()].sort((a, b) => b.rssi - a.rssi)
+    [...devices.value.values()].sort((a, b) => {
+      const ra = a.rssi ?? -999;
+      const rb = b.rssi ?? -999;
+      if (rb !== ra) return rb - ra;
+      return b.lastSeen - a.lastSeen;
+    })
   );
 
   const filteredDevices = computed(() =>
@@ -83,34 +85,33 @@ export function useBleScanner() {
   const stats = computed(() => ({
     total: devices.value.size,
     visible: filteredDevices.value.length,
-    strongest: filteredDevices.value[0]?.rssi ?? null,
+    connected: filteredDevices.value.filter((d) => d.connected).length,
+    paired: filteredDevices.value.filter((d) => d.paired).length,
+    strongest:
+      filteredDevices.value.find((d) => d.rssi != null)?.rssi ?? null,
   }));
 
-  function upsert(payload: BleDevicePayload) {
+  function upsert(payload: ClassicBtDevicePayload) {
     const now = Date.now();
     const prev = devices.value.get(payload.address);
-    const next: BleDeviceRecord = {
+    const next: ClassicBtDeviceRecord = {
       ...payload,
       local_name: payload.local_name ?? "",
+      rssi: mergeRssi(prev?.rssi, payload.rssi ?? null),
       lastSeen: now,
       seenCount: (prev?.seenCount ?? 0) + 1,
-      manufacturer_data: {
-        ...prev?.manufacturer_data,
-        ...payload.manufacturer_data,
-      },
-      services:
-        payload.services.length > 0 ? payload.services : (prev?.services ?? []),
-      service_data: {
-        ...prev?.service_data,
-        ...payload.service_data,
-      },
-      adv: payload.adv.length > 0 ? payload.adv : (prev?.adv ?? []),
+      connected: payload.connected || (prev?.connected ?? false),
+      paired: payload.paired || (prev?.paired ?? false),
+      authenticated: payload.authenticated || (prev?.authenticated ?? false),
     };
     devices.value.set(payload.address, next);
     devices.value = new Map(devices.value);
   }
 
   function pruneStale() {
+    if (!CLASSIC_PRUNE_ENABLED) {
+      return;
+    }
     const cutoff = Date.now() - STALE_TTL_SEC * 1000;
     let changed = false;
     for (const [addr, dev] of devices.value) {
@@ -139,7 +140,7 @@ export function useBleScanner() {
     clearDevices();
     scanning.value = true;
     pruneTimer = setInterval(pruneStale, PRUNE_INTERVAL_MS);
-    await invoke("start_ble_advertisement_scan");
+    await invoke("start_classic_bluetooth_scan");
   }
 
   async function stopScan() {
@@ -147,7 +148,7 @@ export function useBleScanner() {
       return;
     }
     scanning.value = false;
-    await appWindow.emit("stop_ble_advertisement_scan", {});
+    await appWindow.emit("stop_classic_bluetooth_scan", {});
     if (pruneTimer) {
       clearInterval(pruneTimer);
       pruneTimer = null;
@@ -166,9 +167,9 @@ export function useBleScanner() {
     if (unlisten) {
       return;
     }
-    unlisten = await listen<string>("ble_advertisement_scan_event", (event) => {
+    unlisten = await listen<string>("classic_bluetooth_scan_event", (event) => {
       try {
-        const payload = JSON.parse(event.payload) as BleDevicePayload;
+        const payload = JSON.parse(event.payload) as ClassicBtDevicePayload;
         if (payload.address) {
           upsert(payload);
         }
@@ -184,7 +185,7 @@ export function useBleScanner() {
       clearInterval(pruneTimer);
     }
     if (scanning.value) {
-      appWindow.emit("stop_ble_advertisement_scan", {});
+      appWindow.emit("stop_classic_bluetooth_scan", {});
     }
   });
 

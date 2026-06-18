@@ -17,6 +17,8 @@ use esp_nvs_partition_tool::partition::{DataValue, EntryContent, NvsEntry};
 use esp_nvs_partition_tool::NvsPartition;
 use tauri::Manager as TauriManager;
 
+mod classic_bluetooth;
+
 // Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
@@ -450,6 +452,11 @@ async fn start_ble_advertisement_scan(window: tauri::Window) {
 }
 
 #[tauri::command]
+async fn start_classic_bluetooth_scan(window: tauri::Window) {
+    classic_bluetooth::start_classic_scan(window).await;
+}
+
+#[tauri::command]
 fn get_serial_port_list() -> Vec<String> {
     let port_info_list = available_ports().unwrap();
     port_info_list
@@ -518,7 +525,8 @@ fn main() {
             parse_nvs_partition,
             rebuild_nvs_partition,
             generate_nvs_from_csv,
-            start_ble_advertisement_scan
+            start_ble_advertisement_scan,
+            start_classic_bluetooth_scan
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
