@@ -35,20 +35,16 @@ export const useDeviceStore = defineStore("device", {
           const next = saved && list.includes(saved) ? saved : list[0];
           this.port = next;
           localStorage.setItem("port", next);
-          await this.refreshDeviceInfo();
-        } else if (this.port && list.includes(this.port)) {
-          await this.refreshDeviceInfo();
         }
       } finally {
         this.loadingPorts = false;
       }
     },
 
-    async setPort(port: string) {
+    setPort(port: string) {
       this.port = port;
       localStorage.setItem("port", port);
       this.deviceInfo = { ...EMPTY_DEVICE_INFO };
-      await this.refreshDeviceInfo();
     },
 
     clearPort() {

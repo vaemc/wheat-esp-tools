@@ -13,17 +13,15 @@
         @dropdown-visible-change="onDropdownOpen"
         @change="onPortChange"
       />
-      <a-tooltip :title="$t('device.refresh')">
-        <a-button
-          type="text"
-          class="icon-btn"
-          :disabled="!store.port"
-          :loading="store.loadingInfo"
-          @click="store.refreshDeviceInfo()"
-        >
-          <ReloadOutlined />
-        </a-button>
-      </a-tooltip>
+      <a-button
+        size="small"
+        class="fetch-info-btn"
+        :disabled="!store.port"
+        :loading="store.loadingInfo"
+        @click="store.refreshDeviceInfo()"
+      >
+        {{ $t("device.refresh") }}
+      </a-button>
     </div>
 
     <a-divider type="vertical" class="bar-divider" />
@@ -92,7 +90,7 @@
 </template>
 <script setup lang="ts">
 import { onMounted } from "vue";
-import { ReloadOutlined, DownOutlined } from "@ant-design/icons-vue";
+import { DownOutlined } from "@ant-design/icons-vue";
 import { useDeviceInfoDisplay } from "@/composables/useDeviceInfoDisplay";
 
 const { store, port, allItems, primaryItems, extraItems } =
@@ -144,7 +142,7 @@ onMounted(() => {
   flex-shrink: 0;
 }
 .bar-port {
-  min-width: 200px;
+  min-width: 0;
 }
 .port-select {
   width: 168px;
@@ -153,18 +151,22 @@ onMounted(() => {
   background: rgba(0, 0, 0, 0.28) !important;
   border-color: rgba(255, 255, 255, 0.12) !important;
 }
-.icon-btn {
-  color: rgba(255, 255, 255, 0.55);
-  width: 32px;
-  height: 32px;
-  padding: 0;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+.fetch-info-btn {
+  flex-shrink: 0;
+  font-size: 12px;
+  background: rgba(22, 119, 255, 0.15);
+  border-color: rgba(22, 119, 255, 0.45);
+  color: rgba(255, 255, 255, 0.88);
 }
-.icon-btn:hover:not(:disabled) {
-  color: rgba(255, 255, 255, 0.9);
-  background: rgba(255, 255, 255, 0.06);
+.fetch-info-btn:hover:not(:disabled) {
+  background: rgba(22, 119, 255, 0.28);
+  border-color: rgba(22, 119, 255, 0.65);
+  color: #fff;
+}
+.fetch-info-btn:disabled {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.25);
 }
 .bar-divider {
   height: 28px;
