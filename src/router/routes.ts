@@ -73,6 +73,17 @@ export const layoutChildren: RouteRecordRaw[] = [
       menuOrder: 6,
     },
   },
+  {
+    path: "tools/image",
+    name: "image",
+    component: () => import("@/views/tools/image/index.vue"),
+    meta: {
+      icon: "🖼️",
+      titleKey: "menu.image",
+      menu: true,
+      menuOrder: 7,
+    },
+  },
 ];
 
 export const routes: RouteRecordRaw[] = [
