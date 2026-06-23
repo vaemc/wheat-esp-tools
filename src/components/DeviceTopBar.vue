@@ -13,6 +13,7 @@
         @dropdown-visible-change="onDropdownOpen"
         @change="onPortChange"
       />
+      <SerialPortDetailsPopover />
       <a-button
         size="small"
         class="fetch-info-btn"
@@ -91,6 +92,7 @@
 <script setup lang="ts">
 import { onMounted } from "vue";
 import { DownOutlined } from "@ant-design/icons-vue";
+import SerialPortDetailsPopover from "@/components/SerialPortDetailsPopover.vue";
 import { useDeviceInfoDisplay } from "@/composables/useDeviceInfoDisplay";
 
 const { store, port, allItems, primaryItems, extraItems } =

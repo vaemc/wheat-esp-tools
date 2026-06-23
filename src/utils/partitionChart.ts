@@ -69,8 +69,13 @@ export function buildPartitionPieOption(
     backgroundColor: "transparent",
     tooltip: {
       trigger: "item",
-      formatter: (params: { name: string; value: number; percent: number }) =>
-        `${params.name}<br/>${formatHexDisplay(params.value)} (${params.percent}%)`,
+      formatter: (params) => {
+        const p = Array.isArray(params) ? params[0] : params;
+        const name = String(p.name ?? "");
+        const value = Number(p.value ?? 0);
+        const percent = Number(p.percent ?? 0);
+        return `${name}<br/>${formatHexDisplay(value)} (${percent}%)`;
+      },
     },
     legend: {
       type: "scroll",
@@ -117,8 +122,9 @@ export function buildPartitionBarOption(
     backgroundColor: "transparent",
     tooltip: {
       trigger: "item",
-      formatter: (params: { seriesIndex?: number }) => {
-        const seg = segments[params.seriesIndex ?? -1];
+      formatter: (params) => {
+        const p = Array.isArray(params) ? params[0] : params;
+        const seg = segments[p.seriesIndex ?? -1];
         if (!seg) {
           return "";
         }

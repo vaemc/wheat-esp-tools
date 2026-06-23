@@ -2,7 +2,15 @@ import { Command } from "@tauri-apps/api/shell";
 import { writeln } from "@/bus/terminal";
 
 import mitt from "mitt";
-const emitter = mitt();
+
+type CliEvents = {
+  stdout: string;
+  stderr: string;
+  close: unknown;
+  error: unknown;
+};
+
+const emitter = mitt<CliEvents>();
 export default emitter;
 
 export function execute(name: string, cmd: string[]) {

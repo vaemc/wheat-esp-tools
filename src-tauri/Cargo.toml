@@ -27,7 +27,11 @@ windows = { version = "0.62", features = [
     "Devices_Enumeration",
     "Foundation",
     "Foundation_Collections",
+    "Win32_Devices_DeviceAndDriverInstallation",
+    "Win32_Devices_Properties",
+    "Win32_Foundation",
     "Win32_System_Com",
+    "Win32_System_Registry",
     "Win32_System_WinRT",
 ] }
 windows-collections = "0.3.2"

@@ -6,6 +6,7 @@ import {
   FileEntry,
 } from "@tauri-apps/api/fs";
 import { FileInfo, Firmware } from "@/model/model";
+import type { SerialPortDetail } from "@/types/serial";
 import {
   isPlausibleChipList,
   parseChipTypesFromEsptoolOutput,
@@ -16,8 +17,12 @@ export async function getSerialPortList() {
   return (await invoke("get_serial_port_list")) as string[];
 }
 
+export async function getSerialPortDetails() {
+  return (await invoke("get_serial_port_details")) as SerialPortDetail[];
+}
+
 export async function getCurrentDir() {
-  return await invoke("get_current_dir");
+  return (await invoke("get_current_dir")) as string;
 }
 
 let cachedChipTypes: string[] | null = null;

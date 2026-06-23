@@ -18,6 +18,7 @@ use esp_nvs_partition_tool::NvsPartition;
 use tauri::Manager as TauriManager;
 
 mod classic_bluetooth;
+mod serial;
 
 // Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
 
@@ -466,6 +467,11 @@ fn get_serial_port_list() -> Vec<String> {
 }
 
 #[tauri::command]
+fn get_serial_port_details() -> Vec<serial::port_info::SerialPortEntry> {
+    serial::port_info::list_ports_with_details()
+}
+
+#[tauri::command]
 fn get_current_dir() -> String {
     let path = env::current_dir().unwrap();
    path.display().to_string()
@@ -518,6 +524,7 @@ fn main() {
         })
         .invoke_handler(tauri::generate_handler![
             get_serial_port_list,
+            get_serial_port_details,
             get_current_dir,
             open_file_in_explorer,
             open_directory_in_explorer,
