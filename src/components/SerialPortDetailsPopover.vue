@@ -9,22 +9,24 @@
     <template #content>
       <div class="popover-head">{{ $t("device.portListTitle") }}</div>
       <a-spin :spinning="loading && ports.length === 0">
-        <div v-if="ports.length === 0 && !loading" class="empty">
-          {{ $t("device.portNotFound") }}
-        </div>
-        <div v-for="item in ports" :key="item.portName" class="port-item">
-          <div class="port-name">{{ item.portName }}</div>
-          <div class="port-line">
-            {{ $t("device.portFriendlyName") }}:
-            {{ item.friendlyName || "—" }}
+        <div class="port-list">
+          <div v-if="ports.length === 0 && !loading" class="empty">
+            {{ $t("device.portNotFound") }}
           </div>
-          <div class="port-line">
-            {{ $t("device.portDescription") }}:
-            {{ item.description || "—" }}
-          </div>
-          <div class="port-line">
-            {{ $t("device.portSerialNumber") }}:
-            {{ item.serialNumber || "—" }}
+          <div v-for="item in ports" :key="item.portName" class="port-item">
+            <div class="port-name">{{ item.portName }}</div>
+            <div class="port-line">
+              {{ $t("device.portFriendlyName") }}:
+              {{ item.friendlyName || "—" }}
+            </div>
+            <div class="port-line">
+              {{ $t("device.portDescription") }}:
+              {{ item.description || "—" }}
+            </div>
+            <div class="port-line">
+              {{ $t("device.portSerialNumber") }}:
+              {{ item.serialNumber || "—" }}
+            </div>
           </div>
         </div>
       </a-spin>
@@ -101,6 +103,11 @@ onUnmounted(() => {
 .popover-head {
   margin-bottom: 8px;
   font-weight: 500;
+}
+
+.port-list {
+  max-height: min(60vh, 480px);
+  overflow-y: auto;
 }
 
 .port-item + .port-item {
