@@ -24,6 +24,7 @@ import {
   type NvsKeyValue,
   type NvsRebuildSummary,
 } from "@/utils/nvs";
+import { usePortStore } from "@/stores/port";
 
 export interface NvsEditableRow extends NvsKeyValue {
   /** 与 originalRows 中对应条目的下标（用于 diff） */
@@ -168,7 +169,7 @@ export function useNvsReader() {
 
   /** 检测 NVS 分区后读取并解析 */
   async function readFromDevice() {
-    const port = localStorage.getItem("port");
+    const port = usePortStore().selectedPort;
     if (!port) {
       throw new Error("NO_PORT");
     }
@@ -316,7 +317,7 @@ export function useNvsReader() {
     /** 写回成功后刷新基准是否失败（非关键步骤；仅作日志/提示用） */
     refreshError?: unknown;
   }> {
-    const port = localStorage.getItem("port");
+    const port = usePortStore().selectedPort;
     if (!port) {
       throw new Error("NO_PORT");
     }

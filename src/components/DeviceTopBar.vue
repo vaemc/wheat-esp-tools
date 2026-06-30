@@ -2,7 +2,7 @@
   <div class="device-top-bar">
     <div class="bar-section bar-port">
       <a-select
-        v-model:value="port"
+        v-model:value="selectedPort"
         class="port-select"
         :placeholder="$t('device.selectPort')"
         :loading="store.loadingPorts"
@@ -17,7 +17,7 @@
       <a-button
         size="small"
         class="fetch-info-btn"
-        :disabled="!store.port"
+        :disabled="!selectedPort"
         :loading="store.loadingInfo"
         @click="store.refreshDeviceInfo()"
       >
@@ -83,7 +83,7 @@
       </div>
       <span v-else class="bar-placeholder">
         {{
-          store.port ? $t("device.noInfo") : $t("device.selectPortHint")
+          selectedPort ? $t("device.noInfo") : $t("device.selectPortHint")
         }}
       </span>
     </a-spin>
@@ -95,7 +95,7 @@ import { DownOutlined } from "@ant-design/icons-vue";
 import SerialPortDetailsPopover from "@/components/SerialPortDetailsPopover.vue";
 import { useDeviceInfoDisplay } from "@/composables/useDeviceInfoDisplay";
 
-const { store, port, allItems, primaryItems, extraItems } =
+const { store, selectedPort, allItems, primaryItems, extraItems } =
   useDeviceInfoDisplay();
 
 function filterPort(input: string, option?: { label?: string; value?: string }) {
@@ -111,14 +111,14 @@ function onDropdownOpen(open: boolean) {
 
 function onPortChange(value: string | undefined) {
   if (value) {
-    store.setPort(value);
+    store.onPortChange(value);
   } else {
     store.clearPort();
   }
 }
 
 onMounted(() => {
-  store.refreshPortList();
+  store.refreshPortList(true);
 });
 </script>
 <style scoped>

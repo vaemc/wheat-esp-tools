@@ -2,6 +2,7 @@ import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 import { storeToRefs } from "pinia";
 import { useDeviceStore } from "@/stores/device";
+import { usePortStore } from "@/stores/port";
 
 export interface DeviceInfoItem {
   key: string;
@@ -15,7 +16,9 @@ export interface DeviceInfoItem {
 export function useDeviceInfoDisplay() {
   const { t } = useI18n();
   const store = useDeviceStore();
-  const { port, deviceInfo: d } = storeToRefs(store);
+  const portStore = usePortStore();
+  const { selectedPort } = storeToRefs(portStore);
+  const { deviceInfo: d } = storeToRefs(store);
 
   const allItems = computed((): DeviceInfoItem[] => {
     const info = d.value;
@@ -96,7 +99,8 @@ export function useDeviceInfoDisplay() {
 
   return {
     store,
-    port,
+    portStore,
+    selectedPort,
     allItems,
     primaryItems,
     extraItems,

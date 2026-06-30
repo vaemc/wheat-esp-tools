@@ -5,10 +5,10 @@ import {
   fetchDeviceInfo,
   type EspDeviceInfo,
 } from "@/utils/esptoolDevice";
+import { usePortStore } from "@/stores/port";
 
 export const useDeviceStore = defineStore("device", {
   state: () => ({
-    port: (localStorage.getItem("port") ?? "") as string,
     portOptions: [] as { label: string; value: string }[],
     deviceInfo: { ...EMPTY_DEVICE_INFO } as EspDeviceInfo,
     loadingPorts: false,
@@ -16,7 +16,8 @@ export const useDeviceStore = defineStore("device", {
   }),
 
   actions: {
-    async refreshPortList() {
+    async refreshPortList(pickDefault = false) {
+      const portStore = usePortStore();
       this.loadingPorts = true;
       try {
         const list = await getSerialPortList();
@@ -25,43 +26,42 @@ export const useDeviceStore = defineStore("device", {
           label: item,
         }));
 
-        if (this.port && !list.includes(this.port)) {
-          this.port = "";
-          localStorage.removeItem("port");
+        if (portStore.selectedPort && !list.includes(portStore.selectedPort)) {
+          portStore.selectedPort = "";
         }
 
-        if (!this.port && list.length > 0) {
-          const saved = localStorage.getItem("port");
-          const next = saved && list.includes(saved) ? saved : list[0];
-          this.port = next;
-          localStorage.setItem("port", next);
+        if (
+          pickDefault &&
+          !portStore.selectedPort &&
+          list.length > 0
+        ) {
+          portStore.selectedPort = list[0];
         }
       } finally {
         this.loadingPorts = false;
       }
     },
 
-    setPort(port: string) {
-      this.port = port;
-      localStorage.setItem("port", port);
+    onPortChange(port: string) {
+      usePortStore().selectedPort = port;
       this.deviceInfo = { ...EMPTY_DEVICE_INFO };
     },
 
     clearPort() {
-      this.port = "";
+      usePortStore().selectedPort = "";
       this.deviceInfo = { ...EMPTY_DEVICE_INFO };
-      localStorage.removeItem("port");
     },
 
     async refreshDeviceInfo() {
-      if (!this.port) {
+      const port = usePortStore().selectedPort;
+      if (!port) {
         this.deviceInfo = { ...EMPTY_DEVICE_INFO };
         return;
       }
 
       this.loadingInfo = true;
       try {
-        this.deviceInfo = await fetchDeviceInfo(this.port);
+        this.deviceInfo = await fetchDeviceInfo(port);
       } catch {
         this.deviceInfo = { ...EMPTY_DEVICE_INFO };
       } finally {

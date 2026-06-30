@@ -117,6 +117,7 @@ import prettyBytes from "pretty-bytes";
 import { storeToRefs } from "pinia";
 import { useToolsStore } from "@/stores/Tool";
 import { useHistoryStore } from "@/stores/history";
+import { usePortStore } from "@/stores/port";
 import { useImportToFlash } from "@/views/tools/firmware/composables/useImportToFlash";
 import { useFlashQuickActions } from "./composables/useFlashQuickActions";
 
@@ -196,7 +197,7 @@ watch(
 );
 
 function getPort(): string | null {
-  const port = localStorage.getItem("port");
+  const port = usePortStore().selectedPort;
   if (!port) {
     message.warning(i18n.global.t("flash.noPort"));
     return null;

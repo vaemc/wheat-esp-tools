@@ -1,4 +1,5 @@
 import { runEsptool } from "@/utils/esptoolCli";
+import { usePortStore } from "@/stores/port";
 import type { useFlashOptions } from "@/composables/useFlashOptions";
 
 type FlashOptions = Pick<
@@ -8,7 +9,7 @@ type FlashOptions = Pick<
 
 export function useQuickFlash(options: FlashOptions) {
   async function flashFirmware(path: string) {
-    const port = localStorage.getItem("port");
+    const port = usePortStore().selectedPort;
     if (!port) {
       throw new Error("NO_PORT");
     }

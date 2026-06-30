@@ -1,5 +1,6 @@
 import { getCurrentDir, openFileInExplorer } from "@/utils/common";
 import { runEsptool, runEsptoolWithStdout } from "@/utils/esptoolCli";
+import { usePortStore } from "@/stores/port";
 import moment from "moment";
 import { message } from "ant-design-vue";
 import { useI18n } from "vue-i18n";
@@ -9,7 +10,7 @@ export function useFlashQuickActions() {
   const { t } = useI18n();
 
   function ensurePort(): string | null {
-    const port = localStorage.getItem("port");
+    const port = usePortStore().selectedPort;
     if (!port) {
       message.warning(t("flash.noPort"));
       return null;

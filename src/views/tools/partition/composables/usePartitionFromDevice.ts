@@ -9,6 +9,7 @@ import {
   type FlashPartition,
 } from "@/utils/partitionBin";
 import { buildPartitionTableFromFlash } from "@/utils/partitionDeviceTable";
+import { usePortStore } from "@/stores/port";
 import {
   DEFAULT_OFFSET_PART_TABLE,
   PARTITION_TABLE_SIZE,
@@ -22,7 +23,7 @@ export function usePartitionFromDevice() {
   const result = ref<PartitionTableResult | null>(null);
 
   async function readFromDevice(baudRate: string): Promise<void> {
-    const port = localStorage.getItem("port");
+    const port = usePortStore().selectedPort;
     if (!port) {
       throw new Error("NO_PORT");
     }
