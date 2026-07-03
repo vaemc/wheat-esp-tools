@@ -102,20 +102,17 @@ jobs:
           | macOS arm64 | \`${SLUG}-${VERSION}-macos-aarch64.dmg\` |"
           fi
 
-          shopt -s nullglob
-          FILES=(
-            src-tauri/target/release/bundle/msi/${SLUG}-${VERSION}-windows-x64.msi
-            src-tauri/target/release/bundle/nsis/${SLUG}-${VERSION}-windows-x64-setup.exe
-            src-tauri/target/release/bundle/deb/${SLUG}-${VERSION}-linux-amd64.deb
-            src-tauri/target/release/bundle/appimage/${SLUG}-${VERSION}-linux-amd64.AppImage
-            src-tauri/target/release/bundle/dmg/${SLUG}-${VERSION}-macos-aarch64.dmg
-          )
+          shopt -s globstar nullglob
           UPLOAD=()
-          for file in "${FILES[@]}"; do
-            if [ -f "$file" ]; then
-              UPLOAD+=("$file")
-            fi
-          done
+          while IFS= read -r -d '' file; do
+            UPLOAD+=("$file")
+          done < <(find src-tauri/target -type f \( \
+            -name "${SLUG}-${VERSION}-windows-x64.msi" -o \
+            -name "${SLUG}-${VERSION}-windows-x64-setup.exe" -o \
+            -name "${SLUG}-${VERSION}-linux-amd64.deb" -o \
+            -name "${SLUG}-${VERSION}-linux-amd64.AppImage" -o \
+            -name "${SLUG}-${VERSION}-macos-aarch64.dmg" \
+          \) -print0)
           if [ ${#UPLOAD[@]} -eq 0 ]; then
             echo "No release assets found"
             exit 1

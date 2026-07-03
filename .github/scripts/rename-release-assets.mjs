@@ -12,51 +12,99 @@ if (!slug || !version || !platform) {
   process.exit(1);
 }
 
-const bundleRoot = join("src-tauri", "target", "release", "bundle");
+function findBundleRoot() {
+  const targetDir = join("src-tauri", "target");
+  if (!existsSync(targetDir)) {
+    return null;
+  }
 
-function renameFiles(dir, mapName) {
+  const candidates = [join(targetDir, "release", "bundle")];
+
+  for (const entry of readdirSync(targetDir, { withFileTypes: true })) {
+    if (!entry.isDirectory() || entry.name === "release" || entry.name.startsWith(".")) {
+      continue;
+    }
+    candidates.push(join(targetDir, entry.name, "release", "bundle"));
+  }
+
+  for (const candidate of candidates) {
+    if (existsSync(candidate)) {
+      return candidate;
+    }
+  }
+
+  return null;
+}
+
+function renameFiles(dir, { suffix, mapName }) {
   if (!existsSync(dir)) {
     console.warn(`Directory not found: ${dir}`);
     return [];
   }
 
   const renamed = [];
-  for (const file of readdirSync(dir)) {
-    const newName = mapName(file);
-    if (!newName || newName === file) {
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    if (!entry.isFile()) {
       continue;
     }
-    renameSync(join(dir, file), join(dir, newName));
+    if (suffix && !entry.name.endsWith(suffix)) {
+      continue;
+    }
+
+    const newName = mapName(entry.name);
+    if (!newName || newName === entry.name) {
+      continue;
+    }
+
+    renameSync(join(dir, entry.name), join(dir, newName));
     renamed.push(join(dir, newName));
-    console.log(`Renamed: ${file} -> ${newName}`);
+    console.log(`Renamed: ${entry.name} -> ${newName}`);
   }
   return renamed;
 }
+
+const bundleRoot = findBundleRoot();
+if (!bundleRoot) {
+  console.error("Bundle directory not found under src-tauri/target");
+  process.exit(1);
+}
+
+console.log(`Using bundle root: ${bundleRoot}`);
 
 let files = [];
 
 if (platform === "windows-latest") {
   files.push(
-    ...renameFiles(join(bundleRoot, "msi"), () => `${slug}-${version}-windows-x64.msi`)
+    ...renameFiles(join(bundleRoot, "msi"), {
+      suffix: ".msi",
+      mapName: () => `${slug}-${version}-windows-x64.msi`,
+    })
   );
   files.push(
-    ...renameFiles(join(bundleRoot, "nsis"), (file) =>
-      file.endsWith("-setup.exe") ? `${slug}-${version}-windows-x64-setup.exe` : null
-    )
+    ...renameFiles(join(bundleRoot, "nsis"), {
+      suffix: "-setup.exe",
+      mapName: () => `${slug}-${version}-windows-x64-setup.exe`,
+    })
   );
 } else if (platform === "ubuntu-22.04") {
   files.push(
-    ...renameFiles(join(bundleRoot, "deb"), () => `${slug}-${version}-linux-amd64.deb`)
+    ...renameFiles(join(bundleRoot, "deb"), {
+      suffix: ".deb",
+      mapName: () => `${slug}-${version}-linux-amd64.deb`,
+    })
   );
   files.push(
-    ...renameFiles(
-      join(bundleRoot, "appimage"),
-      () => `${slug}-${version}-linux-amd64.AppImage`
-    )
+    ...renameFiles(join(bundleRoot, "appimage"), {
+      suffix: ".AppImage",
+      mapName: () => `${slug}-${version}-linux-amd64.AppImage`,
+    })
   );
 } else if (platform === "macos-latest") {
   files.push(
-    ...renameFiles(join(bundleRoot, "dmg"), () => `${slug}-${version}-macos-aarch64.dmg`)
+    ...renameFiles(join(bundleRoot, "dmg"), {
+      suffix: ".dmg",
+      mapName: () => `${slug}-${version}-macos-aarch64.dmg`,
+    })
   );
 } else {
   console.error(`Unknown platform: ${platform}`);
