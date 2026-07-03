@@ -1,9 +1,10 @@
-import { existsSync, readdirSync, renameSync } from "fs";
+import { existsSync, readdirSync, renameSync, writeFileSync } from "fs";
 import { join } from "path";
 
 const platform = process.argv[2];
 const version = process.argv[3];
 const slug = process.env.APP_SLUG;
+const assetListPath = ".github/release-assets.txt";
 
 if (!slug || !version || !platform) {
   console.error(
@@ -18,27 +19,31 @@ function findBundleRoot() {
     return null;
   }
 
-  const candidates = [join(targetDir, "release", "bundle")];
+  const candidates = [];
 
-  for (const entry of readdirSync(targetDir, { withFileTypes: true })) {
-    if (!entry.isDirectory() || entry.name === "release" || entry.name.startsWith(".")) {
-      continue;
+  function walk(dir, depth = 0) {
+    if (depth > 4 || !existsSync(dir)) {
+      return;
     }
-    candidates.push(join(targetDir, entry.name, "release", "bundle"));
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      if (!entry.isDirectory() || entry.name.startsWith(".")) {
+        continue;
+      }
+      const next = join(dir, entry.name);
+      if (entry.name === "bundle") {
+        candidates.push(next);
+        continue;
+      }
+      walk(next, depth + 1);
+    }
   }
 
-  for (const candidate of candidates) {
-    if (existsSync(candidate)) {
-      return candidate;
-    }
-  }
-
-  return null;
+  walk(targetDir);
+  return candidates[0] ?? null;
 }
 
 function renameFiles(dir, { suffix, mapName }) {
   if (!existsSync(dir)) {
-    console.warn(`Directory not found: ${dir}`);
     return [];
   }
 
@@ -56,9 +61,19 @@ function renameFiles(dir, { suffix, mapName }) {
       continue;
     }
 
-    renameSync(join(dir, entry.name), join(dir, newName));
-    renamed.push(join(dir, newName));
+    const from = join(dir, entry.name);
+    const to = join(dir, newName);
+    renameSync(from, to);
+    renamed.push(to);
     console.log(`Renamed: ${entry.name} -> ${newName}`);
+  }
+  return renamed;
+}
+
+function renameInBundle(bundleRoot, subdirs, options) {
+  const renamed = [];
+  for (const subdir of subdirs) {
+    renamed.push(...renameFiles(join(bundleRoot, subdir), options));
   }
   return renamed;
 }
@@ -75,33 +90,29 @@ let files = [];
 
 if (platform === "windows-latest") {
   files.push(
-    ...renameFiles(join(bundleRoot, "msi"), {
+    ...renameInBundle(bundleRoot, ["msi"], {
       suffix: ".msi",
       mapName: () => `${slug}-${version}-windows-x64.msi`,
-    })
-  );
-  files.push(
-    ...renameFiles(join(bundleRoot, "nsis"), {
+    }),
+    ...renameInBundle(bundleRoot, ["nsis"], {
       suffix: "-setup.exe",
       mapName: () => `${slug}-${version}-windows-x64-setup.exe`,
     })
   );
 } else if (platform === "ubuntu-22.04") {
   files.push(
-    ...renameFiles(join(bundleRoot, "deb"), {
+    ...renameInBundle(bundleRoot, ["deb"], {
       suffix: ".deb",
       mapName: () => `${slug}-${version}-linux-amd64.deb`,
-    })
-  );
-  files.push(
-    ...renameFiles(join(bundleRoot, "appimage"), {
+    }),
+    ...renameInBundle(bundleRoot, ["appimage"], {
       suffix: ".AppImage",
       mapName: () => `${slug}-${version}-linux-amd64.AppImage`,
     })
   );
 } else if (platform === "macos-latest") {
   files.push(
-    ...renameFiles(join(bundleRoot, "dmg"), {
+    ...renameInBundle(bundleRoot, ["dmg", "macos"], {
       suffix: ".dmg",
       mapName: () => `${slug}-${version}-macos-aarch64.dmg`,
     })
@@ -113,7 +124,23 @@ if (platform === "windows-latest") {
 
 if (files.length === 0) {
   console.error("No release assets renamed");
+  console.error("Bundle contents:");
+  for (const entry of readdirSync(bundleRoot, { withFileTypes: true })) {
+    const path = join(bundleRoot, entry.name);
+    if (entry.isDirectory()) {
+      console.error(`  ${entry.name}/`);
+      for (const child of readdirSync(path, { withFileTypes: true })) {
+        console.error(`    ${child.name}${child.isDirectory() ? "/" : ""}`);
+      }
+    } else {
+      console.error(`  ${entry.name}`);
+    }
+  }
   process.exit(1);
 }
 
+writeFileSync(assetListPath, `${files.join("\n")}\n`);
 console.log(`Renamed ${files.length} asset(s)`);
+for (const file of files) {
+  console.log(`  ${file}`);
+}

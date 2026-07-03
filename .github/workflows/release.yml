@@ -23,8 +23,7 @@ jobs:
           - platform: ubuntu-22.04
             args: ""
           - platform: macos-latest
-            args: --target aarch64-apple-darwin
-            rust_targets: aarch64-apple-darwin
+            args: ""
 
     runs-on: ${{ matrix.platform }}
 
@@ -52,8 +51,6 @@ jobs:
 
       - name: Install Rust stable
         uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: ${{ matrix.rust_targets }}
 
       - name: Rust cache
         uses: swatinem/rust-cache@v2
@@ -102,19 +99,23 @@ jobs:
           | macOS arm64 | \`${SLUG}-${VERSION}-macos-aarch64.dmg\` |"
           fi
 
-          shopt -s globstar nullglob
-          UPLOAD=()
-          while IFS= read -r -d '' file; do
-            UPLOAD+=("$file")
-          done < <(find src-tauri/target -type f \( \
-            -name "${SLUG}-${VERSION}-windows-x64.msi" -o \
-            -name "${SLUG}-${VERSION}-windows-x64-setup.exe" -o \
-            -name "${SLUG}-${VERSION}-linux-amd64.deb" -o \
-            -name "${SLUG}-${VERSION}-linux-amd64.AppImage" -o \
-            -name "${SLUG}-${VERSION}-macos-aarch64.dmg" \
-          \) -print0)
-          if [ ${#UPLOAD[@]} -eq 0 ]; then
+          if [ ! -s .github/release-assets.txt ]; then
             echo "No release assets found"
+            find src-tauri/target -path '*/bundle/*' -type f 2>/dev/null || true
             exit 1
           fi
+
+          UPLOAD=()
+          while IFS= read -r file; do
+            if [ -n "$file" ] && [ -f "$file" ]; then
+              UPLOAD+=("$file")
+            fi
+          done < .github/release-assets.txt
+
+          if [ ${#UPLOAD[@]} -eq 0 ]; then
+            echo "Release asset list is empty"
+            cat .github/release-assets.txt || true
+            exit 1
+          fi
+
           gh release upload "$TAG" "${UPLOAD[@]}" --clobber
