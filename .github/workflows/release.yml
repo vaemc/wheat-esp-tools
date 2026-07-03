@@ -6,6 +6,10 @@ on:
       - main
   workflow_dispatch:
 
+env:
+  APP_SLUG: wheat-esp-tools
+  APP_TITLE: Wheat ESP Tools
+
 jobs:
   release:
     permissions:
@@ -59,27 +63,61 @@ jobs:
       - name: Install frontend dependencies
         run: yarn install --frozen-lockfile
 
-      - name: Build Tauri app and upload to Release
-        uses: tauri-apps/tauri-action@v0
+      - name: Get version
+        id: version
+        shell: bash
+        run: |
+          VERSION=$(node -p "require('./src-tauri/tauri.conf.json').package.version")
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=v$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Build Tauri app
+        run: yarn tauri build ${{ matrix.args }}
+
+      - name: Rename release assets
+        shell: bash
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tagName: v__VERSION__
-          releaseName: Wheat ESP Tools v__VERSION__
-          releaseBody: |
-            多平台安装包（自动构建）
+          APP_SLUG: ${{ env.APP_SLUG }}
+        run: node .github/scripts/rename-release-assets.mjs "${{ matrix.platform }}" "${{ steps.version.outputs.version }}"
 
-            **Windows**
-            - `.msi` — WiX 安装程序
-            - `*-setup.exe` — NSIS 安装程序
+      - name: Publish release assets
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${{ steps.version.outputs.tag }}"
+          VERSION="${{ steps.version.outputs.version }}"
+          SLUG="${{ env.APP_SLUG }}"
+          TITLE="${{ env.APP_TITLE }}"
 
-            **Linux**
-            - `.deb` — Debian/Ubuntu 安装包
-            - `.AppImage` — 便携可执行包
+          if ! gh release view "$TAG" >/dev/null 2>&1; then
+            gh release create "$TAG" \
+              --title "${TITLE} v${VERSION}" \
+              --notes "多平台安装包（自动构建）
 
-            **macOS**（Apple Silicon）
-            - `.dmg` — 磁盘镜像安装包
-          releaseDraft: false
-          prerelease: false
-          tauriScript: yarn tauri
-          args: ${{ matrix.args }}
+          | 平台 | 文件名示例 |
+          | --- | --- |
+          | Windows x64 | \`${SLUG}-${VERSION}-windows-x64.msi\` / \`${SLUG}-${VERSION}-windows-x64-setup.exe\` |
+          | Linux amd64 | \`${SLUG}-${VERSION}-linux-amd64.deb\` / \`${SLUG}-${VERSION}-linux-amd64.AppImage\` |
+          | macOS arm64 | \`${SLUG}-${VERSION}-macos-aarch64.dmg\` |"
+          fi
+
+          shopt -s nullglob
+          FILES=(
+            src-tauri/target/release/bundle/msi/${SLUG}-${VERSION}-windows-x64.msi
+            src-tauri/target/release/bundle/nsis/${SLUG}-${VERSION}-windows-x64-setup.exe
+            src-tauri/target/release/bundle/deb/${SLUG}-${VERSION}-linux-amd64.deb
+            src-tauri/target/release/bundle/appimage/${SLUG}-${VERSION}-linux-amd64.AppImage
+            src-tauri/target/release/bundle/dmg/${SLUG}-${VERSION}-macos-aarch64.dmg
+          )
+          UPLOAD=()
+          for file in "${FILES[@]}"; do
+            if [ -f "$file" ]; then
+              UPLOAD+=("$file")
+            fi
+          done
+          if [ ${#UPLOAD[@]} -eq 0 ]; then
+            echo "No release assets found"
+            exit 1
+          fi
+          gh release upload "$TAG" "${UPLOAD[@]}" --clobber
