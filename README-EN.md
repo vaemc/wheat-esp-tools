@@ -31,7 +31,7 @@ A desktop toolkit for ESP series chips — firmware flashing, merging, partition
 |--------|-------------|
 | **Flash & Merge** | Multi-firmware batch flash, merge into a single `.bin`, full Flash erase/read |
 | **Partition Table** | Auto-align CSV offsets, read partition table from device with visualization |
-| **Firmware** | Recent project configs (ESP-IDF / PlatformIO), local firmware quick flash |
+| **Firmware Management** | Recent project configs (ESP-IDF / PlatformIO), local firmware quick flash |
 | **NVS** | Read NVS partition from device or local file, parse and edit key-value pairs, write back to device, generate from CSV |
 | **Chip Pinout** | Interactive ESP32-family pinout with category filtering and pin details |
 | **BLE** | Scan nearby BLE advertisements with multi-criteria filtering |
@@ -95,13 +95,13 @@ Three ways to populate the firmware list:
 
 #### 1. Drag & drop / select `.bin` files
 
-The tool parses the flash offset from the filename (hex `0x` prefix):
+The tool parses the flash address from the filename (hex `0x` prefix):
 
 ```
-FirmwareName_0xOffset.bin
+FirmwareName_0xFlashAddress.bin
 ```
 
-Example: `ESP32_0x10000.bin` → offset `0x10000`
+Example: `ESP32_0x10000.bin` → flash address `0x10000`
 
 Multiple `.bin` files can be added at once.
 
@@ -113,7 +113,7 @@ Drop or select:
 your_project/build/flasher_args.json
 ```
 
-Parses `flash_files`, chip type, paths, and offsets automatically. The config is also saved under **Firmware → Recent Projects**.
+Parses `flash_files`, chip type, paths, and flash addresses automatically. The config is also saved under **Firmware Management → Recent Projects**.
 
 #### 3. Import PlatformIO project config
 
@@ -130,20 +130,20 @@ Same auto-fill behavior; saved to recent projects.
 | Option | Description |
 |--------|-------------|
 | **SPI mode** | `keep` / `qio` / `qout` / `dio` / `dout` — Flash SPI mode for write |
-| **Baud rate** | Default 1152000; options from 115200 to 1500000 |
-| **Target chip** | Required for merge; auto-detected from esptool |
+| **Flash baud rate** | Default 1152000; options from 115200 to 1500000 |
+| **Chip type** | Required for merge; auto-detected from esptool |
 
 ### Firmware List Actions
 
 - **Checkbox**: Only checked items are flashed/merged; header checkbox toggles all.
-- **Offset**: Editable per row.
-- **Flash (row)**: Write a single firmware file.
+- **Flash address**: Editable per row.
+- **Flash item (row)**: Write a single firmware file.
 - **Remove**: Remove from the list.
 
 ### Flashing
 
-1. Check the firmware entries and verify offsets.
-2. (Optional) Enable **Erase flash before write** (`--erase-all`) for a full erase first.
+1. Check the firmware entries and verify flash addresses.
+2. (Optional) Enable **Erase all before flashing** (`--erase-all`) for a full erase first.
 3. Click **Flash** — progress appears in the bottom terminal.
 
 Equivalent to:
@@ -154,9 +154,9 @@ esptool.py -p COMx -b 1152000 write_flash --flash_mode keep 0x10000 firmware.bin
 
 ### Merging Firmware
 
-Combine multiple `.bin` files by offset into one file (no device write):
+Combine multiple `.bin` files by flash address into one file (no device write):
 
-1. Select a **Target chip** (required).
+1. Select a **Chip type** (required).
 2. Check the firmware to merge.
 3. Click **Merge**.
 
@@ -166,7 +166,7 @@ Output is saved to the app's `firmware/` folder as `{chip}-merge-bin-{timestamp}
 
 The toolbar also provides:
 
-- **Erase flash**: Full chip erase (`erase-flash`)
+- **Erase entire flash**: Full chip erase (`erase-flash`)
 - **Read flash**: Dump entire Flash to `firmware/read-{timestamp}.bin`
 
 ---
@@ -261,7 +261,7 @@ Automatically records ESP-IDF / PlatformIO configs imported from the Flash page:
 
 - Shows project name and config file path
 - Tags: **IDF** (blue) vs **PIO** (green)
-- **Import to Flash**: Load config and jump to the Flash page
+- **Open in Flash page**: Load config and jump to the Flash page
 - **Open**: Reveal config file in explorer
 - **Remove**: Delete from history
 
@@ -272,7 +272,7 @@ Search by name or path is supported.
 Manages `.bin` files in the app's `firmware/` folder:
 
 - **Open Folder** opens the directory — drop `.bin` files there to list them
-- **Quick Flash**: One-click write to offset `0x0` with current flash options
+- **Quick Flash**: One-click write to flash address `0x0` by default with current flash options
 - Flash options (SPI mode, baud rate, erase before write) are configurable next to the button
 - Search, open file, and remove list entries
 
@@ -315,7 +315,7 @@ When edits are ready:
 | Action | Description |
 |--------|-------------|
 | **Export .bin** | Rebuild the modified NVS into a new binary file |
-| **Save & flash to device** | Rebuild and write back to the device's NVS partition (only available after **Read from device**) |
+| **Write back to device** | Rebuild and write back to the device's NVS partition (only available after **Read from device**) |
 
 A confirmation dialog shows target offset, size, and pending entry count before flashing. Binary-type entries cannot be edited inline.
 
@@ -390,7 +390,7 @@ The app creates these folders at runtime:
 |---------|--------|
 | Multi-firmware flash / merge | ✅ Done |
 | ESP-IDF / PlatformIO config import | ✅ Done |
-| Filename offset parsing | ✅ Done |
+| Filename flash address parsing | ✅ Done |
 | Full Flash erase / read | ✅ Done |
 | Partition table offset alignment | ✅ Done |
 | Read partition table from device | ✅ Done |

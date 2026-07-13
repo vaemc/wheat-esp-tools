@@ -1,7 +1,7 @@
 <template>
   <div class="spi-mode">
     <a-tooltip v-if="!plain">
-      <template #title>SPI Mode</template>
+      <template #title>{{ t("firmware.spiMode") }}</template>
       <a-segmented v-model:value="data" :options="options" />
     </a-tooltip>
     <a-segmented v-else v-model:value="data" :options="options" />
@@ -11,6 +11,9 @@
 <script setup lang="ts">
 import { useVModel } from "@vueuse/core";
 import { reactive } from "vue";
+import { useI18n } from "vue-i18n";
+
+const { t } = useI18n();
 
 const props = defineProps<{
   modelValue: string;

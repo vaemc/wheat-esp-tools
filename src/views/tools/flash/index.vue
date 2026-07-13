@@ -3,7 +3,10 @@
     <section class="flash-toolbar">
       <div class="toolbar-options">
         <div class="toolbar-field toolbar-field--spi">
-          <SPIMode v-model="selectedMode" />
+          <div class="toolbar-field-stack">
+            <span class="toolbar-label">{{ $t("firmware.spiMode") }}</span>
+            <SPIMode v-model="selectedMode" plain />
+          </div>
         </div>
         <div class="toolbar-field">
           <a-tooltip>
@@ -72,8 +75,11 @@
           <a-input :bordered="false" v-model:value="record.address" />
         </template>
         <template v-if="column.key === 'action'">
-          <a @click="flashFirmwareBtn(record)">{{ $t("flash.flash") }}</a> |
-          <a @click="removeFirmwareBtn(record)">{{ $t("flash.remove") }}</a>
+          <span class="flash-row-actions">
+            <a @click="flashFirmwareBtn(record)">{{ $t("flash.flashRow") }}</a>
+            <span class="flash-row-actions__sep" aria-hidden="true">|</span>
+            <a @click="removeFirmwareBtn(record)">{{ $t("flash.remove") }}</a>
+          </span>
         </template>
       </template>
     </a-table>
@@ -136,7 +142,7 @@ const currentDir = ref("");
 
 const columns = ref([
   {
-    title: i18n.global.t("flash.flash"),
+    title: i18n.global.t("flash.select"),
     dataIndex: "check",
     key: "check",
     width: 35,
@@ -162,7 +168,7 @@ const columns = ref([
   {
     title: i18n.global.t("flash.action"),
     key: "action",
-    width: 110,
+    width: 150,
   },
 ]);
 
@@ -274,7 +280,7 @@ const handle = (action: () => void | Promise<void>) => {
   }
 
   if (firmwareList.value.filter((x) => x.check).length == 0) {
-    message.warning(i18n.global.t("flash.dialog.selecOneFirmware"));
+    message.warning(i18n.global.t("flash.dialog.selectOneFirmware"));
     return;
   }
 
@@ -419,6 +425,17 @@ const flashCheckAllChange = () => {
   min-width: 120px;
 }
 
+.toolbar-field-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.toolbar-label {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.45);
+}
+
 .toolbar-field--spi {
   min-width: 140px;
 }
@@ -433,5 +450,17 @@ const flashCheckAllChange = () => {
   align-items: center;
   gap: 8px;
   flex-shrink: 0;
+}
+
+.flash-row-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.flash-row-actions__sep {
+  color: rgba(255, 255, 255, 0.25);
+  user-select: none;
 }
 </style>

@@ -77,22 +77,12 @@ const emit = defineEmits<{
   (e: "drop", path: string | string[]): void;
 }>();
 
-const { t, te } = useI18n();
-const fallback = (key: string, en: string, zh: string) =>
-  te(key) ? (t(key) as string) : /zh/i.test(navigator.language) ? zh : en;
+const { t } = useI18n();
 
-const hintFile = computed(() =>
-  fallback("upload.hintFile", "Click to choose file", "点击选择文件"),
-);
-const hintDir = computed(() =>
-  fallback("upload.hintDir", "Click to choose folder", "点击选择文件夹"),
-);
-const hintMultiple = computed(() =>
-  fallback("upload.hintMultiple", "Multiple files supported", "支持多文件"),
-);
-const dropHere = computed(() =>
-  fallback("upload.dropHere", "Release to import", "松开即可导入"),
-);
+const hintFile = computed(() => t("common.upload.hintFile"));
+const hintDir = computed(() => t("common.upload.hintDir"));
+const hintMultiple = computed(() => t("common.upload.hintMultiple"));
+const dropHere = computed(() => t("common.upload.dropHere"));
 
 const hover = ref(false);
 const dragging = ref(false);
