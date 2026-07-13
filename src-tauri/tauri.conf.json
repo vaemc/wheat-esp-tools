@@ -52,6 +52,9 @@
         "wix": {
           "language": "zh-CN"
         },
+        "nsis": {
+          "installerIcon": "icons/icon.ico"
+        },
         "webviewInstallMode": {
           "type": "embedBootstrapper"
         }
