@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Tauri + Vue + TS</title>
+    <title>Wheat ESP Tools</title>
     <style>
       /* @font-face {
         font-family: HarmonyOS_Sans_SC_Medium;
@@ -19,10 +19,87 @@
         padding: 0px;
         /* font-family: HarmonyOS_Sans_SC_Medium; */
       }
+
+      html,
+      body {
+        height: 100%;
+        background: #0a0a0a;
+        overflow: hidden;
+      }
+
+      /* Vue 挂载前即可见，避免主界面先闪一帧 */
+      #app-splash {
+        position: fixed;
+        inset: 0;
+        z-index: 9999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #0a0a0a;
+        transition: opacity 0.45s ease, transform 0.45s ease;
+      }
+
+      #app-splash.app-splash-leave {
+        opacity: 0;
+        transform: scale(1.03);
+        pointer-events: none;
+      }
+
+      #app-splash .app-splash-content {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 20px;
+      }
+
+      #app-splash .app-splash-logo {
+        width: 140px;
+        height: 140px;
+        border-radius: 28px;
+        object-fit: cover;
+        animation: splash-logo-in 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+      }
+
+      #app-splash .app-splash-title {
+        margin: 0;
+        font-size: 22px;
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        color: rgba(255, 255, 255, 0.92);
+        animation: splash-title-in 0.7s cubic-bezier(0.22, 1, 0.36, 1) 0.12s both;
+      }
+
+      @keyframes splash-logo-in {
+        from {
+          opacity: 0;
+          transform: scale(0.82) translateY(8px);
+        }
+        to {
+          opacity: 1;
+          transform: scale(1) translateY(0);
+        }
+      }
+
+      @keyframes splash-title-in {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
     </style>
   </head>
 
   <body>
+    <div id="app-splash" aria-hidden="true">
+      <div class="app-splash-content">
+        <img class="app-splash-logo" src="/logo.png" alt="" />
+        <h1 class="app-splash-title">Wheat ESP Tools</h1>
+      </div>
+    </div>
     <div id="app"></div>
     <script type="module" src="/src/main.ts"></script>
     <script>
