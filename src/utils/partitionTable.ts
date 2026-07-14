@@ -5,6 +5,7 @@ import {
   SUBTYPES,
   TYPES,
 } from "@/utils/partitionTableFormat";
+import { parseSizeParam } from "@/utils/partitionBin";
 
 /** ESP-IDF 分区表 CSV 解析与偏移量计算（对齐 gen_esp32part.py 核心逻辑） */
 
@@ -15,6 +16,17 @@ const PARTITION_TABLE_TYPE = 0x03;
 
 export const PARTITION_TABLE_SIZE = 0x1000;
 export const DEFAULT_OFFSET_PART_TABLE = 0x8000;
+/** UI / 配置默认字符串，与 DEFAULT_OFFSET_PART_TABLE 对应 */
+export const DEFAULT_OFFSET_PART_TABLE_HEX = "0x8000";
+
+/** 解析分区表偏移；空串回落到默认 0x8000 */
+export function resolvePartitionTableOffset(text: string): number {
+  const n = parseSizeParam((text || "").trim() || DEFAULT_OFFSET_PART_TABLE_HEX);
+  if (!Number.isFinite(n) || n < 0) {
+    throw new Error("BAD_TABLE_OFFSET");
+  }
+  return n >>> 0;
+}
 const ALIGNMENT: Record<number, number> = {
   [APP_TYPE]: 0x10000,
   [DATA_TYPE]: 0x1000,
@@ -220,7 +232,7 @@ const CSV_COLUMNS = [
 
 type CsvColumn = (typeof CSV_COLUMNS)[number];
 
-interface CsvLineFields {
+export interface CsvLineFields {
   name: string;
   type: string;
   subtype: string;
@@ -242,7 +254,7 @@ function entryToFields(entry: PartitionEntry): CsvLineFields {
 
 function columnWidths(rows: CsvLineFields[]): Record<CsvColumn, number> {
   const headers: CsvLineFields = {
-    name: "Name",
+    name: "# Name",
     type: "Type",
     subtype: "SubType",
     offset: "Offset",
@@ -261,19 +273,36 @@ function columnWidths(rows: CsvLineFields[]): Record<CsvColumn, number> {
   return widths;
 }
 
+/**
+ * 所有列统一左对齐：列宽取「列头 / 各行该列」最大值，
+ * 格式为 `值,` 后补空格，保证每一列起点与列头文字对齐。
+ */
 function formatAlignedRow(
   fields: CsvLineFields,
   widths: Record<CsvColumn, number>
 ): string {
-  return CSV_COLUMNS.map((col) => fields[col].padEnd(widths[col])).join(",");
+  const line = CSV_COLUMNS.map((col, index) => {
+    const value = fields[col];
+    const width = widths[col];
+    const isLast = index === CSV_COLUMNS.length - 1;
+
+    if (isLast) {
+      return value;
+    }
+
+    return (value + ",").padEnd(width + 2);
+  }).join("");
+
+  return line.replace(/\s+$/, "");
 }
 
-function formatAlignedCsv(entries: PartitionEntry[]): string {
-  const rows = entries.map(entryToFields);
+/** 生成列宽对齐的分区 CSV，粘贴到编辑器中各列与列头对齐 */
+export function formatAlignedCsvLines(rows: CsvLineFields[]): string {
   const widths = columnWidths(rows);
-  const headerLine = `# ${formatAlignedRow(
+  // 首列用 "# Name"，保证与数据行同一起点对齐（不再额外拼 "# "）
+  const headerLine = formatAlignedRow(
     {
-      name: "Name",
+      name: "# Name",
       type: "Type",
       subtype: "SubType",
       offset: "Offset",
@@ -281,11 +310,15 @@ function formatAlignedCsv(entries: PartitionEntry[]): string {
       flags: "Flags",
     },
     widths
-  )}`;
+  );
   const dataLines = rows.map((row) => formatAlignedRow(row, widths));
   return ["# ESP-IDF Partition Table", headerLine, ...dataLines, ""].join(
     "\n"
   );
+}
+
+function formatAlignedCsv(entries: PartitionEntry[]): string {
+  return formatAlignedCsvLines(entries.map(entryToFields));
 }
 
 function sumSizesToMB(entries: PartitionEntry[]): string {

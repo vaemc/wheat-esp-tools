@@ -9,6 +9,15 @@
         {{ $t("partition.readFromDevice") }}
       </a-button>
       <label class="baud-field">
+        <span>{{ $t("partition.tableOffset") }}</span>
+        <a-input
+          v-model:value="tableOffset"
+          placeholder="0x8000"
+          class="offset-input mono"
+          :disabled="loading"
+        />
+      </label>
+      <label class="baud-field">
         <span>{{ $t("partition.baudRate") }}</span>
         <a-select
           v-model:value="baudRate"
@@ -46,33 +55,30 @@
           {{ $t("partition.copy") }}
         </a-button>
       </header>
-      <a-table
-        :bordered="true"
-        :pagination="false"
-        size="small"
-        :scroll="{ y: 280 }"
-        :data-source="result?.rows ?? []"
+      <PartitionDetailTable
+        :rows="result?.rows ?? []"
         :columns="columns"
-      >
-        <template #emptyText>
-          <PlaceholderHint :text="$t('partition.emptyDevicePreview')" />
-        </template>
-      </a-table>
+        :empty-text="$t('partition.emptyDevicePreview')"
+        :max-height="280"
+      />
     </section>
   </div>
 </template>
 <script setup lang="ts">
 import { ref } from "vue";
+import { storeToRefs } from "pinia";
 import { useI18n } from "vue-i18n";
 import { message } from "ant-design-vue";
 import PartitionCharts from "@/components/PartitionCharts.vue";
-import PlaceholderHint from "@/components/PlaceholderHint.vue";
+import PartitionDetailTable from "./PartitionDetailTable.vue";
 import { usePartitionFromDevice } from "../composables/usePartitionFromDevice";
 import { usePartitionColumns } from "../composables/usePartitionColumns";
 import { READ_BAUD_RATE_OPTIONS, toBaudSelectOptions } from "@/composables/useFlashOptions";
+import { usePartitionTableStore } from "@/stores/partitionTable";
 
 const { t } = useI18n();
 const baudRate = ref("460800");
+const { tableOffset } = storeToRefs(usePartitionTableStore());
 const baudOptions = toBaudSelectOptions(READ_BAUD_RATE_OPTIONS);
 const { loading, partitions, result, readFromDevice } = usePartitionFromDevice();
 const { columns } = usePartitionColumns();
@@ -84,6 +90,8 @@ async function onReadFromDevice() {
   } catch (e) {
     if (e instanceof Error && e.message === "NO_PORT") {
       message.warning(t("partition.noPort"));
+    } else if (e instanceof Error && e.message === "BAD_TABLE_OFFSET") {
+      message.warning(t("partition.badTableOffset"));
     } else if (e instanceof Error && e.message === "EMPTY_PARTITION") {
       message.warning(t("partition.emptyPartition"));
     } else {
@@ -125,6 +133,12 @@ async function copyCsv() {
   gap: 8px;
   font-size: 12px;
   color: rgba(255, 255, 255, 0.45);
+}
+.offset-input {
+  width: 110px;
+}
+.mono :deep(input) {
+  font-family: Consolas, "Courier New", monospace;
 }
 .device-meta {
   font-size: 12px;

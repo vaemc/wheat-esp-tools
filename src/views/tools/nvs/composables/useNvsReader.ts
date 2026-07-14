@@ -1,8 +1,8 @@
 import { computed, ref } from "vue";
 import { open } from "@tauri-apps/api/dialog";
 import { readBinaryFile } from "@tauri-apps/api/fs";
+import { join } from "@tauri-apps/api/path";
 import moment from "moment";
-import { getCurrentDir } from "@/utils/common";
 import { runEsptoolReadFlash } from "@/utils/esptoolRead";
 import { runEsptoolWriteFlash } from "@/utils/esptoolWrite";
 import {
@@ -13,8 +13,8 @@ import {
   parsePartitionTableBinary,
 } from "@/utils/partitionBin";
 import {
-  DEFAULT_OFFSET_PART_TABLE,
   PARTITION_TABLE_SIZE,
+  resolvePartitionTableOffset,
 } from "@/utils/partitionTable";
 import {
   generateNvsFromCsv,
@@ -24,7 +24,14 @@ import {
   type NvsKeyValue,
   type NvsRebuildSummary,
 } from "@/utils/nvs";
+import { getTempWorkDir } from "@/utils/tempWorkDir";
 import { usePortStore } from "@/stores/port";
+import { usePartitionTableStore } from "@/stores/partitionTable";
+import { storeToRefs } from "pinia";
+
+async function nvsTempPath(name: string): Promise<string> {
+  return join(await getTempWorkDir("nvs"), name);
+}
 
 export interface NvsEditableRow extends NvsKeyValue {
   /** 与 originalRows 中对应条目的下标（用于 diff） */
@@ -53,6 +60,7 @@ export function useNvsReader() {
   const sourceIsDevice = ref(false);
 
   const keyword = ref("");
+  const { tableOffset } = storeToRefs(usePartitionTableStore());
   const offset = ref("0x9000");
   const size = ref("0x6000");
   const baudRate = ref("460800");
@@ -125,13 +133,14 @@ export function useNvsReader() {
 
   /** 从设备读取分区表并填充 NVS 偏移/大小 */
   async function detectNvsPartitionFromDevice(port: string): Promise<void> {
-    const dir = await getCurrentDir();
-    const ptPath = `${dir}\\partitions\\pt-read-${moment().valueOf()}.bin`;
+    const dir = await getTempWorkDir("partitions");
+    const ptPath = await join(dir, `pt-read-${moment().valueOf()}.bin`);
+    const ptOffset = resolvePartitionTableOffset(tableOffset.value);
 
     await runEsptoolReadFlash(
       port,
       baudRate.value,
-      formatHexForEsptool(DEFAULT_OFFSET_PART_TABLE),
+      formatHexForEsptool(ptOffset),
       formatHexForEsptool(PARTITION_TABLE_SIZE),
       ptPath
     );
@@ -181,8 +190,7 @@ export function useNvsReader() {
     try {
       await detectNvsPartitionFromDevice(port);
 
-      const dir = await getCurrentDir();
-      const savePath = `${dir}\\nvs\\nvs-${moment().valueOf()}.bin`;
+      const savePath = await nvsTempPath(`nvs-${moment().valueOf()}.bin`);
 
       await runEsptoolReadFlash(
         port,
@@ -299,8 +307,7 @@ export function useNvsReader() {
       throw new Error("NO_EDITS");
     }
 
-    const dir = await getCurrentDir();
-    const savePath = `${dir}\\nvs\\nvs-edited-${moment().valueOf()}.bin`;
+    const savePath = await nvsTempPath(`nvs-edited-${moment().valueOf()}.bin`);
 
     return rebuildNvsPartition({
       sourcePath: nvsBinPath.value,
@@ -368,8 +375,7 @@ export function useNvsReader() {
     if (!sizeBytes || sizeBytes % 0x1000 !== 0) {
       throw new Error("BAD_SIZE");
     }
-    const dir = await getCurrentDir();
-    const savePath = `${dir}\\nvs\\nvs-from-csv-${moment().valueOf()}.bin`;
+    const savePath = await nvsTempPath(`nvs-from-csv-${moment().valueOf()}.bin`);
     const summary = await generateNvsFromCsv({
       csvPath: selected,
       size: sizeBytes,
@@ -385,6 +391,7 @@ export function useNvsReader() {
     rows,
     originalRows,
     keyword,
+    tableOffset,
     offset,
     size,
     baudRate,

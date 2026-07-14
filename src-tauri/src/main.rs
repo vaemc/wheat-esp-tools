@@ -510,7 +510,7 @@ fn get_file_info(path: &str) -> FileInfo {
 }
 
 fn main() {
-    for item in ["firmware", "partitions", "nvs"].iter() {
+    for item in ["firmware"].iter() {
         if !Path::new(item).exists() {
             fs::create_dir(item).unwrap();
         }

@@ -1,10 +1,18 @@
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
+import type { PartitionRow } from "@/utils/partitionTable";
+
+export interface PartitionDetailColumn {
+  title: string;
+  dataIndex: keyof PartitionRow;
+  key: string;
+  width?: number;
+}
 
 export function usePartitionColumns() {
   const { t } = useI18n();
 
-  const columns = computed(() => [
+  const columns = computed<PartitionDetailColumn[]>(() => [
     { title: t("partition.colName"), dataIndex: "name", key: "name", width: 88 },
     { title: t("partition.colType"), dataIndex: "type", key: "type", width: 56 },
     {

@@ -1,7 +1,7 @@
 import { ref } from "vue";
 import { readBinaryFile } from "@tauri-apps/api/fs";
+import { join } from "@tauri-apps/api/path";
 import moment from "moment";
-import { getCurrentDir } from "@/utils/common";
 import { runEsptoolReadFlash } from "@/utils/esptoolRead";
 import {
   formatHexForEsptool,
@@ -9,10 +9,12 @@ import {
   type FlashPartition,
 } from "@/utils/partitionBin";
 import { buildPartitionTableFromFlash } from "@/utils/partitionDeviceTable";
+import { getTempWorkDir } from "@/utils/tempWorkDir";
 import { usePortStore } from "@/stores/port";
+import { usePartitionTableStore } from "@/stores/partitionTable";
 import {
-  DEFAULT_OFFSET_PART_TABLE,
   PARTITION_TABLE_SIZE,
+  resolvePartitionTableOffset,
   type PartitionTableResult,
 } from "@/utils/partitionTable";
 
@@ -21,6 +23,7 @@ export function usePartitionFromDevice() {
   const loading = ref(false);
   const partitions = ref<FlashPartition[]>([]);
   const result = ref<PartitionTableResult | null>(null);
+  const partTableStore = usePartitionTableStore();
 
   async function readFromDevice(baudRate: string): Promise<void> {
     const port = usePortStore().selectedPort;
@@ -28,15 +31,17 @@ export function usePartitionFromDevice() {
       throw new Error("NO_PORT");
     }
 
+    const tableOffset = resolvePartitionTableOffset(partTableStore.tableOffset);
+
     loading.value = true;
     try {
-      const dir = await getCurrentDir();
-      const ptPath = `${dir}\\partitions\\pt-read-${moment().valueOf()}.bin`;
+      const dir = await getTempWorkDir("partitions");
+      const ptPath = await join(dir, `pt-read-${moment().valueOf()}.bin`);
 
       await runEsptoolReadFlash(
         port,
         baudRate,
-        formatHexForEsptool(DEFAULT_OFFSET_PART_TABLE),
+        formatHexForEsptool(tableOffset),
         formatHexForEsptool(PARTITION_TABLE_SIZE),
         ptPath
       );

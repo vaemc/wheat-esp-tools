@@ -30,6 +30,17 @@ export const layoutChildren: RouteRecordRaw[] = [
     },
   },
   {
+    path: "tools/ota",
+    name: "ota",
+    component: () => import("@/views/tools/ota/index.vue"),
+    meta: {
+      icon: "🔄",
+      titleKey: "menu.ota",
+      menu: true,
+      menuOrder: 3,
+    },
+  },
+  {
     path: "tools/nvs",
     name: "nvs",
     component: () => import("@/views/tools/nvs/index.vue"),
@@ -37,7 +48,7 @@ export const layoutChildren: RouteRecordRaw[] = [
       icon: "🗄️",
       titleKey: "menu.nvs",
       menu: true,
-      menuOrder: 5,
+      menuOrder: 6,
     },
   },
   {
@@ -48,7 +59,7 @@ export const layoutChildren: RouteRecordRaw[] = [
       icon: "📡",
       titleKey: "menu.ble",
       menu: true,
-      menuOrder: 3,
+      menuOrder: 4,
     },
   },
   {
@@ -59,7 +70,7 @@ export const layoutChildren: RouteRecordRaw[] = [
       icon: "📦",
       titleKey: "menu.firmware",
       menu: true,
-      menuOrder: 4,
+      menuOrder: 5,
     },
   },
   {
@@ -70,7 +81,7 @@ export const layoutChildren: RouteRecordRaw[] = [
       icon: "🧩",
       titleKey: "menu.pinout",
       menu: true,
-      menuOrder: 6,
+      menuOrder: 7,
     },
   },
   {
@@ -81,7 +92,7 @@ export const layoutChildren: RouteRecordRaw[] = [
       icon: "🖼️",
       titleKey: "menu.image",
       menu: true,
-      menuOrder: 7,
+      menuOrder: 8,
     },
   },
 ];

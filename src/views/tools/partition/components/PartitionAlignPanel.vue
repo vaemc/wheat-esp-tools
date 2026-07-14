@@ -6,10 +6,19 @@
           <span class="panel-title">{{ $t("partition.input") }}</span>
         </header>
         <p class="panel-hint">{{ $t("partition.alignHint") }}</p>
+        <label class="offset-field">
+          <span class="offset-label">{{ $t("partition.tableOffset") }}</span>
+          <a-input
+            v-model:value="tableOffset"
+            placeholder="0x8000"
+            class="offset-input mono-input"
+            allow-clear
+          />
+        </label>
         <a-textarea
           v-model:value="inputCsv"
           :placeholder="$t('partition.inputPlaceholder')"
-          :rows="20"
+          :rows="18"
           allow-clear
           class="mono-input"
         />
@@ -39,28 +48,21 @@
             {{ $t("partition.copy") }}
           </a-button>
         </header>
-        <a-table
-          :bordered="true"
-          :pagination="false"
-          size="small"
-          :scroll="{ y: 420 }"
-          :data-source="result?.rows ?? []"
+        <PartitionDetailTable
+          :rows="result?.rows ?? []"
           :columns="columns"
-        >
-          <template #emptyText>
-            <PlaceholderHint :text="$t('partition.emptyPreview')" />
-          </template>
-        </a-table>
+          :empty-text="$t('partition.emptyPreview')"
+        />
       </section>
     </a-col>
   </a-row>
 </template>
 <script setup lang="ts">
-import PlaceholderHint from "@/components/PlaceholderHint.vue";
+import PartitionDetailTable from "./PartitionDetailTable.vue";
 import { usePartitionAlign } from "../composables/usePartitionAlign";
 import { usePartitionColumns } from "../composables/usePartitionColumns";
 
-const { inputCsv, error, result, copyOutput } = usePartitionAlign();
+const { inputCsv, tableOffset, error, result, copyOutput } = usePartitionAlign();
 const { columns } = usePartitionColumns();
 </script>
 <style scoped>
@@ -100,7 +102,22 @@ const { columns } = usePartitionColumns();
   color: rgba(255, 255, 255, 0.45);
   line-height: 1.5;
 }
-.mono-input :deep(textarea) {
+.offset-field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.offset-label {
+  flex-shrink: 0;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.45);
+}
+.offset-input {
+  width: 140px;
+}
+.mono-input :deep(textarea),
+.mono-input :deep(input) {
   font-family: Consolas, "Courier New", monospace;
   font-size: 13px;
   line-height: 1.5;

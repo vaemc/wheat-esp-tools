@@ -209,7 +209,7 @@ Read the partition table from Flash offset `0x8000` on a connected device:
    - **Details table**: Name, Type, SubType, Offset, Size, Flags
    - **CSV output**: Copy as standard CSV
 
-Binary backups are stored in the app's `partitions/` folder.
+Binary backups go to the system temp directory (`wheat-esp-tools/partitions`), not the project folder.
 
 ---
 
@@ -300,7 +300,7 @@ Click **Open local file** to parse a `.bin` NVS partition image without a connec
 
 ### Generate from CSV
 
-Click **Generate from CSV** and select an ESP-IDF standard NVS CSV file to produce a `.bin` partition image (no direct flash). Output is saved to the app's `nvs/` folder.
+Click **Generate from CSV** and select an ESP-IDF standard NVS CSV file to produce a `.bin` partition image (no direct flash). Output goes to the system temp directory.
 
 ### Edit & Write Back
 
@@ -325,7 +325,7 @@ Filter by namespace, key, or value content. Unmodified cells can be clicked to c
 
 > **Note**: Empty or encrypted partitions may yield no parseable entries. Write-back overwrites the target NVS partition — verify offset and size before proceeding.
 
-Backups from read, export, and CSV generation are saved to the app's `nvs/` folder.
+Backups from read, export, and CSV generation go to the system temp directory (`wheat-esp-tools/nvs`), not the project folder.
 
 ---
 
@@ -379,8 +379,8 @@ The app creates these folders at runtime:
 | Directory | Contents |
 |-----------|----------|
 | `firmware/` | Merged firmware, full Flash dumps, local firmware library |
-| `partitions/` | Partition table binaries read from device |
-| `nvs/` | NVS partition backups from device read, edited export, or CSV generation |
+
+Partition table / OTA / NVS temporary `.bin` files are stored in the system temp directory.
 
 ---
 
@@ -394,6 +394,7 @@ The app creates these folders at runtime:
 | Full Flash erase / read | ✅ Done |
 | Partition table offset alignment | ✅ Done |
 | Read partition table from device | ✅ Done |
+| OTA partition R/W / switch boot slot | ✅ Done |
 | NVS partition read & parse | ✅ Done |
 | NVS edit / export / write back to device | ✅ Done |
 | NVS generate from CSV | ✅ Done |

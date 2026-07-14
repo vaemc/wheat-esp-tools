@@ -1,10 +1,13 @@
 import { computed, ref } from "vue";
+import { storeToRefs } from "pinia";
 import { useI18n } from "vue-i18n";
 import { message } from "ant-design-vue";
 import {
   buildPartitionTable,
   PartitionTableError,
+  resolvePartitionTableOffset,
 } from "@/utils/partitionTable";
+import { usePartitionTableStore } from "@/stores/partitionTable";
 
 const DEFAULT_CSV = `# Name, Type, SubType, Offset, Size, Flags
 nvs, data, nvs, , 0x6000,
@@ -18,6 +21,7 @@ export function usePartitionAlign() {
   const { t } = useI18n();
   const inputCsv = ref(DEFAULT_CSV);
   const error = ref<string | null>(null);
+  const { tableOffset } = storeToRefs(usePartitionTableStore());
 
   const result = computed(() => {
     const text = inputCsv.value?.trim();
@@ -26,10 +30,15 @@ export function usePartitionAlign() {
       return null;
     }
     try {
-      const table = buildPartitionTable(inputCsv.value);
+      const ptOffset = resolvePartitionTableOffset(tableOffset.value);
+      const table = buildPartitionTable(inputCsv.value, ptOffset);
       error.value = null;
       return table;
     } catch (e) {
+      if (e instanceof Error && e.message === "BAD_TABLE_OFFSET") {
+        error.value = t("partition.badTableOffset");
+        return null;
+      }
       error.value =
         e instanceof PartitionTableError
           ? e.message
@@ -52,6 +61,7 @@ export function usePartitionAlign() {
 
   return {
     inputCsv,
+    tableOffset,
     error,
     result,
     copyOutput,

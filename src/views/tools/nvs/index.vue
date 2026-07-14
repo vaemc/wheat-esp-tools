@@ -8,6 +8,15 @@
       <p v-else class="panel-hint">{{ $t("nvs.detectHint") }}</p>
       <div class="options-row">
         <label class="option-field">
+          <span class="option-label">{{ $t("nvs.tableOffset") }}</span>
+          <a-input
+            v-model:value="tableOffset"
+            placeholder="0x8000"
+            class="mono"
+            :disabled="loading"
+          />
+        </label>
+        <label class="option-field">
           <span class="option-label">{{ $t("nvs.offset") }}</span>
           <a-input
             v-model:value="offset"
@@ -191,6 +200,7 @@ const {
   rows,
   originalRows,
   keyword,
+  tableOffset,
   offset,
   size,
   baudRate,
@@ -268,6 +278,8 @@ const columns = computed(() => [
 function handleReadError(e: unknown) {
   if (e instanceof Error && e.message === "NO_PORT") {
     message.warning(t("nvs.noPort"));
+  } else if (e instanceof Error && e.message === "BAD_TABLE_OFFSET") {
+    message.warning(t("nvs.badTableOffset"));
   } else if (e instanceof Error && e.message === "NO_NVS") {
     message.warning(t("nvs.noNvsPartition"));
   } else if (e instanceof Error && e.message === "READ_FAILED") {

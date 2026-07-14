@@ -1,5 +1,6 @@
 import type { FlashPartition } from "@/utils/partitionBin";
 import {
+  formatAlignedCsvLines,
   PartitionTableError,
   type PartitionRow,
   type PartitionTableResult,
@@ -18,8 +19,7 @@ export function buildPartitionTableFromFlash(
     throw new PartitionTableError("分区表为空");
   }
 
-  const rows: PartitionRow[] = partitions.map((p) => ({
-    key: p.name,
+  const fields = partitions.map((p) => ({
     name: p.name,
     type: partitionTypeLabel(p.type),
     subtype: partitionSubtypeLabel(p.type, p.subtype),
@@ -28,26 +28,16 @@ export function buildPartitionTableFromFlash(
     flags: "",
   }));
 
-  const csvLines = [
-    "# ESP-IDF Partition Table",
-    "# Name, Type, SubType, Offset, Size, Flags",
-    ...partitions.map((p) =>
-      [
-        p.name,
-        partitionTypeLabel(p.type),
-        partitionSubtypeLabel(p.type, p.subtype),
-        formatPartitionAddress(p.offset, false),
-        formatPartitionAddress(p.size, true),
-        "",
-      ].join(",")
-    ),
-  ];
+  const rows: PartitionRow[] = fields.map((f) => ({
+    key: f.name,
+    ...f,
+  }));
 
   const totalEnd = Math.max(...partitions.map((p) => p.offset + p.size));
 
   return {
     rows,
-    csv: `${csvLines.join("\n")}\n`,
+    csv: formatAlignedCsvLines(fields),
     totalSizeMb: `${(totalEnd / (1024 * 1024)).toFixed(3)}M`,
   };
 }
