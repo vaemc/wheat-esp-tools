@@ -15,7 +15,7 @@
         >
           <a-menu-item v-for="item in menuRoutes" :key="item.name">
             <span class="menu-item-content">
-              <span class="menu-icon" aria-hidden="true">{{ item.icon }}</span>
+              <MenuIcon class="menu-icon" :name="item.icon" />
               <span class="menu-title">{{ t(item.titleKey) }}</span>
             </span>
           </a-menu-item>
@@ -54,6 +54,7 @@
 import Terminal from "@/components/Terminal.vue";
 import DeviceTopBar from "@/components/DeviceTopBar.vue";
 import LanguageSwitch from "@/components/LanguageSwitch.vue";
+import MenuIcon from "@/components/icons/MenuIcon.vue";
 import { computed } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
@@ -123,7 +124,8 @@ const onMenuClick: MenuProps["onClick"] = ({ key }) => {
 
 .menu-icon {
   font-size: 16px;
-  line-height: 1;
+  width: 16px;
+  height: 16px;
   flex-shrink: 0;
 }
 

@@ -48,15 +48,15 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref } from "vue";
+import { computed, ref } from "vue";
 import {
   CloudUploadOutlined,
   FolderOpenOutlined,
   AppstoreAddOutlined,
 } from "@ant-design/icons-vue";
-import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import { open } from "@tauri-apps/plugin-dialog";
 import { useI18n } from "vue-i18n";
+import { useTauriDragDrop } from "@/composables/useTauriDragDrop";
 
 const props = withDefaults(
   defineProps<{
@@ -101,52 +101,21 @@ const pick = async () => {
   }
 };
 
-const unlisteners: UnlistenFn[] = [];
-
-const safeListen = async (
-  event: string,
-  handler: (e: { payload: unknown }) => void,
-) => {
-  try {
-    const off = await listen(event, handler as never);
-    unlisteners.push(off);
-  } catch (err) {
-    console.warn(`[Upload] listen "${event}" failed:`, err);
-  }
-};
-
-onMounted(() => {
-  void safeListen("tauri://drag-drop", (event) => {
+useTauriDragDrop({
+  onDrop(paths) {
     dragging.value = false;
-    const paths = (event.payload as { paths?: string[] } | undefined)?.paths;
-    if (!Array.isArray(paths) || paths.length === 0) {
-      return;
-    }
     if (paths.length === 1 && !props.isMultiple) {
       emit("drop", paths[0]);
     } else {
       emit("drop", paths);
     }
-  });
-
-  void safeListen("tauri://drag-enter", () => {
+  },
+  onEnter() {
     dragging.value = true;
-  });
-
-  void safeListen("tauri://drag-leave", () => {
+  },
+  onLeave() {
     dragging.value = false;
-  });
-});
-
-onBeforeUnmount(() => {
-  for (const off of unlisteners) {
-    try {
-      off();
-    } catch {
-      /* noop */
-    }
-  }
-  unlisteners.length = 0;
+  },
 });
 </script>
 

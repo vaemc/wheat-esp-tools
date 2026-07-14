@@ -1,7 +1,7 @@
 import "vue-router";
 
 export interface AppRouteMeta {
-  /** 侧栏菜单图标（emoji） */
+  /** 侧栏菜单图标名（见 MenuIcon） */
   icon?: string;
   /** i18n 标题键，如 menu.general */
   titleKey?: string;

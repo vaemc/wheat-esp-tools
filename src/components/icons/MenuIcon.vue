@@ -1,0 +1,95 @@
+<template>
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    fill="none"
+    :stroke="color"
+    stroke-width="2"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    class="menu-svg-icon"
+    aria-hidden="true"
+  >
+    <!-- Lucide icons (ISC) https://lucide.dev -->
+    <template v-if="name === 'flash'">
+      <path
+        d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"
+      />
+    </template>
+    <template v-else-if="name === 'firmware'">
+      <path
+        d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z"
+      />
+      <path d="M12 22V12" />
+      <path d="m3.3 7 7.703 4.734a2 2 0 0 0 1.994 0L20.7 7" />
+      <path d="m7.5 4.27 9 5.15" />
+    </template>
+    <template v-else-if="name === 'partition'">
+      <path
+        d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2V9M9 21H5a2 2 0 0 1-2-2V9m0 0h18"
+      />
+    </template>
+    <template v-else-if="name === 'ota'">
+      <path d="M12 13v8" />
+      <path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242" />
+      <path d="m8 17 4-4 4 4" />
+    </template>
+    <template v-else-if="name === 'nvs'">
+      <path
+        d="M2.586 17.414A2 2 0 0 0 2 18.828V21a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h.172a2 2 0 0 0 1.414-.586l.814-.814a6.5 6.5 0 1 0-4-4z"
+      />
+      <circle cx="16.5" cy="7.5" r=".5" :fill="color" />
+    </template>
+    <template v-else-if="name === 'ble'">
+      <path d="m7 7 10 10-5 5V2l5 5L7 17" />
+    </template>
+    <template v-else-if="name === 'pinout'">
+      <rect width="16" height="16" x="4" y="4" rx="2" />
+      <rect width="6" height="6" x="9" y="9" rx="1" />
+      <path d="M15 2v2" />
+      <path d="M15 20v2" />
+      <path d="M2 15h2" />
+      <path d="M2 9h2" />
+      <path d="M20 15h2" />
+      <path d="M20 9h2" />
+      <path d="M9 2v2" />
+      <path d="M9 20v2" />
+    </template>
+    <template v-else-if="name === 'image'">
+      <rect width="18" height="18" x="3" y="3" rx="2" ry="2" />
+      <circle cx="9" cy="9" r="2" />
+      <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
+    </template>
+  </svg>
+</template>
+
+<script setup lang="ts">
+import { computed } from "vue";
+
+const props = defineProps<{
+  name: string;
+}>();
+
+/** 深色侧栏下辨识度较好的色板 */
+const ICON_COLORS: Record<string, string> = {
+  flash: "#faad14",
+  firmware: "#36cfc9",
+  partition: "#69b1ff",
+  ota: "#40a9ff",
+  nvs: "#ffc53d",
+  ble: "#4096ff",
+  pinout: "#95de64",
+  image: "#ff85c0",
+};
+
+const color = computed(() => ICON_COLORS[props.name] ?? "#bfbfbf");
+</script>
+
+<style scoped>
+.menu-svg-icon {
+  width: 1em;
+  height: 1em;
+  display: block;
+  flex-shrink: 0;
+}
+</style>

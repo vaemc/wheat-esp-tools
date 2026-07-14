@@ -176,17 +176,18 @@
 </template>
 
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, ref } from "vue";
+import { onBeforeUnmount, ref } from "vue";
 import { message } from "ant-design-vue";
 import { useI18n } from "vue-i18n";
-import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import { readFile } from "@tauri-apps/plugin-fs";
 import ImageBatchGrid from "./components/ImageBatchGrid.vue";
 import { useImageBatch } from "./composables/useImageBatch";
+import { useTauriDragDrop } from "@/composables/useTauriDragDrop";
 import {
-  downloadBytes,
-  downloadText,
   encodeCanvasToSjpg,
+  saveBytesWithDialog,
+  saveFilesToPickedDir,
+  saveTextWithDialog,
 } from "@/utils/sjpgEncoder";
 
 const { t } = useI18n();
@@ -221,8 +222,6 @@ const {
   renderItemToCanvas,
   baseNameFrom,
 } = useImageBatch();
-
-const unlisteners: UnlistenFn[] = [];
 
 function pickFiles() {
   fileInputRef.value?.click();
@@ -332,61 +331,97 @@ async function onConvertAll() {
   }
 }
 
-function downloadSelectedSjpg() {
+async function downloadSelectedSjpg() {
   const item = selectedItem.value;
   if (!item?.result) {
     return;
   }
-  downloadBytes(item.result.bytes, `${baseNameFrom(item.fileName)}.sjpg`);
+  try {
+    const path = await saveBytesWithDialog(
+      item.result.bytes,
+      `${baseNameFrom(item.fileName)}.sjpg`,
+      [{ name: "SJPG", extensions: ["sjpg"] }]
+    );
+    if (path) {
+      message.success(t("image.saveSuccess", { path }));
+    }
+  } catch {
+    message.error(t("image.saveFailed"));
+  }
 }
 
-function downloadSelectedC() {
+async function downloadSelectedC() {
   const item = selectedItem.value;
   if (!item?.result) {
     return;
   }
-  downloadText(item.result.cSource, `${baseNameFrom(item.fileName)}.c`);
-}
-
-function downloadAllSjpg() {
-  for (const item of items.value) {
-    if (item.result) {
-      downloadBytes(item.result.bytes, `${baseNameFrom(item.fileName)}.sjpg`);
+  try {
+    const path = await saveTextWithDialog(
+      item.result.cSource,
+      `${baseNameFrom(item.fileName)}.c`,
+      [{ name: "C Source", extensions: ["c"] }]
+    );
+    if (path) {
+      message.success(t("image.saveSuccess", { path }));
     }
+  } catch {
+    message.error(t("image.saveFailed"));
   }
 }
 
-function downloadAllC() {
-  for (const item of items.value) {
-    if (item.result) {
-      downloadText(item.result.cSource, `${baseNameFrom(item.fileName)}.c`);
+async function downloadAllSjpg() {
+  const files = items.value
+    .filter((item) => item.result)
+    .map((item) => ({
+      name: `${baseNameFrom(item.fileName)}.sjpg`,
+      data: item.result!.bytes,
+    }));
+  if (!files.length) {
+    return;
+  }
+  try {
+    const dir = await saveFilesToPickedDir(files);
+    if (dir) {
+      message.success(t("image.saveAllSuccess", { n: files.length, path: dir }));
     }
+  } catch {
+    message.error(t("image.saveFailed"));
   }
 }
 
-onMounted(() => {
-  void (async () => {
-    try {
-      const off = await listen<{ paths: string[] }>("tauri://drag-drop", (event) => {
-        const paths = event.payload?.paths ?? [];
-        const imagePaths = paths.filter(
-          (path) => typeof path === "string" && /\.(jpe?g|png|webp|bmp|gif)$/i.test(path)
-        );
-        if (imagePaths.length) {
-          void loadFromPaths(imagePaths);
-        }
-      });
-      unlisteners.push(off);
-    } catch {
-      /* browser dev */
+async function downloadAllC() {
+  const encoder = new TextEncoder();
+  const files = items.value
+    .filter((item) => item.result)
+    .map((item) => ({
+      name: `${baseNameFrom(item.fileName)}.c`,
+      data: encoder.encode(item.result!.cSource),
+    }));
+  if (!files.length) {
+    return;
+  }
+  try {
+    const dir = await saveFilesToPickedDir(files);
+    if (dir) {
+      message.success(t("image.saveAllSuccess", { n: files.length, path: dir }));
     }
-  })();
+  } catch {
+    message.error(t("image.saveFailed"));
+  }
+}
+
+useTauriDragDrop({
+  onDrop(paths) {
+    const imagePaths = paths.filter((path) =>
+      /\.(jpe?g|png|webp|bmp|gif)$/i.test(path)
+    );
+    if (imagePaths.length) {
+      void loadFromPaths(imagePaths);
+    }
+  },
 });
 
 onBeforeUnmount(() => {
-  for (const off of unlisteners) {
-    off();
-  }
   clearAll();
 });
 </script>

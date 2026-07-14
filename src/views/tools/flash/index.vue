@@ -87,17 +87,45 @@
       </a-checkbox>
     </a-tooltip>
     <a-row :gutter="16">
-      <a-col :span="12">
+      <a-col :span="8">
         <a-button type="primary" @click="handle(flash)" block>
           {{ $t("flash.flash") }}
         </a-button>
       </a-col>
-      <a-col :span="12">
+      <a-col :span="8">
         <a-button type="primary" @click="handle(merge)" block>
           {{ $t("flash.merge") }}
         </a-button>
       </a-col>
+      <a-col :span="8">
+        <a-button
+          type="primary"
+          :loading="exporting"
+          @click="exportAll"
+          block
+        >
+          {{ $t("flash.export") }}
+        </a-button>
+      </a-col>
     </a-row>
+
+    <a-modal
+      v-model:open="mergeModalOpen"
+      :title="$t('flash.mergeNameTitle')"
+      :ok-text="$t('flash.mergeNameOk')"
+      :cancel-text="$t('flash.mergeNameCancel')"
+      :confirm-loading="merging"
+      destroy-on-close
+      @ok="confirmMerge"
+    >
+      <p class="merge-name-hint">{{ $t("flash.mergeNameHint") }}</p>
+      <a-input
+        v-model:value="mergeFileName"
+        :placeholder="$t('flash.mergeNamePlaceholder')"
+        allow-clear
+        @pressEnter="confirmMerge"
+      />
+    </a-modal>
   </div>
 </template>
 <script setup lang="ts">
@@ -110,6 +138,7 @@ import {
   getChipTypeList,
   getCurrentDir,
   getFileInfo,
+  openDirectoryInExplorer,
   openFileInExplorer,
 } from "@/utils/common";
 import { runEsptool, runEsptoolWithStdout } from "@/utils/esptoolCli";
@@ -123,6 +152,7 @@ import { useHistoryStore } from "@/stores/history";
 import { usePortStore } from "@/stores/port";
 import { useImportToFlash } from "@/views/tools/firmware/composables/useImportToFlash";
 import { useFlashQuickActions } from "./composables/useFlashQuickActions";
+import { exportFirmwareFilesToDir } from "./composables/useExportFirmware";
 
 const store = useToolsStore();
 const historyStore = useHistoryStore();
@@ -136,6 +166,10 @@ const selectedMode = ref("keep");
 const selectedBaud = ref("1152000");
 const eraseChecked = ref(false);
 const currentDir = ref("");
+const exporting = ref(false);
+const mergeModalOpen = ref(false);
+const mergeFileName = ref("");
+const merging = ref(false);
 
 const columns = ref([
   {
@@ -248,26 +282,59 @@ const merge = async () => {
     return;
   }
 
-  const dir = await ensureCurrentDir();
-  const filename = `${dir}\\firmware\\${selectedChipType.value}-merge-bin-${moment().format("YYYYMMDDHHmmss")}.bin`;
+  mergeFileName.value = `${selectedChipType.value}-merge-bin-${moment().format("YYYYMMDDHHmmss")}.bin`;
+  mergeModalOpen.value = true;
+};
 
-  await runEsptoolWithStdout(
-    [
-      "--chip",
-      selectedChipType.value,
-      "merge-bin",
-      "-o",
-      filename,
-      ...firmwareList.value
-        .filter((x) => x.check)
-        .flatMap((x) => [x.address, x.path]),
-    ],
-    (line) => {
-      if (line.includes("ready to flash to offset 0x0")) {
-        openFileInExplorer(filename);
+/** 规范化用户输入的合并文件名 */
+function normalizeMergeFileName(raw: string): string | null {
+  let name = raw.trim().replace(/[<>:"/\\|?*]/g, "_");
+  if (!name) {
+    return null;
+  }
+  if (!/\.bin$/i.test(name)) {
+    name += ".bin";
+  }
+  return name;
+}
+
+const confirmMerge = async () => {
+  const name = normalizeMergeFileName(mergeFileName.value);
+  if (!name) {
+    message.warning(i18n.global.t("flash.dialog.inputMergeName"));
+    return Promise.reject();
+  }
+  if (selectedChipType.value == undefined) {
+    message.warning(i18n.global.t("flash.dialog.selectedChipType"));
+    return Promise.reject();
+  }
+
+  merging.value = true;
+  try {
+    const dir = await ensureCurrentDir();
+    const filename = `${dir}\\firmware\\${name}`;
+
+    await runEsptoolWithStdout(
+      [
+        "--chip",
+        selectedChipType.value,
+        "merge-bin",
+        "-o",
+        filename,
+        ...firmwareList.value
+          .filter((x) => x.check)
+          .flatMap((x) => [x.address, x.path]),
+      ],
+      (line) => {
+        if (line.includes("ready to flash to offset 0x0")) {
+          openFileInExplorer(filename);
+        }
       }
-    }
-  );
+    );
+    mergeModalOpen.value = false;
+  } finally {
+    merging.value = false;
+  }
 };
 
 const handle = (action: () => void | Promise<void>) => {
@@ -292,6 +359,49 @@ const handle = (action: () => void | Promise<void>) => {
   }
 
   void action();
+};
+
+/** 导出勾选的固件到所选文件夹：文件名_{地址}.扩展名 */
+const exportAll = async () => {
+  if (firmwareList.value.length === 0) {
+    message.warning(i18n.global.t("flash.dialog.addFirmware"));
+    return;
+  }
+
+  const selected = firmwareList.value.filter((x) => x.check);
+  if (selected.length === 0) {
+    message.warning(i18n.global.t("flash.dialog.selectOneFirmware"));
+    return;
+  }
+
+  if (selected.some((x) => x.address === "")) {
+    message.warning(i18n.global.t("flash.dialog.inputAddress"));
+    return;
+  }
+
+  if (selected.some((x) => x.path === "")) {
+    message.warning(i18n.global.t("flash.dialog.inputPath"));
+    return;
+  }
+
+  exporting.value = true;
+  try {
+    const dir = await exportFirmwareFilesToDir(selected);
+    if (!dir) {
+      return;
+    }
+    message.success(
+      i18n.global.t("flash.exportSuccess", {
+        n: selected.length,
+        path: dir,
+      })
+    );
+    await openDirectoryInExplorer(dir);
+  } catch {
+    message.error(i18n.global.t("flash.exportFailed"));
+  } finally {
+    exporting.value = false;
+  }
 };
 
 const removeFirmwareBtn = (item: Firmware) => {
@@ -453,5 +563,11 @@ const flashCheckAllChange = () => {
 .flash-row-actions__sep {
   color: rgba(255, 255, 255, 0.25);
   user-select: none;
+}
+
+.merge-name-hint {
+  margin: 0 0 10px;
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 13px;
 }
 </style>
