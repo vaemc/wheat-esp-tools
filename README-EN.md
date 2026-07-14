@@ -149,7 +149,7 @@ Same auto-fill behavior; saved to recent projects.
 Equivalent to:
 
 ```bash
-esptool.py -p COMx -b 1152000 write_flash --flash_mode keep 0x10000 firmware.bin ...
+esptool.py -p COMx -b 1152000 write-flash --flash-mode keep 0x10000 firmware.bin ...
 ```
 
 ### Merging Firmware

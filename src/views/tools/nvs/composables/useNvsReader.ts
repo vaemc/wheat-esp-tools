@@ -339,7 +339,7 @@ export function useNvsReader() {
       { eraseAll: false }
     );
 
-    // ⬇️ 走到这里 = esptool write_flash 已成功写入设备
+    // ⬇️ 走到这里 = esptool write-flash 已成功写入设备
     // (runEsptoolWriteFlash 内部基于 stdout 的 "Hash of data verified" /
     //  "Leaving..." 等成功标志做判定，吃掉了 Tauri Shell close/error 竞态)
     //

@@ -149,7 +149,7 @@ your_project/.pio/build/your_board/idedata.json
 烧录命令等效于：
 
 ```bash
-esptool.py -p COMx -b 1152000 write_flash --flash_mode keep 0x10000 firmware.bin ...
+esptool.py -p COMx -b 1152000 write-flash --flash-mode keep 0x10000 firmware.bin ...
 ```
 
 ### 合并固件

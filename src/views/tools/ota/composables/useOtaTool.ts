@@ -192,7 +192,7 @@ export function useOtaTool() {
         port,
         baudRate.value,
         [{ offset: formatHexForEsptool(otadata.offset), path }],
-        { after: "hard_reset" }
+        { after: "hard-reset" }
       );
       await refreshOtadata(port, otadata, otaApps.value);
     } finally {
@@ -237,7 +237,7 @@ export function useOtaTool() {
         port,
         baudRate.value,
         [{ offset: formatHexForEsptool(target.offset), path: inputPath }],
-        { after: "hard_reset" }
+        { after: "hard-reset" }
       );
     } finally {
       loading.value = false;

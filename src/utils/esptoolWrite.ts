@@ -18,16 +18,16 @@ export interface WriteFlashOptions {
 }
 
 /**
- * esptool write_flash 的"成功标志"。
+ * esptool write-flash 的"成功标志"。
  *
  * Tauri Shell 在 sidecar 进程结束时偶发会先于 / 同步于 close 事件 emit error
- * （比如 hard_reset 触发设备复位时端口抖动、stdout/stderr 中带非 UTF-8 字节
+ * （比如 hard-reset 触发设备复位时端口抖动、stdout/stderr 中带非 UTF-8 字节
  * 导致 Tauri 的 read_line 解码失败），让 listenEsptool reject。
  * 但此时数据其实已经成功写入。
  *
  * 真实的"写完了"信号其实在 esptool 的 stdout / stderr 里非常稳定，任一出现都
  * 意味着写入流程跑完了：
- *   - "Hash of data verified."         —— write_flash 默认开启 verify，写完必打印
+ *   - "Hash of data verified."         —— write-flash 默认开启 verify，写完必打印
  *   - "Leaving..."                     —— esptool 进入正常退出流程
  *   - "Hard resetting via RTS pin..."  —— 进入复位阶段
  *   - "Wrote ... bytes ... at"         —— 该地址写入完成
@@ -48,7 +48,7 @@ const WRITE_FAILURE_PATTERNS = [
   /error:\s+the chip stop responding/i,
 ];
 
-/** 执行 esptool write_flash，等待完成 */
+/** 执行 esptool write-flash，等待完成 */
 export async function runEsptoolWriteFlash(
   port: string,
   baud: string,
@@ -61,8 +61,8 @@ export async function runEsptoolWriteFlash(
   const {
     flashMode = "dio",
     eraseAll = false,
-    before = "default_reset",
-    after = "hard_reset",
+    before = "default-reset",
+    after = "hard-reset",
   } = options;
 
   const args: string[] = [
@@ -72,8 +72,8 @@ export async function runEsptoolWriteFlash(
     baud,
     `--before=${before}`,
     `--after=${after}`,
-    "write_flash",
-    "--flash_mode",
+    "write-flash",
+    "--flash-mode",
     flashMode,
   ];
 
@@ -122,7 +122,7 @@ export async function runEsptoolWriteFlash(
     if (processError) {
       // 写完已成功，但底层抛了非致命的错；只在 console 里留个痕迹方便排查
       console.warn(
-        "[esptoolWrite] write_flash 已识别成功标志，忽略底层非致命错误：",
+        "[esptoolWrite] write-flash 已识别成功标志，忽略底层非致命错误：",
         processError
       );
     }

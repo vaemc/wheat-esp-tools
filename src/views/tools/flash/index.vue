@@ -214,10 +214,10 @@ function buildWriteFlashArgs(extra: string[]): string[] {
     getPort()!,
     "-b",
     selectedBaud.value,
-    "--before=default_reset",
-    "--after=hard_reset",
-    "write_flash",
-    "--flash_mode",
+    "--before=default-reset",
+    "--after=hard-reset",
+    "write-flash",
+    "--flash-mode",
     selectedMode.value,
     ...extra,
   ];
@@ -255,7 +255,7 @@ const merge = async () => {
     [
       "--chip",
       selectedChipType.value,
-      "merge_bin",
+      "merge-bin",
       "-o",
       filename,
       ...firmwareList.value
