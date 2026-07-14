@@ -80,35 +80,22 @@
         </template>
       </template>
     </a-table>
-    <section class="flash-actions">
-      <div class="flash-actions__option">
-        <a-tooltip>
-          <template #title>{{ $t("flash.eraseFlashInfo") }}</template>
-          <a-checkbox v-model:checked="eraseChecked">
-            {{ $t("flash.eraseFlash") }}
-          </a-checkbox>
-        </a-tooltip>
-      </div>
-      <div class="flash-actions__btns">
-        <a-button
-          type="primary"
-          class="flash-actions__btn flash-actions__btn--primary"
-          @click="handle(flash)"
-        >
-          {{ $t("flash.flash") }}
+    <section class="flash-footer">
+      <a-tooltip>
+        <template #title>{{ $t("flash.eraseFlashInfo") }}</template>
+        <a-checkbox v-model:checked="eraseChecked">
+          {{ $t("flash.eraseFlash") }}
+        </a-checkbox>
+      </a-tooltip>
+      <div class="flash-footer__actions">
+        <a-button block :loading="exporting" @click="exportAll">
+          {{ $t("flash.export") }}
         </a-button>
-        <a-button
-          class="flash-actions__btn"
-          @click="handle(merge)"
-        >
+        <a-button block @click="handle(merge)">
           {{ $t("flash.merge") }}
         </a-button>
-        <a-button
-          class="flash-actions__btn"
-          :loading="exporting"
-          @click="exportAll"
-        >
-          {{ $t("flash.export") }}
+        <a-button block type="primary" @click="handle(flash)">
+          {{ $t("flash.flash") }}
         </a-button>
       </div>
     </section>
@@ -569,39 +556,28 @@ const flashCheckAllChange = () => {
   user-select: none;
 }
 
-.flash-actions {
+.flash-footer {
   display: flex;
   flex-direction: column;
   gap: 12px;
   margin-top: 12px;
-  padding: 12px;
+  padding: 10px 12px;
   background: rgba(0, 0, 0, 0.2);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 6px;
 }
 
-.flash-actions__option {
+.flash-footer__actions {
   display: flex;
   align-items: center;
-}
-
-.flash-actions__btns {
-  display: flex;
-  align-items: stretch;
   gap: 10px;
-  flex-wrap: wrap;
+  width: 100%;
 }
 
-.flash-actions__btn {
+.flash-footer__actions :deep(.ant-btn) {
   flex: 1;
-  min-width: 112px;
   height: 36px;
-}
-
-.flash-actions__btn--primary {
-  flex: 1.6;
-  min-width: 140px;
-  font-weight: 600;
+  text-align: center;
 }
 
 .merge-name-hint {
