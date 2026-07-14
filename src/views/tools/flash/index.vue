@@ -3,10 +3,7 @@
     <section class="flash-toolbar">
       <div class="toolbar-options">
         <div class="toolbar-field toolbar-field--spi">
-          <div class="toolbar-field-stack">
-            <span class="toolbar-label">{{ $t("firmware.spiMode") }}</span>
-            <SPIMode v-model="selectedMode" plain />
-          </div>
+          <SPIMode v-model="selectedMode" />
         </div>
         <div class="toolbar-field">
           <a-tooltip>
@@ -157,7 +154,7 @@ const columns = ref([
     title: i18n.global.t("flash.address"),
     dataIndex: "address",
     key: "address",
-    width: 100,
+    width: 110,
   },
   {
     title: i18n.global.t("flash.size"),
@@ -401,7 +398,7 @@ const flashCheckAllChange = () => {
 
 .flash-toolbar {
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
   gap: 12px 16px;
@@ -414,7 +411,7 @@ const flashCheckAllChange = () => {
 
 .toolbar-options {
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   flex-wrap: wrap;
   gap: 12px 16px;
   flex: 1;
@@ -425,19 +422,13 @@ const flashCheckAllChange = () => {
   min-width: 120px;
 }
 
-.toolbar-field-stack {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.toolbar-label {
-  font-size: 11px;
-  color: rgba(255, 255, 255, 0.45);
-}
-
 .toolbar-field--spi {
-  min-width: 140px;
+  min-width: 0;
+  flex: 0 0 auto;
+}
+
+.toolbar-field--spi :deep(.ant-segmented) {
+  width: auto;
 }
 
 .toolbar-input {

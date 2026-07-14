@@ -1,4 +1,4 @@
-import { computed, ref } from "vue";
+import { computed, ref, shallowRef } from "vue";
 import { open } from "@tauri-apps/api/dialog";
 import { readBinaryFile, writeBinaryFile } from "@tauri-apps/api/fs";
 import { join } from "@tauri-apps/api/path";
@@ -48,7 +48,8 @@ export function useOtaTool() {
   const { tableOffset } = storeToRefs(usePartitionTableStore());
   const otadataPart = ref<FlashPartition | null>(null);
   const otaApps = ref<FlashPartition[]>([]);
-  const otadataRaw = ref<Uint8Array | null>(null);
+  /** TypedArray 必须用 shallowRef，否则 Vue 深代理会卡死/白屏 */
+  const otadataRaw = shallowRef<Uint8Array | null>(null);
   const otadataInfo = ref<OtadataInfo | null>(null);
   const selectedKey = ref("");
 

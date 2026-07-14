@@ -38,7 +38,7 @@
       <header class="panel-head">
         <span class="panel-title">{{ $t("ota.otadataTitle") }}</span>
       </header>
-      <div v-if="otadataInfo" class="otadata-grid mono">
+      <div v-if="otadataInfo?.copies?.length" class="otadata-grid mono">
         <div
           v-for="(copy, idx) in otadataInfo.copies"
           :key="idx"
@@ -49,25 +49,30 @@
           </div>
           <div>
             SEQ:
-            <span :class="{ invalid: !copy.valid }">
+            <span :class="{ 'is-dim': !copy.valid }">
               0x{{ hex8(copy.seq) }}
             </span>
           </div>
           <div>
             CRC:
-            <span :class="{ invalid: !copy.valid }">
+            <span :class="{ 'is-dim': !copy.valid }">
               0x{{ hex8(copy.crc) }}
             </span>
           </div>
-          <div class="valid-tag" :class="{ 'is-invalid': !copy.valid }">
+          <a-tag
+            class="status-tag"
+            :color="copy.valid ? 'success' : 'default'"
+          >
             {{ copy.valid ? $t("ota.valid") : $t("ota.invalid") }}
-          </div>
+          </a-tag>
         </div>
         <div class="otadata-active">
-          <template v-if="otadataInfo.activeSlot != null">
+          <a-tag v-if="otadataInfo.activeSlot != null" color="processing">
             {{ $t("ota.activeSlot", { slot: otadataInfo.activeSlot }) }}
-          </template>
-          <template v-else>{{ $t("ota.activeUnknown") }}</template>
+          </a-tag>
+          <a-tag v-else color="default">
+            {{ $t("ota.activeUnknown") }}
+          </a-tag>
         </div>
       </div>
       <PlaceholderHint v-else :text="$t('ota.emptyOtadata')" />
@@ -406,7 +411,7 @@ function onEraseApp() {
 .detected-info {
   margin: 10px 0 0;
   font-size: 12px;
-  color: #52c41a;
+  color: rgba(255, 255, 255, 0.75);
 }
 .otadata-grid {
   display: grid;
@@ -415,7 +420,7 @@ function onEraseApp() {
   margin-bottom: 8px;
   font-size: 12px;
   line-height: 1.7;
-  color: rgba(255, 255, 255, 0.75);
+  color: rgba(255, 255, 255, 0.85);
 }
 .otadata-col {
   padding: 10px 12px;
@@ -430,20 +435,12 @@ function onEraseApp() {
 }
 .otadata-active {
   grid-column: 1 / -1;
-  font-size: 13px;
-  color: #1677ff;
 }
-.valid-tag {
-  margin-top: 4px;
-  color: #73d13d;
-  font-weight: 500;
+.status-tag {
+  margin-top: 6px;
 }
-.valid-tag.is-invalid {
-  color: #ff8585;
-}
-.invalid {
-  color: #ff8585;
-  font-weight: 600;
+.is-dim {
+  color: rgba(255, 255, 255, 0.45);
 }
 .app-select-row {
   display: flex;

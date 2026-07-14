@@ -15,7 +15,6 @@ use std::sync::mpsc::{self, TryRecvError};
 use std::time::SystemTime;
 use esp_nvs_partition_tool::partition::{DataValue, EntryContent, NvsEntry};
 use esp_nvs_partition_tool::NvsPartition;
-use tauri::Manager as TauriManager;
 
 mod classic_bluetooth;
 mod serial;
@@ -517,11 +516,7 @@ fn main() {
     }
 
     tauri::Builder::default()
-        .setup(|app| {
-            let _window = app.get_window("main").unwrap();
-
-            Ok(())
-        })
+        .setup(|_app| Ok(()))
         .invoke_handler(tauri::generate_handler![
             get_serial_port_list,
             get_serial_port_details,
