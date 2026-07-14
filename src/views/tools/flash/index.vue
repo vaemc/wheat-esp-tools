@@ -80,34 +80,38 @@
         </template>
       </template>
     </a-table>
-    <a-tooltip>
-      <template #title>{{ $t("flash.eraseFlashInfo") }}</template>
-      <a-checkbox v-model:checked="eraseChecked">
-        {{ $t("flash.eraseFlash") }}
-      </a-checkbox>
-    </a-tooltip>
-    <a-row :gutter="16">
-      <a-col :span="8">
-        <a-button type="primary" @click="handle(flash)" block>
-          {{ $t("flash.flash") }}
-        </a-button>
-      </a-col>
-      <a-col :span="8">
-        <a-button type="primary" @click="handle(merge)" block>
-          {{ $t("flash.merge") }}
-        </a-button>
-      </a-col>
-      <a-col :span="8">
+    <section class="flash-actions">
+      <div class="flash-actions__option">
+        <a-tooltip>
+          <template #title>{{ $t("flash.eraseFlashInfo") }}</template>
+          <a-checkbox v-model:checked="eraseChecked">
+            {{ $t("flash.eraseFlash") }}
+          </a-checkbox>
+        </a-tooltip>
+      </div>
+      <div class="flash-actions__btns">
         <a-button
           type="primary"
+          class="flash-actions__btn flash-actions__btn--primary"
+          @click="handle(flash)"
+        >
+          {{ $t("flash.flash") }}
+        </a-button>
+        <a-button
+          class="flash-actions__btn"
+          @click="handle(merge)"
+        >
+          {{ $t("flash.merge") }}
+        </a-button>
+        <a-button
+          class="flash-actions__btn"
           :loading="exporting"
           @click="exportAll"
-          block
         >
           {{ $t("flash.export") }}
         </a-button>
-      </a-col>
-    </a-row>
+      </div>
+    </section>
 
     <a-modal
       v-model:open="mergeModalOpen"
@@ -563,6 +567,41 @@ const flashCheckAllChange = () => {
 .flash-row-actions__sep {
   color: rgba(255, 255, 255, 0.25);
   user-select: none;
+}
+
+.flash-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+}
+
+.flash-actions__option {
+  display: flex;
+  align-items: center;
+}
+
+.flash-actions__btns {
+  display: flex;
+  align-items: stretch;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.flash-actions__btn {
+  flex: 1;
+  min-width: 112px;
+  height: 36px;
+}
+
+.flash-actions__btn--primary {
+  flex: 1.6;
+  min-width: 140px;
+  font-weight: 600;
 }
 
 .merge-name-hint {
