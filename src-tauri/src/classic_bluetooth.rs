@@ -21,11 +21,11 @@ pub struct ClassicBtDevice {
 mod win {
     use super::ClassicBtDevice;
     use std::collections::HashMap;
-    use std::sync::{Arc, Mutex, mpsc};
+    use std::sync::{mpsc, Arc, Mutex};
     use std::thread;
     use std::time::Duration;
-    use tauri::Window;
-    use windows::core::{Interface, Ref, HSTRING, IInspectable};
+    use tauri::{Emitter, WebviewWindow};
+    use windows::core::{IInspectable, Interface, Ref, HSTRING};
     use windows::Devices::Enumeration::{
         DeviceInformation, DeviceInformationKind, DeviceInformationUpdate, DeviceWatcher,
     };
@@ -51,7 +51,7 @@ mod win {
     }
 
     struct WatcherContext {
-        window: Window,
+        window: WebviewWindow,
         by_id: Mutex<HashMap<String, CachedEntry>>,
     }
 
@@ -171,7 +171,7 @@ mod win {
         }
     }
 
-    fn emit_entry(window: &Window, entry: &CachedEntry) {
+    fn emit_entry(window: &WebviewWindow, entry: &CachedEntry) {
         let device = entry_to_device(entry);
         if let Ok(json) = serde_json::to_string(&device) {
             let _ = window.emit("classic_bluetooth_scan_event", json);
@@ -297,7 +297,7 @@ mod win {
         ])
     }
 
-    pub fn run_watcher(window: Window, stop_rx: mpsc::Receiver<()>) {
+    pub fn run_watcher(window: WebviewWindow, stop_rx: mpsc::Receiver<()>) {
         init_runtime();
 
         let ctx = Arc::new(WatcherContext {
@@ -374,7 +374,9 @@ mod win {
 }
 
 #[cfg(windows)]
-pub async fn start_classic_scan(window: tauri::Window) {
+pub async fn start_classic_scan(window: tauri::WebviewWindow) {
+    use tauri::Listener;
+
     let (tx, rx) = mpsc::channel();
 
     let listen = window.listen("stop_classic_bluetooth_scan", move |_event| {
@@ -388,4 +390,4 @@ pub async fn start_classic_scan(window: tauri::Window) {
 }
 
 #[cfg(not(windows))]
-pub async fn start_classic_scan(_window: tauri::Window) {}
+pub async fn start_classic_scan(_window: tauri::WebviewWindow) {}

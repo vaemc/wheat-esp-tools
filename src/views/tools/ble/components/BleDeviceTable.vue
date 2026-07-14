@@ -103,9 +103,9 @@ import { useRelativeTimeTick } from "../composables/useRelativeTimeTick";
 import {
   bytesToHex,
   displayName,
+  formatAgoShort,
   formatManufacturerId,
   rssiColor,
-  secondsSince,
 } from "../utils/bleFormat";
 
 const props = defineProps<{
@@ -132,15 +132,6 @@ function shortUuid(uuid: string): string {
     return `0x${u}`;
   }
   return `0x${u.slice(0, 4)}…${u.slice(-4)}`;
-}
-
-function formatAgoShort(lastSeen: number, _tick: number): string {
-  void _tick;
-  const sec = secondsSince(lastSeen);
-  if (sec <= 0) {
-    return t("ble.justNow");
-  }
-  return t("ble.secondsAgo", { n: sec });
 }
 
 function formatServicesShort(services: string[]): string {

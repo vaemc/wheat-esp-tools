@@ -1,8 +1,11 @@
 import { computed, onUnmounted, reactive, ref } from "vue";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
-import { invoke } from "@tauri-apps/api/tauri";
-import { appWindow } from "@tauri-apps/api/window";
+import { invoke } from "@tauri-apps/api/core";
+import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
 import type { BleDevicePayload, BleDeviceRecord, BleFilterState } from "../types";
+import { bytesToHex } from "../utils/bleFormat";
+
+const appWindow = getCurrentWebviewWindow();
 
 const STALE_TTL_SEC = 10;
 const PRUNE_INTERVAL_MS = 1000;
@@ -38,16 +41,16 @@ function matchesFilter(device: BleDeviceRecord, filter: BleFilterState): boolean
 
   const advQ = filter.adv.trim().toLowerCase().replace(/\s/g, "");
   if (advQ) {
-    const advHex = bytesToHex(device.adv).toLowerCase().replace(/\s/g, "");
-    const mfgHex = Object.values(device.manufacturer_data)
-      .flatMap((b) => b)
-      .map((x) => x.toString(16).padStart(2, "0"))
-      .join("");
-    const svcHex = Object.values(device.service_data)
-      .flatMap((b) => b)
-      .map((x) => x.toString(16).padStart(2, "0"))
-      .join("");
-    const blob = (advHex + mfgHex + svcHex).toLowerCase();
+    const advHex = bytesToHex(device.adv, "").toLowerCase();
+    const mfgHex = bytesToHex(
+      Object.values(device.manufacturer_data).flatMap((b) => b),
+      ""
+    ).toLowerCase();
+    const svcHex = bytesToHex(
+      Object.values(device.service_data).flatMap((b) => b),
+      ""
+    ).toLowerCase();
+    const blob = advHex + mfgHex + svcHex;
     if (!blob.includes(advQ)) {
       return false;
     }
@@ -58,10 +61,6 @@ function matchesFilter(device: BleDeviceRecord, filter: BleFilterState): boolean
   }
 
   return true;
-}
-
-function bytesToHex(bytes: number[]): string {
-  return bytes.map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
 export function useBleScanner() {

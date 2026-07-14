@@ -123,7 +123,7 @@ import { useI18n } from "vue-i18n";
 import type { ClassicBtDeviceRecord } from "../types";
 import PlaceholderHint from "@/components/PlaceholderHint.vue";
 import { useRelativeTimeTick } from "../composables/useRelativeTimeTick";
-import { displayName, rssiColor, secondsSince } from "../utils/bleFormat";
+import { displayName, formatAgoShort, rssiColor } from "../utils/bleFormat";
 
 defineProps<{
   devices: ClassicBtDeviceRecord[];
@@ -143,15 +143,6 @@ const columns = computed(() => [
   { title: t("ble.classicColStatus"), key: "status", width: 140 },
   { title: t("ble.colLastSeen"), key: "lastSeen", width: 72, align: "right" as const },
 ]);
-
-function formatAgoShort(lastSeen: number, _tick: number): string {
-  void _tick;
-  const sec = secondsSince(lastSeen);
-  if (sec <= 0) {
-    return t("ble.justNow");
-  }
-  return t("ble.secondsAgo", { n: sec });
-}
 
 function yesNo(v: boolean): string {
   return v ? t("ble.classicYes") : t("ble.classicNo");

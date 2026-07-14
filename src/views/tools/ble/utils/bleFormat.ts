@@ -1,3 +1,5 @@
+import i18n from "@/locales/i18n";
+
 const MANUFACTURER_NAMES: Record<number, string> = {
   0x004c: "Apple",
   0x0059: "Nordic",
@@ -46,24 +48,22 @@ export function rssiColor(rssi: number): string {
   return map[rssiLevel(rssi)];
 }
 
-/** 信号条 0–100，越近越强 */
-export function rssiBarPercent(rssi: number): number {
-  const clamped = Math.min(-30, Math.max(-100, rssi));
-  return Math.round(((clamped + 100) / 70) * 100);
-}
-
 /** 多久前见到（秒） */
 export function secondsSince(ts: number): number {
   return Math.max(0, Math.floor((Date.now() - ts) / 1000));
 }
 
-/** 新鲜度 0–100，10 秒内衰减 */
-export function freshnessPercent(lastSeen: number, ttlSec = 10): number {
-  const age = secondsSince(lastSeen);
-  return Math.max(0, Math.round((1 - age / ttlSec) * 100));
-}
-
 export function displayName(name: string, unknownLabel: string): string {
   const trimmed = name?.trim();
   return trimmed || unknownLabel;
+}
+
+/** `_tick` 仅用于驱动模板刷新，不参与计算 */
+export function formatAgoShort(lastSeen: number, _tick: number): string {
+  void _tick;
+  const sec = secondsSince(lastSeen);
+  if (sec <= 0) {
+    return i18n.global.t("ble.justNow");
+  }
+  return i18n.global.t("ble.secondsAgo", { n: sec });
 }

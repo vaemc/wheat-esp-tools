@@ -1,18 +1,16 @@
 use std::io;
 use windows::core::GUID;
 use windows::Win32::Devices::DeviceAndDriverInstallation::{
-    SetupDiDestroyDeviceInfoList, SetupDiEnumDeviceInfo, SetupDiGetClassDevsW,
-    SetupDiGetDeviceInstanceIdW, SetupDiGetDevicePropertyW, SetupDiGetDeviceRegistryPropertyW,
-    SetupDiOpenDevRegKey, CM_Get_Device_IDW, CM_Get_Parent, CONFIGRET, CR_SUCCESS,
+    CM_Get_Device_IDW, CM_Get_Parent, SetupDiDestroyDeviceInfoList, SetupDiEnumDeviceInfo,
+    SetupDiGetClassDevsW, SetupDiGetDeviceInstanceIdW, SetupDiGetDevicePropertyW,
+    SetupDiGetDeviceRegistryPropertyW, SetupDiOpenDevRegKey, CONFIGRET, CR_SUCCESS,
     DIGCF_DEVICEINTERFACE, DIGCF_PRESENT, DIREG_DEV, HDEVINFO, SETUP_DI_REGISTRY_PROPERTY,
     SP_DEVINFO_DATA,
 };
 use windows::Win32::Devices::Properties::{
     DEVPKEY_Device_BusReportedDeviceDesc, DEVPROP_TYPE_STRING,
 };
-use windows::Win32::Foundation::{
-    DEVPROPKEY, ERROR_INSUFFICIENT_BUFFER, ERROR_NO_MORE_ITEMS,
-};
+use windows::Win32::Foundation::{DEVPROPKEY, ERROR_INSUFFICIENT_BUFFER, ERROR_NO_MORE_ITEMS};
 use windows::Win32::System::Registry::{
     RegCloseKey, RegOpenKeyExW, RegQueryValueExW, HKEY, HKEY_LOCAL_MACHINE, KEY_READ, REG_SZ,
 };
@@ -69,18 +67,11 @@ pub fn list_ports() -> io::Result<Vec<PortInfo>> {
             continue;
         }
 
-        let friendly_name = read_registry_string(
-            device_info_set,
-            &dev_info_data,
-            SPDRP_FRIENDLYNAME,
-        )
-        .unwrap_or_default();
-        let hardware_id = read_registry_string(
-            device_info_set,
-            &dev_info_data,
-            SPDRP_HARDWAREID,
-        )
-        .unwrap_or_default();
+        let friendly_name =
+            read_registry_string(device_info_set, &dev_info_data, SPDRP_FRIENDLYNAME)
+                .unwrap_or_default();
+        let hardware_id = read_registry_string(device_info_set, &dev_info_data, SPDRP_HARDWAREID)
+            .unwrap_or_default();
         let bus_reported_desc = read_device_property(
             device_info_set,
             &dev_info_data,
@@ -170,19 +161,15 @@ fn read_devinst_instance_id(devinst: u32) -> Option<String> {
 
 fn read_instance_id(device_info_set: HDEVINFO, dev_info_data: &SP_DEVINFO_DATA) -> Option<String> {
     let mut buffer = vec![0u16; 512];
-    unsafe {
-        SetupDiGetDeviceInstanceIdW(
-            device_info_set,
-            dev_info_data,
-            Some(&mut buffer),
-            None,
-        )
-    }
-    .ok()?;
+    unsafe { SetupDiGetDeviceInstanceIdW(device_info_set, dev_info_data, Some(&mut buffer), None) }
+        .ok()?;
     Some(wide_to_string(&buffer))
 }
 
-fn read_registry_serial(device_info_set: HDEVINFO, dev_info_data: &SP_DEVINFO_DATA) -> Option<String> {
+fn read_registry_serial(
+    device_info_set: HDEVINFO,
+    dev_info_data: &SP_DEVINFO_DATA,
+) -> Option<String> {
     let key = unsafe {
         SetupDiOpenDevRegKey(
             device_info_set,
@@ -245,7 +232,10 @@ impl Drop for RegKeyGuard {
 }
 
 fn read_reg_value(key: HKEY, value_name: &str) -> Option<String> {
-    let value_name: Vec<u16> = value_name.encode_utf16().chain(std::iter::once(0)).collect();
+    let value_name: Vec<u16> = value_name
+        .encode_utf16()
+        .chain(std::iter::once(0))
+        .collect();
     let mut buffer = vec![0u16; 256];
     let mut size = (buffer.len() * 2) as u32;
     let mut kind = REG_SZ;

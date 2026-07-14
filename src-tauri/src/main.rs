@@ -4,6 +4,8 @@
 use btleplug::api::Peripheral;
 use btleplug::api::{Central, CentralEvent, Manager as _, ScanFilter};
 use btleplug::platform::{Adapter, Manager, PeripheralId};
+use esp_nvs_partition_tool::partition::{DataValue, EntryContent, NvsEntry};
+use esp_nvs_partition_tool::NvsPartition;
 use futures::stream::StreamExt;
 use serialport::available_ports;
 use std::collections::HashMap;
@@ -13,8 +15,7 @@ use std::path::Path;
 use std::process::Command;
 use std::sync::mpsc::{self, TryRecvError};
 use std::time::SystemTime;
-use esp_nvs_partition_tool::partition::{DataValue, EntryContent, NvsEntry};
-use esp_nvs_partition_tool::NvsPartition;
+use tauri::{Emitter, Listener, WebviewWindow};
 
 mod classic_bluetooth;
 mod serial;
@@ -67,7 +68,10 @@ fn format_nvs_value(value: &DataValue) -> String {
             if bytes.iter().all(|b| b.is_ascii_graphic() || *b == b' ') {
                 String::from_utf8_lossy(bytes).into_owned()
             } else {
-                format!("0x{}", bytes.iter().map(|b| format!("{b:02x}")).collect::<String>())
+                format!(
+                    "0x{}",
+                    bytes.iter().map(|b| format!("{b:02x}")).collect::<String>()
+                )
             }
         }
         other => other.to_string(),
@@ -125,7 +129,10 @@ fn parse_unsigned(s: &str) -> Result<u128, String> {
 
 fn parse_hex_bytes(s: &str) -> Result<Vec<u8>, String> {
     let raw = s.trim();
-    let body = raw.strip_prefix("0x").or_else(|| raw.strip_prefix("0X")).unwrap_or(raw);
+    let body = raw
+        .strip_prefix("0x")
+        .or_else(|| raw.strip_prefix("0X"))
+        .unwrap_or(raw);
     // 允许中间空白 / 冒号 / 短横，便于粘贴 "AA:BB CC-DD"
     let cleaned: String = body
         .chars()
@@ -204,9 +211,9 @@ fn apply_edits(partition: &mut NvsPartition, edits: &[NvsEdit]) -> Result<(), St
     for edit in edits {
         match edit.op.as_str() {
             "delete" => {
-                partition.entries.retain(|e| {
-                    !(e.namespace == edit.namespace && e.key == edit.key)
-                });
+                partition
+                    .entries
+                    .retain(|e| !(e.namespace == edit.namespace && e.key == edit.key));
             }
             "update" => {
                 let value_type = edit.value_type.as_deref().ok_or("update 缺少 value_type")?;
@@ -222,10 +229,7 @@ fn apply_edits(partition: &mut NvsPartition, edits: &[NvsEdit]) -> Result<(), St
                     }
                 }
                 if !hit {
-                    return Err(format!(
-                        "未找到要更新的键: {}/{}",
-                        edit.namespace, edit.key
-                    ));
+                    return Err(format!("未找到要更新的键: {}/{}", edit.namespace, edit.key));
                 }
             }
             "add" => {
@@ -239,9 +243,11 @@ fn apply_edits(partition: &mut NvsPartition, edits: &[NvsEdit]) -> Result<(), St
                 if edit.key.len() > 15 {
                     return Err(format!("键长度超过 15: {}", edit.key));
                 }
-                partition
-                    .entries
-                    .push(NvsEntry::new_data(edit.namespace.clone(), edit.key.clone(), dv));
+                partition.entries.push(NvsEntry::new_data(
+                    edit.namespace.clone(),
+                    edit.key.clone(),
+                    dv,
+                ));
             }
             other => return Err(format!("未知的编辑操作: {other}")),
         }
@@ -254,11 +260,7 @@ fn parse_nvs_partition(path: &str) -> Result<Vec<NvsKeyValue>, String> {
     let bytes = fs::read(path).map_err(|e| format!("读取文件失败: {e}"))?;
     let partition =
         NvsPartition::try_from_bytes(bytes).map_err(|e| format!("解析 NVS 分区失败: {e}"))?;
-    Ok(partition
-        .entries
-        .iter()
-        .filter_map(entry_to_row)
-        .collect())
+    Ok(partition.entries.iter().filter_map(entry_to_row).collect())
 }
 
 /// 在原 NVS 二进制基础上应用编辑，重新生成等大小的分区文件。
@@ -352,7 +354,7 @@ fn generate_nvs_from_csv(
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
 struct FileInfo {
-    name:String,
+    name: String,
     is_dir: bool,
     is_file: bool,
     len: u64,
@@ -364,11 +366,7 @@ async fn get_central(manager: &Manager) -> Adapter {
     adapters.into_iter().nth(0).unwrap()
 }
 
-async fn emit_ble_device(
-    window: &tauri::Window,
-    central: &Adapter,
-    id: &PeripheralId,
-) {
+async fn emit_ble_device(window: &WebviewWindow, central: &Adapter, id: &PeripheralId) {
     let Ok(peripheral) = central.peripheral(id).await else {
         return;
     };
@@ -387,12 +385,7 @@ async fn emit_ble_device(
             .iter()
             .map(|(uuid, data)| (uuid.to_string(), data.clone()))
             .collect(),
-        adv: props
-            .service_data
-            .values()
-            .flatten()
-            .cloned()
-            .collect(),
+        adv: props.service_data.values().flatten().cloned().collect(),
     };
 
     let _ = window.emit(
@@ -402,7 +395,7 @@ async fn emit_ble_device(
 }
 
 #[tauri::command]
-async fn start_ble_advertisement_scan(window: tauri::Window) {
+async fn start_ble_advertisement_scan(window: WebviewWindow) {
     let (tx, rx) = mpsc::channel();
 
     let manager = Manager::new().await.unwrap();
@@ -452,7 +445,7 @@ async fn start_ble_advertisement_scan(window: tauri::Window) {
 }
 
 #[tauri::command]
-async fn start_classic_bluetooth_scan(window: tauri::Window) {
+async fn start_classic_bluetooth_scan(window: WebviewWindow) {
     classic_bluetooth::start_classic_scan(window).await;
 }
 
@@ -473,7 +466,7 @@ fn get_serial_port_details() -> Vec<serial::port_info::SerialPortEntry> {
 #[tauri::command]
 fn get_current_dir() -> String {
     let path = env::current_dir().unwrap();
-   path.display().to_string()
+    path.display().to_string()
 }
 
 #[tauri::command]
@@ -495,7 +488,12 @@ fn open_directory_in_explorer(path: &str) {
 fn get_file_info(path: &str) -> FileInfo {
     let metadata = fs::metadata(path).unwrap();
     FileInfo {
-        name:Path::new(path).file_name().unwrap().to_str().unwrap().to_string(),
+        name: Path::new(path)
+            .file_name()
+            .unwrap()
+            .to_str()
+            .unwrap()
+            .to_string(),
         is_dir: metadata.is_dir(),
         is_file: metadata.is_file(),
         len: metadata.len(),
@@ -516,7 +514,9 @@ fn main() {
     }
 
     tauri::Builder::default()
-        .setup(|_app| Ok(()))
+        .plugin(tauri_plugin_fs::init())
+        .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_shell::init())
         .invoke_handler(tauri::generate_handler![
             get_serial_port_list,
             get_serial_port_details,

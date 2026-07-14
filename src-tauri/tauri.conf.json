@@ -2,92 +2,64 @@
   "build": {
     "beforeDevCommand": "yarn dev",
     "beforeBuildCommand": "yarn build",
-    "devPath": "http://localhost:1420",
-    "distDir": "../dist",
-    "withGlobalTauri": false
+    "frontendDist": "../dist",
+    "devUrl": "http://localhost:1420"
   },
-  "package": {
-    "productName": "Wheat ESP Tools",
-    "version": "1.0.0"
-  },
-  "tauri": {
-    "allowlist": {
-      "notification": {
-        "all": true
+  "bundle": {
+    "copyright": "Copyright © 2026 wheat <vaemc520@qq.com>",
+    "publisher": "wheat",
+    "windows": {
+      "wix": {
+        "language": "zh-CN"
       },
-      "all": false,
-      "process": { "relaunch": true },
-      "fs": { "all": true, "scope": ["**"] },
-      "path": { "all": true },
-      "os": {
-        "all": true
+      "nsis": {
+        "installerIcon": "icons/icon.ico"
       },
-      "dialog": {
-        "all": true,
-        "open": true
-      },
-      "window": {
-        "create": true,
-        "maximize": true,
-        "setTitle": true
-      },
-      "shell": {
-        "all": true,
-        "execute": true,
-        "sidecar": true,
-        "open": true,
-        "scope": [
-          { "name": "bin/esptool", "args": true, "sidecar": true }
-        ]
-      },
-      "protocol": {
-        "asset": true,
-        "assetScope": ["**"]
+      "webviewInstallMode": {
+        "type": "embedBootstrapper"
       }
     },
-    "bundle": {
-      "copyright": "Copyright © 2026 wheat <vaemc520@qq.com>",
-      "publisher": "wheat",
-      "windows": {
-        "wix": {
-          "language": "zh-CN"
-        },
-        "nsis": {
-          "installerIcon": "icons/icon.ico"
-        },
-        "webviewInstallMode": {
-          "type": "embedBootstrapper"
-        }
-      },
-      "externalBin": ["bin/esptool"],
-      "active": true,
-      "icon": [
-        "icons/32x32.png",
-        "icons/128x128.png",
-        "icons/128x128@2x.png",
-        "icons/icon.icns",
-        "icons/icon.ico"
-      ],
-      "identifier": "com.vaemc.wheat.esp.tools",
-      "targets": "all"
-    },
-    "security": {
-      "csp": null
-    },
-    "updater": {
-      "active": false
-    },
+    "externalBin": [
+      "bin/esptool"
+    ],
+    "active": true,
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "targets": "all"
+  },
+  "productName": "Wheat ESP Tools",
+  "mainBinaryName": "Wheat ESP Tools",
+  "version": "1.0.0",
+  "identifier": "com.vaemc.wheat.esp.tools",
+  "app": {
+    "withGlobalTauri": false,
     "windows": [
       {
+        "label": "main",
         "center": true,
-        "fileDropEnabled": true,
+        "dragDropEnabled": true,
         "theme": "Dark",
         "height": 900,
         "minHeight": 800,
         "title": "Wheat ESP Tools",
         "width": 1200,
-        "minWidth": 950
+        "minWidth": 950,
+        "useHttpsScheme": true
       }
-    ]
+    ],
+    "security": {
+      "assetProtocol": {
+        "scope": [
+          "**"
+        ],
+        "enable": true
+      },
+      "csp": null
+    }
   }
 }

@@ -28,10 +28,6 @@ export const useHistoryStore = defineStore("history", {
   }),
 
   getters: {
-    items(state): HistoryPathItem[] {
-      return state.paths.map(toHistoryItem);
-    },
-
     filteredItems(state): HistoryPathItem[] {
       const q = state.keyword.trim().toLowerCase();
       const items = state.paths.map(toHistoryItem);

@@ -18,6 +18,9 @@ dist
 dist-ssr
 *.local
 
+# Tauri 2 build-time ACL schemas
+src-tauri/gen/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

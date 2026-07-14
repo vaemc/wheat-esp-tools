@@ -1,17 +1,13 @@
 import { computed, onUnmounted, reactive, ref } from "vue";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
-import { invoke } from "@tauri-apps/api/tauri";
-import { appWindow } from "@tauri-apps/api/window";
+import { invoke } from "@tauri-apps/api/core";
+import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
 import type {
   ClassicBtDevicePayload,
   ClassicBtDeviceRecord,
   ClassicBtFilterState,
 } from "../types";
-
-const STALE_TTL_SEC = 30;
-const PRUNE_INTERVAL_MS = 2000;
-/** 经典蓝牙由 DeviceWatcher 维护，不按 TTL 剔除（与 BleScanner.py 一致） */
-const CLASSIC_PRUNE_ENABLED = false;
+const appWindow = getCurrentWebviewWindow()
 
 function defaultFilter(): ClassicBtFilterState {
   return {
@@ -67,7 +63,6 @@ export function useClassicBtScanner() {
   const filter = reactive(defaultFilter());
 
   let unlisten: UnlistenFn | null = null;
-  let pruneTimer: ReturnType<typeof setInterval> | null = null;
 
   const deviceList = computed(() =>
     [...devices.value.values()].sort((a, b) => {
@@ -108,23 +103,6 @@ export function useClassicBtScanner() {
     devices.value = new Map(devices.value);
   }
 
-  function pruneStale() {
-    if (!CLASSIC_PRUNE_ENABLED) {
-      return;
-    }
-    const cutoff = Date.now() - STALE_TTL_SEC * 1000;
-    let changed = false;
-    for (const [addr, dev] of devices.value) {
-      if (dev.lastSeen < cutoff) {
-        devices.value.delete(addr);
-        changed = true;
-      }
-    }
-    if (changed) {
-      devices.value = new Map(devices.value);
-    }
-  }
-
   function resetFilter() {
     Object.assign(filter, defaultFilter());
   }
@@ -139,7 +117,6 @@ export function useClassicBtScanner() {
     }
     clearDevices();
     scanning.value = true;
-    pruneTimer = setInterval(pruneStale, PRUNE_INTERVAL_MS);
     await invoke("start_classic_bluetooth_scan");
   }
 
@@ -149,10 +126,6 @@ export function useClassicBtScanner() {
     }
     scanning.value = false;
     await appWindow.emit("stop_classic_bluetooth_scan", {});
-    if (pruneTimer) {
-      clearInterval(pruneTimer);
-      pruneTimer = null;
-    }
   }
 
   async function toggleScan() {
@@ -181,9 +154,6 @@ export function useClassicBtScanner() {
 
   onUnmounted(() => {
     unlisten?.();
-    if (pruneTimer) {
-      clearInterval(pruneTimer);
-    }
     if (scanning.value) {
       appWindow.emit("stop_classic_bluetooth_scan", {});
     }

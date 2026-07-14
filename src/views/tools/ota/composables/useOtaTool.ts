@@ -1,7 +1,6 @@
 import { computed, ref, shallowRef } from "vue";
-import { open } from "@tauri-apps/api/dialog";
-import { readBinaryFile, writeBinaryFile } from "@tauri-apps/api/fs";
-import { join } from "@tauri-apps/api/path";
+import { open } from "@tauri-apps/plugin-dialog";
+import { readFile, writeFile } from "@tauri-apps/plugin-fs";
 import moment from "moment";
 import { openFileInExplorer } from "@/utils/common";
 import { runEsptoolEraseRegion } from "@/utils/esptoolErase";
@@ -18,14 +17,11 @@ import {
 import {
   formatHexDisplay,
   formatHexForEsptool,
-  parsePartitionTableBinary,
   type FlashPartition,
 } from "@/utils/partitionBin";
-import {
-  PARTITION_TABLE_SIZE,
-  resolvePartitionTableOffset,
-} from "@/utils/partitionTable";
-import { getTempWorkDir } from "@/utils/tempWorkDir";
+import { readPartitionTableFromDevice } from "@/utils/partitionDeviceRead";
+import { resolvePartitionTableOffset } from "@/utils/partitionTable";
+import { joinTempWorkDir } from "@/utils/tempWorkDir";
 import { usePortStore } from "@/stores/port";
 import { usePartitionTableStore } from "@/stores/partitionTable";
 import { storeToRefs } from "pinia";
@@ -62,7 +58,7 @@ export function useOtaTool() {
   });
 
   async function tempPath(name: string): Promise<string> {
-    return join(await getTempWorkDir("ota"), name);
+    return joinTempWorkDir("ota", name);
   }
 
   async function readFlashBytes(
@@ -79,7 +75,7 @@ export function useOtaTool() {
       formatHexForEsptool(size),
       path
     );
-    return new Uint8Array(await readBinaryFile(path));
+    return new Uint8Array(await readFile(path));
   }
 
   async function refreshOtadata(
@@ -101,13 +97,11 @@ export function useOtaTool() {
     const port = requirePort();
     loading.value = true;
     try {
-      const tableBytes = await readFlashBytes(
+      const parsed = await readPartitionTableFromDevice(
         port,
-        resolvePartitionTableOffset(tableOffset.value),
-        PARTITION_TABLE_SIZE,
-        `pt-ota-${moment().valueOf()}.bin`
+        baudRate.value,
+        resolvePartitionTableOffset(tableOffset.value)
       );
-      const parsed = parsePartitionTableBinary(tableBytes);
       if (parsed.length === 0) {
         throw new Error("EMPTY_PARTITION");
       }
@@ -187,7 +181,7 @@ export function useOtaTool() {
     try {
       const next = buildSwitchedOtadata(raw, target, otaApps.value);
       const path = await tempPath(`otadata-switch-${moment().valueOf()}.bin`);
-      await writeBinaryFile(path, next);
+      await writeFile(path, next);
       await runEsptoolWriteFlash(
         port,
         baudRate.value,

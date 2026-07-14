@@ -1,4 +1,4 @@
-import { Command } from "@tauri-apps/api/shell";
+import { Command } from "@tauri-apps/plugin-shell";
 import { writeln } from "@/bus/terminal";
 
 import mitt from "mitt";
@@ -13,6 +13,11 @@ type CliEvents = {
 const emitter = mitt<CliEvents>();
 export default emitter;
 
+/** Tauri 2 shell 的 data 事件会保留行尾换行；xterm.writeln 还会再追加一次 */
+function normalizeCliLine(line: string) {
+  return line.replace(/\r?\n$/, "").replace(/\r$/, "");
+}
+
 export function execute(name: string, cmd: string[]) {
   cmd = cmd.filter((x: string) => x != "");
   let command = Command.sidecar(`bin/${name}`, cmd as string[]);
@@ -23,12 +28,14 @@ export function execute(name: string, cmd: string[]) {
     emitter.emit("error", error);
   });
   command.stdout.on("data", (line) => {
-    writeln(line);
-    emitter.emit("stdout", line);
+    const text = normalizeCliLine(line);
+    writeln(text);
+    emitter.emit("stdout", text);
   });
   command.stderr.on("data", (line) => {
-    writeln(line);
-    emitter.emit("stderr", line);
+    const text = normalizeCliLine(line);
+    writeln(text);
+    emitter.emit("stderr", text);
   });
   command.spawn();
 }

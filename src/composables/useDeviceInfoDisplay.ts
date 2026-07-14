@@ -16,8 +16,7 @@ export interface DeviceInfoItem {
 export function useDeviceInfoDisplay() {
   const { t } = useI18n();
   const store = useDeviceStore();
-  const portStore = usePortStore();
-  const { selectedPort } = storeToRefs(portStore);
+  const { selectedPort } = storeToRefs(usePortStore());
   const { deviceInfo: d } = storeToRefs(store);
 
   const allItems = computed((): DeviceInfoItem[] => {
@@ -99,7 +98,6 @@ export function useDeviceInfoDisplay() {
 
   return {
     store,
-    portStore,
     selectedPort,
     allItems,
     primaryItems,

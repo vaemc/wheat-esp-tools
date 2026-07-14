@@ -33,7 +33,7 @@ export const EMPTY_DEVICE_INFO: EspDeviceInfo = {
 const CHIP_COMMANDS = ["chip-id", "flash-id", "read-mac", "get-security-info"] as const;
 
 /** 解析 esptool chip-id / flash-id / read-mac 等命令输出 */
-export function parseEsptoolDeviceOutput(log: string): EspDeviceInfo {
+function parseEsptoolDeviceOutput(log: string): EspDeviceInfo {
   const info: EspDeviceInfo = { ...EMPTY_DEVICE_INFO };
 
   for (const rawLine of log.split(/\r?\n/)) {

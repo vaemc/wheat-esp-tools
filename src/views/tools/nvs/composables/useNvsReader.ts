@@ -1,7 +1,5 @@
 import { computed, ref } from "vue";
-import { open } from "@tauri-apps/api/dialog";
-import { readBinaryFile } from "@tauri-apps/api/fs";
-import { join } from "@tauri-apps/api/path";
+import { open } from "@tauri-apps/plugin-dialog";
 import moment from "moment";
 import { runEsptoolReadFlash } from "@/utils/esptoolRead";
 import { runEsptoolWriteFlash } from "@/utils/esptoolWrite";
@@ -10,12 +8,9 @@ import {
   formatHexDisplay,
   formatHexForEsptool,
   parseSizeParam,
-  parsePartitionTableBinary,
 } from "@/utils/partitionBin";
-import {
-  PARTITION_TABLE_SIZE,
-  resolvePartitionTableOffset,
-} from "@/utils/partitionTable";
+import { readPartitionTableFromDevice } from "@/utils/partitionDeviceRead";
+import { resolvePartitionTableOffset } from "@/utils/partitionTable";
 import {
   generateNvsFromCsv,
   parseNvsPartition,
@@ -24,13 +19,13 @@ import {
   type NvsKeyValue,
   type NvsRebuildSummary,
 } from "@/utils/nvs";
-import { getTempWorkDir } from "@/utils/tempWorkDir";
+import { joinTempWorkDir } from "@/utils/tempWorkDir";
 import { usePortStore } from "@/stores/port";
 import { usePartitionTableStore } from "@/stores/partitionTable";
 import { storeToRefs } from "pinia";
 
 async function nvsTempPath(name: string): Promise<string> {
-  return join(await getTempWorkDir("nvs"), name);
+  return joinTempWorkDir("nvs", name);
 }
 
 export interface NvsEditableRow extends NvsKeyValue {
@@ -133,20 +128,12 @@ export function useNvsReader() {
 
   /** 从设备读取分区表并填充 NVS 偏移/大小 */
   async function detectNvsPartitionFromDevice(port: string): Promise<void> {
-    const dir = await getTempWorkDir("partitions");
-    const ptPath = await join(dir, `pt-read-${moment().valueOf()}.bin`);
     const ptOffset = resolvePartitionTableOffset(tableOffset.value);
-
-    await runEsptoolReadFlash(
+    const partitions = await readPartitionTableFromDevice(
       port,
       baudRate.value,
-      formatHexForEsptool(ptOffset),
-      formatHexForEsptool(PARTITION_TABLE_SIZE),
-      ptPath
+      ptOffset
     );
-
-    const buffer = await readBinaryFile(ptPath);
-    const partitions = parsePartitionTableBinary(new Uint8Array(buffer));
     const nvs = findNvsPartition(partitions);
 
     if (!nvs) {

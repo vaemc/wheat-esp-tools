@@ -1,0 +1,42 @@
+{
+  "identifier": "migrated",
+  "description": "permissions that were migrated from v1",
+  "local": true,
+  "windows": ["main"],
+  "permissions": [
+    "core:default",
+    "core:event:default",
+    "fs:allow-read-file",
+    "fs:allow-read-text-file",
+    "fs:allow-write-file",
+    "fs:allow-read-dir",
+    "fs:allow-mkdir",
+    "fs:allow-remove",
+    {
+      "identifier": "fs:scope",
+      "allow": ["**"]
+    },
+    {
+      "identifier": "shell:allow-execute",
+      "allow": [
+        {
+          "args": true,
+          "name": "bin/esptool",
+          "sidecar": true
+        }
+      ]
+    },
+    {
+      "identifier": "shell:allow-spawn",
+      "allow": [
+        {
+          "args": true,
+          "name": "bin/esptool",
+          "sidecar": true
+        }
+      ]
+    },
+    "shell:allow-open",
+    "dialog:allow-open"
+  ]
+}

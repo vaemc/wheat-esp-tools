@@ -55,7 +55,7 @@ import {
   AppstoreAddOutlined,
 } from "@ant-design/icons-vue";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
-import { open } from "@tauri-apps/api/dialog";
+import { open } from "@tauri-apps/plugin-dialog";
 import { useI18n } from "vue-i18n";
 
 const props = withDefaults(
@@ -116,25 +116,24 @@ const safeListen = async (
 };
 
 onMounted(() => {
-  void safeListen("tauri://file-drop", (event) => {
+  void safeListen("tauri://drag-drop", (event) => {
     dragging.value = false;
-    const payload = event.payload as string[] | string | undefined;
-    if (Array.isArray(payload)) {
-      if (payload.length === 1 && !props.isMultiple) {
-        emit("drop", payload[0]);
-      } else {
-        emit("drop", payload);
-      }
-    } else if (typeof payload === "string") {
-      emit("drop", payload);
+    const paths = (event.payload as { paths?: string[] } | undefined)?.paths;
+    if (!Array.isArray(paths) || paths.length === 0) {
+      return;
+    }
+    if (paths.length === 1 && !props.isMultiple) {
+      emit("drop", paths[0]);
+    } else {
+      emit("drop", paths);
     }
   });
 
-  void safeListen("tauri://file-drop-hover", () => {
+  void safeListen("tauri://drag-enter", () => {
     dragging.value = true;
   });
 
-  void safeListen("tauri://file-drop-cancelled", () => {
+  void safeListen("tauri://drag-leave", () => {
     dragging.value = false;
   });
 });

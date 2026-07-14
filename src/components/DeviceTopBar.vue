@@ -36,9 +36,13 @@
           :class="`stat-pill--${item.key}`"
         >
           <span class="stat-label">{{ item.label }}</span>
-          <p v-if="item.copy" v-copy class="stat-value stat-value--mono stat-value--copy">
+          <span
+            v-if="item.copy"
+            v-copy
+            class="stat-value stat-value--mono stat-value--copy"
+          >
             {{ item.value }}
-          </p>
+          </span>
           <span
             v-else
             class="stat-value"
@@ -62,9 +66,13 @@
                 class="more-row"
               >
                 <span class="more-label">{{ item.label }}</span>
-                <p v-if="item.copy" v-copy class="more-value more-value--mono">
+                <span
+                  v-if="item.copy"
+                  v-copy
+                  class="more-value more-value--mono more-value--copy"
+                >
                   {{ item.value }}
-                </p>
+                </span>
                 <span
                   v-else
                   class="more-value"
@@ -194,6 +202,7 @@ onMounted(() => {
 }
 .stat-pill {
   display: inline-flex;
+  flex-direction: row;
   align-items: center;
   gap: 6px;
   max-width: 280px;
@@ -201,6 +210,7 @@ onMounted(() => {
   border-radius: 6px;
   background: rgba(0, 0, 0, 0.22);
   border: 1px solid rgba(255, 255, 255, 0.08);
+  line-height: 1.2;
 }
 .stat-pill--chip {
   border-color: rgba(22, 119, 255, 0.35);
@@ -214,13 +224,21 @@ onMounted(() => {
   border-color: rgba(250, 173, 20, 0.35);
   background: rgba(250, 173, 20, 0.1);
 }
+.stat-pill--psram {
+  border-color: rgba(114, 46, 209, 0.4);
+  background: rgba(114, 46, 209, 0.12);
+}
 .stat-label {
+  flex-shrink: 0;
   font-size: 11px;
+  line-height: 1.2;
   color: rgba(255, 255, 255, 0.45);
   white-space: nowrap;
 }
 .stat-value {
+  display: inline;
   font-size: 12px;
+  line-height: 1.2;
   font-weight: 500;
   color: rgba(255, 255, 255, 0.92);
   overflow: hidden;
@@ -232,7 +250,6 @@ onMounted(() => {
   font-size: 11px;
 }
 .stat-value--copy {
-  margin: 0;
   cursor: pointer;
 }
 .more-btn {
@@ -272,20 +289,25 @@ onMounted(() => {
   display: grid;
   grid-template-columns: 72px 1fr;
   gap: 8px;
-  align-items: start;
+  align-items: center;
+  line-height: 1.2;
 }
 .device-more-popover .more-label {
   font-size: 11px;
+  line-height: 1.2;
   color: rgba(255, 255, 255, 0.45);
 }
 .device-more-popover .more-value {
   font-size: 12px;
+  line-height: 1.2;
   color: rgba(255, 255, 255, 0.9);
   word-break: break-word;
-  margin: 0;
 }
 .device-more-popover .more-value--mono {
   font-family: Consolas, "Courier New", monospace;
   font-size: 11px;
+}
+.device-more-popover .more-value--copy {
+  cursor: pointer;
 }
 </style>

@@ -1,4 +1,4 @@
-import { Command } from "@tauri-apps/api/shell";
+import { Command } from "@tauri-apps/plugin-shell";
 
 /** 故意传入无效 chip，从 stderr 报错中获取完整支持列表 */
 export async function runEsptoolChipListProbe(): Promise<string> {

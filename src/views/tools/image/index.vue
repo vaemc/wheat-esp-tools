@@ -180,7 +180,7 @@ import { onBeforeUnmount, onMounted, ref } from "vue";
 import { message } from "ant-design-vue";
 import { useI18n } from "vue-i18n";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
-import { readBinaryFile } from "@tauri-apps/api/fs";
+import { readFile } from "@tauri-apps/plugin-fs";
 import ImageBatchGrid from "./components/ImageBatchGrid.vue";
 import { useImageBatch } from "./composables/useImageBatch";
 import {
@@ -251,7 +251,7 @@ async function onFileInputChange(event: Event) {
 
 async function loadFromPaths(paths: string[]) {
   try {
-    await addPaths(paths, readBinaryFile);
+    await addPaths(paths, readFile);
   } catch {
     message.error(t("image.loadFailed"));
   }
@@ -367,9 +367,8 @@ function downloadAllC() {
 onMounted(() => {
   void (async () => {
     try {
-      const off = await listen<string[]>("tauri://file-drop", (event) => {
-        const payload = event.payload;
-        const paths = Array.isArray(payload) ? payload : [payload];
+      const off = await listen<{ paths: string[] }>("tauri://drag-drop", (event) => {
+        const paths = event.payload?.paths ?? [];
         const imagePaths = paths.filter(
           (path) => typeof path === "string" && /\.(jpe?g|png|webp|bmp|gif)$/i.test(path)
         );

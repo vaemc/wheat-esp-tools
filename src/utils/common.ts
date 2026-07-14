@@ -1,10 +1,6 @@
-import { invoke } from "@tauri-apps/api/tauri";
-import {
-  readTextFile,
-  readDir,
-  removeFile as rf,
-  FileEntry,
-} from "@tauri-apps/api/fs";
+import { invoke } from "@tauri-apps/api/core";
+import { join } from "@tauri-apps/api/path";
+import { readTextFile, readDir, remove } from "@tauri-apps/plugin-fs";
 import { FileInfo, Firmware } from "@/model/model";
 import type { SerialPortDetail } from "@/types/serial";
 import {
@@ -48,12 +44,9 @@ export async function getChipTypeList(): Promise<string[]> {
 }
 
 export async function getFirmwareList() {
-  let fileList = (await readDir(
-    (await getCurrentDir()) + "\\firmware"
-  )) as FileEntry[];
-  return fileList.map((item) => {
-    return item.path;
-  });
+  const dir = await join(await getCurrentDir(), "firmware");
+  const fileList = await readDir(dir);
+  return Promise.all(fileList.map((item) => join(dir, item.name)));
 }
 
 export async function getIDFArgsConfig(path: string) {
@@ -126,5 +119,5 @@ export async function getFileInfo(path: string) {
 }
 
 export async function removeFile(path: string) {
-  await rf(path);
+  await remove(path);
 }
