@@ -7,8 +7,9 @@
       </div>
       <div class="flash-options-field">
         <span class="flash-options-label">{{ $t("firmware.baudRate") }}</span>
-        <a-segmented
+        <a-select
           v-model:value="baudRate"
+          class="baud-select"
           :options="baudRateOptions"
         />
       </div>
@@ -20,24 +21,33 @@
       </a-tooltip>
     </template>
     <template v-else>
-      <div class="flash-options-row">
-        <span class="flash-options-label">{{ $t("firmware.spiMode") }}</span>
-        <SPIMode v-model="spiMode" />
+      <div class="flash-options-grid">
+        <div class="flash-options-field flash-options-field--spi">
+          <span class="flash-options-label">{{ $t("firmware.spiMode") }}</span>
+          <SPIMode v-model="spiMode" />
+        </div>
+        <div class="flash-options-field flash-options-field--baud">
+          <span class="flash-options-label">{{ $t("firmware.baudRate") }}</span>
+          <a-select
+            v-model:value="baudRate"
+            class="baud-select"
+            :options="baudRateOptions"
+          />
+        </div>
+        <div class="flash-options-field flash-options-field--erase">
+          <span class="flash-options-label">{{ $t("firmware.eraseOption") }}</span>
+          <a-checkbox v-model:checked="eraseBeforeFlash">
+            {{ $t("firmware.eraseFlash") }}
+            <span class="flash-options-hint">{{ $t("firmware.eraseFlashInfo") }}</span>
+          </a-checkbox>
+        </div>
       </div>
-      <div class="flash-options-row">
-        <span class="flash-options-label">{{ $t("firmware.baudRate") }}</span>
-        <a-segmented v-model:value="baudRate" :options="baudRateOptions" />
-      </div>
-      <a-checkbox v-model:checked="eraseBeforeFlash">
-        {{ $t("firmware.eraseFlash") }}
-        <span class="flash-options-hint">{{ $t("firmware.eraseFlashInfo") }}</span>
-      </a-checkbox>
     </template>
   </div>
 </template>
 <script setup lang="ts">
 import SPIMode from "@/components/SPIMode.vue";
-import { BAUD_RATE_OPTIONS } from "@/composables/useFlashOptions";
+import { toBaudSelectOptions } from "@/composables/useFlashOptions";
 
 defineProps<{
   popover?: boolean;
@@ -49,58 +59,67 @@ const eraseBeforeFlash = defineModel<boolean>("eraseBeforeFlash", {
   required: true,
 });
 
-const baudRateOptions = [...BAUD_RATE_OPTIONS];
+const baudRateOptions = toBaudSelectOptions();
 </script>
 <style scoped>
-.flash-options {
+.flash-options--popover {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  padding: 6px 10px;
-  margin-bottom: 8px;
-  background: rgba(0, 0, 0, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 6px;
-}
-.flash-options--popover {
   gap: 8px;
-  margin: 0;
-  padding: 0;
-  background: transparent;
-  border: none;
 }
+
+.flash-options-grid {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 12px 36px;
+}
+
 .flash-options-field {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
+  min-width: 0;
 }
-.flash-options--popover .flash-options-label {
+
+/* 与固件烧录页一致：按内容撑开，避免 dout 被挤出 */
+.flash-options-field--spi {
+  flex: 0 0 auto;
+}
+
+.flash-options-field--spi :deep(.ant-segmented) {
+  width: auto;
+}
+
+.flash-options-field--baud {
+  flex: 0 0 auto;
+}
+
+.baud-select {
+  width: 140px;
+}
+
+.flash-options-field--erase {
+  flex: 0 1 auto;
+}
+
+.flash-options-label {
   font-size: 12px;
+  color: rgba(255, 255, 255, 0.45);
 }
-.flash-options-field :deep(.ant-segmented) {
-  width: 100%;
-}
+
 .erase-check {
   margin-left: 4px;
 }
-.flash-options-row {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-.flash-options-label {
-  flex-shrink: 0;
-  min-width: 48px;
-  font-size: 11px;
-  color: rgba(255, 255, 255, 0.45);
-}
+
 .flash-options-hint {
-  margin-left: 2px;
+  margin-left: 4px;
   font-size: 11px;
   color: rgba(255, 255, 255, 0.35);
 }
+
 :deep(.ant-checkbox-wrapper) {
   font-size: 12px;
+  color: rgba(255, 255, 255, 0.65);
 }
 </style>

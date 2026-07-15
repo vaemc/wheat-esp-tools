@@ -1,30 +1,6 @@
 <template>
-  <a-layout class="app-root">
-    <a-layout-sider
-      class="app-sider"
-      :width="200"
-      collapsed-width="0"
-    >
-      <div class="sider-inner">
-        <a-menu
-          class="sider-menu"
-          :selected-keys="menuSelectedKeys"
-          theme="dark"
-          mode="inline"
-          @click="onMenuClick"
-        >
-          <a-menu-item v-for="item in menuRoutes" :key="item.name">
-            <span class="menu-item-content">
-              <MenuIcon class="menu-icon" :name="item.icon" />
-              <span class="menu-title">{{ t(item.titleKey) }}</span>
-            </span>
-          </a-menu-item>
-        </a-menu>
-        <div class="sider-footer">
-          <LanguageSwitch />
-        </div>
-      </div>
-    </a-layout-sider>
+  <div class="app-root">
+    <AppSider />
     <a-layout class="main-layout">
       <a-layout-header class="app-device-header">
         <DeviceTopBar />
@@ -48,85 +24,19 @@
         <Terminal />
       </footer>
     </a-layout>
-  </a-layout>
+  </div>
 </template>
 <script setup lang="ts">
 import Terminal from "@/components/Terminal.vue";
 import DeviceTopBar from "@/components/DeviceTopBar.vue";
-import LanguageSwitch from "@/components/LanguageSwitch.vue";
-import MenuIcon from "@/components/icons/MenuIcon.vue";
-import { computed } from "vue";
-import { useRoute, useRouter } from "vue-router";
-import { useI18n } from "vue-i18n";
-import { useMenuNavigation } from "@/composables/useMenuNavigation";
-import { getMenuItems } from "@/router/menu";
-import type { MenuProps } from "ant-design-vue";
-
-const route = useRoute();
-const router = useRouter();
-const { t } = useI18n();
-const { navigateTo } = useMenuNavigation();
-
-const menuRoutes = computed(() => getMenuItems(router));
-
-/** 菜单选中态仅跟随当前路由 */
-const menuSelectedKeys = computed(() =>
-  route.name ? [String(route.name)] : []
-);
-
-const onMenuClick: MenuProps["onClick"] = ({ key }) => {
-  void navigateTo(String(key));
-};
+import AppSider from "./AppSider.vue";
 </script>
 <style scoped>
 .app-root {
-  height: 100vh;
-  overflow: hidden;
-}
-
-.app-root :deep(.app-sider) {
-  height: 100vh;
-  overflow: hidden;
-  flex-shrink: 0;
-}
-
-.app-root :deep(.app-sider .ant-layout-sider-children) {
-  height: 100%;
-  overflow: hidden;
-}
-
-.sider-inner {
   display: flex;
-  flex-direction: column;
-  height: 100%;
+  flex-direction: row;
+  height: 100vh;
   overflow: hidden;
-}
-
-.sider-menu {
-  flex: 1;
-  min-height: 0;
-  overflow-x: hidden;
-  overflow-y: auto;
-  border-inline-end: none !important;
-}
-
-.sider-footer {
-  flex-shrink: 0;
-  padding: 12px 16px;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.menu-item-content {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.menu-icon {
-  font-size: 16px;
-  width: 16px;
-  height: 16px;
-  flex-shrink: 0;
 }
 
 .main-layout {

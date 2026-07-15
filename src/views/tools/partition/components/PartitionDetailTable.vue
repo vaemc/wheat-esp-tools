@@ -1,7 +1,8 @@
 <template>
   <div
     class="partition-detail-table-wrap"
-    :style="maxHeight ? { maxHeight: `${maxHeight}px` } : undefined"
+    :class="{ 'is-fill': fill }"
+    :style="maxHeight && !fill ? { maxHeight: `${maxHeight}px` } : undefined"
   >
     <table v-if="rows.length" class="partition-detail-table">
       <thead>
@@ -23,7 +24,9 @@
         </tr>
       </tbody>
     </table>
-    <PlaceholderHint v-else :text="emptyText" />
+    <div v-else class="empty-wrap">
+      <PlaceholderHint :text="emptyText" />
+    </div>
   </div>
 </template>
 <script setup lang="ts">
@@ -36,6 +39,8 @@ defineProps<{
   columns: PartitionDetailColumn[];
   emptyText: string;
   maxHeight?: number;
+  /** 填满父级高度并内部滚动 */
+  fill?: boolean;
 }>();
 </script>
 <style scoped>
@@ -46,6 +51,18 @@ defineProps<{
   background: rgba(0, 0, 0, 0.2);
   user-select: text;
   -webkit-user-select: text;
+}
+
+.partition-detail-table-wrap.is-fill {
+  height: 100%;
+}
+
+.empty-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 160px;
+  height: 100%;
 }
 
 .partition-detail-table {

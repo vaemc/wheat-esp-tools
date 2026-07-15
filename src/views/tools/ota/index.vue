@@ -1,147 +1,175 @@
 <template>
   <div class="ota-page">
-    <section class="panel">
-      <header class="panel-head">
-        <span class="panel-title">{{ $t("ota.options") }}</span>
-      </header>
-      <p class="panel-hint">{{ $t("ota.hint") }}</p>
-      <div class="options-row">
-        <label class="option-field">
-          <span class="option-label">{{ $t("ota.tableOffset") }}</span>
-          <a-input
-            v-model:value="tableOffset"
-            placeholder="0x8000"
-            class="mono"
-            :disabled="loading"
-          />
-        </label>
-        <label class="option-field">
-          <span class="option-label">{{ $t("ota.baudRate") }}</span>
-          <a-select v-model:value="baudRate" :options="baudOptions" />
-        </label>
+    <section class="toolbar panel">
+      <div class="toolbar-main">
+        <div class="toolbar-fields">
+          <label class="field">
+            <span class="field-label">{{ $t("ota.tableOffset") }}</span>
+            <a-input
+              v-model:value="tableOffset"
+              placeholder="0x8000"
+              class="offset-input mono"
+              :disabled="loading"
+              allow-clear
+            />
+          </label>
+          <label class="field">
+            <span class="field-label">{{ $t("ota.baudRate") }}</span>
+            <a-select
+              v-model:value="baudRate"
+              class="baud-select"
+              :options="baudOptions"
+              :disabled="loading"
+            />
+          </label>
+        </div>
+        <p class="toolbar-hint">{{ $t("ota.hint") }}</p>
+      </div>
+      <div class="toolbar-actions">
+        <span v-if="otadataPart" class="detected-info mono">
+          {{
+            $t("ota.otadataInfo", {
+              name: otadataPart.name,
+              offset: formatHexDisplay(otadataPart.offset),
+              size: formatHexDisplay(otadataPart.size),
+            })
+          }}
+        </span>
         <a-button type="primary" :loading="loading" @click="onLoad">
           {{ $t("ota.loadFromDevice") }}
         </a-button>
       </div>
-      <p v-if="otadataPart" class="detected-info mono">
-        {{
-          $t("ota.otadataInfo", {
-            name: otadataPart.name,
-            offset: formatHexDisplay(otadataPart.offset),
-            size: formatHexDisplay(otadataPart.size),
-          })
-        }}
-      </p>
     </section>
 
-    <section class="panel">
-      <header class="panel-head">
-        <span class="panel-title">{{ $t("ota.otadataTitle") }}</span>
-      </header>
-      <div v-if="otadataInfo?.copies?.length" class="otadata-grid mono">
-        <div
-          v-for="(copy, idx) in otadataInfo.copies"
-          :key="idx"
-          class="otadata-col"
-        >
-          <div class="otadata-label">
-            {{ idx === 0 ? $t("ota.copy0") : $t("ota.copy1") }}
-          </div>
-          <div>
-            SEQ:
-            <span :class="{ 'is-dim': !copy.valid }">
-              0x{{ hex8(copy.seq) }}
-            </span>
-          </div>
-          <div>
-            CRC:
-            <span :class="{ 'is-dim': !copy.valid }">
-              0x{{ hex8(copy.crc) }}
-            </span>
-          </div>
-          <a-tag
-            class="status-tag"
-            :color="copy.valid ? 'success' : 'default'"
+    <div class="ota-content">
+      <section class="panel panel-otadata">
+        <header class="panel-head">
+          <span class="panel-title">{{ $t("ota.otadataTitle") }}</span>
+          <a-button
+            danger
+            size="small"
+            :disabled="!otadataPart || loading"
+            :loading="loading"
+            @click="onEraseOtadata"
           >
-            {{ copy.valid ? $t("ota.valid") : $t("ota.invalid") }}
-          </a-tag>
+            {{ $t("ota.eraseOtadata") }}
+          </a-button>
+        </header>
+
+        <div v-if="otadataInfo?.copies?.length" class="otadata-body">
+          <div class="otadata-grid mono">
+            <div
+              v-for="(copy, idx) in otadataInfo.copies"
+              :key="idx"
+              class="otadata-col"
+            >
+              <div class="otadata-label">
+                {{ idx === 0 ? $t("ota.copy0") : $t("ota.copy1") }}
+              </div>
+              <div>
+                SEQ:
+                <span :class="{ 'is-dim': !copy.valid }">
+                  0x{{ hex8(copy.seq) }}
+                </span>
+              </div>
+              <div>
+                CRC:
+                <span :class="{ 'is-dim': !copy.valid }">
+                  0x{{ hex8(copy.crc) }}
+                </span>
+              </div>
+              <a-tag
+                class="status-tag"
+                :color="copy.valid ? 'success' : 'default'"
+              >
+                {{ copy.valid ? $t("ota.valid") : $t("ota.invalid") }}
+              </a-tag>
+            </div>
+          </div>
+          <div class="otadata-active">
+            <a-tag v-if="otadataInfo.activeSlot != null" color="processing">
+              {{ $t("ota.activeSlot", { slot: otadataInfo.activeSlot }) }}
+            </a-tag>
+            <a-tag v-else color="default">
+              {{ $t("ota.activeUnknown") }}
+            </a-tag>
+          </div>
         </div>
-        <div class="otadata-active">
-          <a-tag v-if="otadataInfo.activeSlot != null" color="processing">
-            {{ $t("ota.activeSlot", { slot: otadataInfo.activeSlot }) }}
-          </a-tag>
-          <a-tag v-else color="default">
-            {{ $t("ota.activeUnknown") }}
-          </a-tag>
+        <div v-else class="panel-empty">
+          <PlaceholderHint :text="$t('ota.emptyOtadata')" />
         </div>
-      </div>
-      <PlaceholderHint v-else :text="$t('ota.emptyOtadata')" />
-      <div class="action-row">
-        <a-button
-          type="primary"
-          danger
-          :disabled="!otadataPart || loading"
-          :loading="loading"
-          @click="onEraseOtadata"
-        >
-          {{ $t("ota.eraseOtadata") }}
-        </a-button>
-      </div>
-    </section>
+      </section>
 
-    <section class="panel">
-      <header class="panel-head">
-        <span class="panel-title">{{ $t("ota.appTitle") }}</span>
-        <span v-if="otaApps.length" class="panel-meta">
-          {{ $t("ota.appCount", { n: otaApps.length }) }}
-        </span>
-      </header>
+      <section class="panel panel-apps">
+        <header class="panel-head">
+          <div class="panel-head-main">
+            <span class="panel-title">{{ $t("ota.appTitle") }}</span>
+            <span v-if="otaApps.length" class="panel-meta">
+              {{ $t("ota.appCount", { n: otaApps.length }) }}
+            </span>
+          </div>
+        </header>
 
-      <div v-if="otaApps.length" class="app-select-row">
-        <span class="option-label">{{ $t("ota.selectPartition") }}</span>
-        <a-select
-          v-model:value="selectedKey"
-          class="app-select"
-          :options="appOptions"
-          :disabled="loading"
-        />
-      </div>
-      <PlaceholderHint v-else :text="$t('ota.emptyApps')" />
+        <div v-if="otaApps.length" class="apps-body">
+          <label class="field field-block">
+            <span class="field-label">{{ $t("ota.selectPartition") }}</span>
+            <a-select
+              v-model:value="selectedKey"
+              class="app-select"
+              :options="appOptions"
+              :disabled="loading"
+            />
+          </label>
 
-      <div class="action-row">
-        <a-button
-          type="primary"
-          :disabled="!selectedPartition || loading"
-          :loading="loading"
-          @click="onSwitch"
-        >
-          {{ $t("ota.switchPartition") }}
-        </a-button>
-        <a-button
-          :disabled="!selectedPartition || loading"
-          :loading="loading"
-          @click="onRead"
-        >
-          {{ $t("ota.readPartition") }}
-        </a-button>
-        <a-button
-          :disabled="!selectedPartition || loading"
-          :loading="loading"
-          @click="onWrite"
-        >
-          {{ $t("ota.writePartition") }}
-        </a-button>
-        <a-button
-          type="primary"
-          danger
-          :disabled="!selectedPartition || loading"
-          :loading="loading"
-          @click="onEraseApp"
-        >
-          {{ $t("ota.erasePartition") }}
-        </a-button>
-      </div>
-    </section>
+          <div class="action-groups">
+            <div class="action-group">
+              <div class="action-group-label">{{ $t("ota.groupBoot") }}</div>
+              <a-button
+                type="primary"
+                :disabled="!selectedPartition || loading"
+                :loading="loading"
+                @click="onSwitch"
+              >
+                {{ $t("ota.switchPartition") }}
+              </a-button>
+            </div>
+            <div class="action-group">
+              <div class="action-group-label">{{ $t("ota.groupData") }}</div>
+              <div class="action-row">
+                <a-button
+                  :disabled="!selectedPartition || loading"
+                  :loading="loading"
+                  @click="onRead"
+                >
+                  {{ $t("ota.readPartition") }}
+                </a-button>
+                <a-button
+                  :disabled="!selectedPartition || loading"
+                  :loading="loading"
+                  @click="onWrite"
+                >
+                  {{ $t("ota.writePartition") }}
+                </a-button>
+              </div>
+            </div>
+            <div class="action-group">
+              <div class="action-group-label">{{ $t("ota.groupDanger") }}</div>
+              <a-button
+                danger
+                :disabled="!selectedPartition || loading"
+                :loading="loading"
+                @click="onEraseApp"
+              >
+                {{ $t("ota.erasePartition") }}
+              </a-button>
+            </div>
+          </div>
+        </div>
+        <div v-else class="panel-empty">
+          <PlaceholderHint :text="$t('ota.emptyApps')" />
+        </div>
+      </section>
+    </div>
   </div>
 </template>
 
@@ -355,108 +383,247 @@ function onEraseApp() {
 
 <style scoped>
 .ota-page {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  height: 100%;
+  min-height: 0;
   padding: 12px 16px;
 }
+
 .panel {
-  margin-bottom: 16px;
   padding: 12px 14px;
   background: rgba(0, 0, 0, 0.2);
   border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 6px;
+  border-radius: 8px;
 }
+
+.toolbar {
+  flex-shrink: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px 16px;
+}
+
+.toolbar-main {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 12px 20px;
+  min-width: 0;
+  flex: 1;
+}
+
+.toolbar-fields {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 12px 20px;
+}
+
+.toolbar-hint {
+  margin: 0;
+  flex: 1;
+  min-width: 220px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.toolbar-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-left: auto;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.field-block {
+  width: 100%;
+}
+
+.field-label {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.offset-input,
+.baud-select {
+  width: 140px;
+}
+
+.mono {
+  font-family: Consolas, "Courier New", monospace;
+}
+
+.mono :deep(input) {
+  font-family: Consolas, "Courier New", monospace;
+}
+
+.detected-info {
+  font-size: 12px;
+  color: #52c41a;
+  white-space: nowrap;
+}
+
+.ota-content {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+  gap: 12px;
+}
+
+@media (max-width: 1100px) {
+  .ota-content {
+    grid-template-columns: 1fr;
+    overflow: auto;
+  }
+
+  .panel-otadata,
+  .panel-apps {
+    min-height: 280px;
+  }
+}
+
+.panel-otadata,
+.panel-apps {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
 .panel-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 10px;
   gap: 10px;
+  flex-shrink: 0;
+  margin-bottom: 12px;
 }
+
+.panel-head-main {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
 .panel-title {
   font-size: 14px;
   font-weight: 500;
   color: rgba(255, 255, 255, 0.88);
+  white-space: nowrap;
 }
+
 .panel-meta {
   font-size: 12px;
   color: rgba(255, 255, 255, 0.45);
 }
-.panel-hint {
-  margin: 0 0 8px;
-  font-size: 12px;
-  color: rgba(255, 255, 255, 0.45);
-  line-height: 1.5;
-}
-.options-row {
+
+.panel-empty {
+  flex: 1;
   display: flex;
-  flex-wrap: wrap;
-  align-items: flex-end;
-  gap: 12px 16px;
+  align-items: center;
+  justify-content: center;
+  min-height: 160px;
 }
-.option-field {
+
+.otadata-body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  min-width: 140px;
+  gap: 12px;
 }
-.option-label {
-  font-size: 12px;
-  color: rgba(255, 255, 255, 0.45);
-}
-.mono {
-  font-family: Consolas, "Courier New", monospace;
-}
-.mono :deep(input) {
-  font-family: Consolas, "Courier New", monospace;
-}
-.detected-info {
-  margin: 10px 0 0;
-  font-size: 12px;
-  color: rgba(255, 255, 255, 0.75);
-}
+
 .otadata-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 12px;
-  margin-bottom: 8px;
   font-size: 12px;
   line-height: 1.7;
   color: rgba(255, 255, 255, 0.85);
 }
+
 .otadata-col {
-  padding: 10px 12px;
-  background: rgba(0, 0, 0, 0.22);
-  border-radius: 6px;
+  padding: 12px 14px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 8px;
   border: 1px solid rgba(255, 255, 255, 0.08);
 }
+
 .otadata-label {
   font-weight: 500;
   margin-bottom: 4px;
   color: rgba(255, 255, 255, 0.88);
 }
+
 .otadata-active {
-  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
 }
+
 .status-tag {
   margin-top: 6px;
 }
+
 .is-dim {
   color: rgba(255, 255, 255, 0.45);
 }
-.app-select-row {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 12px;
-}
-.app-select {
-  min-width: 360px;
+
+.apps-body {
   flex: 1;
+  min-height: 0;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
+
+.app-select {
+  width: 100%;
+}
+
+.action-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.action-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.action-group-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.4);
+}
+
 .action-row {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  margin-top: 10px;
 }
 </style>

@@ -1,73 +1,83 @@
 <template>
-  <section class="panel">
+  <section class="panel-body">
     <header class="panel-head">
-      <span class="panel-title">{{ $t("firmware.historyTitle") }}</span>
-      <span class="panel-meta">{{ filteredItems.length }} {{ $t("firmware.itemUnit") }}</span>
+      <div class="panel-head-text">
+        <div class="panel-title-row">
+          <span class="panel-title">{{ $t("firmware.historyTitle") }}</span>
+          <span class="panel-meta">
+            {{ filteredItems.length }} {{ $t("firmware.itemUnit") }}
+          </span>
+        </div>
+        <p class="panel-hint">{{ $t("firmware.historyHint") }}</p>
+      </div>
     </header>
-    <p class="panel-hint">{{ $t("firmware.historyHint") }}</p>
+
     <a-input-search
       v-model:value="keyword"
       :placeholder="$t('firmware.search')"
       allow-clear
       class="panel-search"
     />
-    <PlaceholderHint
-      v-if="filteredItems.length === 0"
-      :text="$t('firmware.emptyHistory')"
-    />
-    <a-list
-      v-else
-      class="item-list"
-      size="small"
-      bordered
-      :data-source="filteredItems"
-      :pagination="listPagination"
-    >
-      <template #renderItem="{ item }">
-        <a-list-item>
-          <a-list-item-meta>
-            <template #title>
+
+    <div class="item-scroll">
+      <div v-if="filteredItems.length === 0" class="firmware-empty">
+        <PlaceholderHint :text="$t('firmware.emptyHistory')" />
+      </div>
+      <div v-else class="item-stack">
+        <article
+          v-for="item in pagedItems"
+          :key="item.key"
+          class="fw-item"
+        >
+          <div class="fw-item-main">
+            <div class="fw-item-title-row">
               <a-tag
                 :color="item.configType === 'idf' ? 'blue' : 'green'"
                 class="type-tag"
               >
                 {{ item.configType === "idf" ? "IDF" : "PIO" }}
               </a-tag>
-              <span class="item-title">{{ item.title }}</span>
-            </template>
-            <template #description>
-              <span class="item-path" :title="item.description">{{
-                item.description
+              <span class="fw-item-title" :title="item.title">{{
+                item.title
               }}</span>
-            </template>
-          </a-list-item-meta>
-          <template #actions>
-            <a-button type="link" size="small" @click="onImport(item.path)">
+            </div>
+            <div class="fw-item-path" :title="item.description">
+              {{ item.description }}
+            </div>
+          </div>
+          <div class="fw-item-actions">
+            <a-button type="primary" size="small" @click="onImport(item.path)">
               {{ $t("firmware.importFlash") }}
             </a-button>
-            <a-button
-              type="link"
-              size="small"
-              @click="openFileInExplorer(item.path)"
-            >
+            <a-button size="small" @click="openFileInExplorer(item.path)">
               {{ $t("firmware.open") }}
             </a-button>
             <a-popconfirm
               :title="$t('firmware.removeConfirm')"
               @confirm="historyStore.removePath(item.path)"
             >
-              <a-button type="link" size="small" danger>
+              <a-button size="small" danger>
                 {{ $t("firmware.remove") }}
               </a-button>
             </a-popconfirm>
-          </template>
-        </a-list-item>
-      </template>
-    </a-list>
+          </div>
+        </article>
+      </div>
+    </div>
+
+    <div v-if="filteredItems.length > pageSize" class="panel-pagination">
+      <a-pagination
+        v-model:current="page"
+        size="small"
+        :total="filteredItems.length"
+        :page-size="pageSize"
+        :show-size-changer="false"
+      />
+    </div>
   </section>
 </template>
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { storeToRefs } from "pinia";
 import { message } from "ant-design-vue";
@@ -81,12 +91,17 @@ const historyStore = useHistoryStore();
 const { keyword, filteredItems } = storeToRefs(historyStore);
 const { importConfig } = useImportToFlash();
 
-const listPagination = computed(() => ({
-  pageSize: 10,
-  size: "small" as const,
-  hideOnSinglePage: true,
-  showSizeChanger: false,
-}));
+const page = ref(1);
+const pageSize = 8;
+
+const pagedItems = computed(() => {
+  const start = (page.value - 1) * pageSize;
+  return filteredItems.value.slice(start, start + pageSize);
+});
+
+watch(keyword, () => {
+  page.value = 1;
+});
 
 async function onImport(path: string) {
   try {
