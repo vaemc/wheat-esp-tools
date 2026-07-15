@@ -13,22 +13,22 @@ export function usePartitionColumns() {
   const { t } = useI18n();
 
   const columns = computed<PartitionDetailColumn[]>(() => [
-    { title: t("partition.colName"), dataIndex: "name", key: "name", width: 88 },
-    { title: t("partition.colType"), dataIndex: "type", key: "type", width: 56 },
+    { title: t("partition.colName"), dataIndex: "name", key: "name", width: 120 },
+    { title: t("partition.colType"), dataIndex: "type", key: "type", width: 88 },
     {
       title: t("partition.colSubType"),
       dataIndex: "subtype",
       key: "subtype",
-      width: 72,
+      width: 100,
     },
     {
       title: t("partition.colOffset"),
       dataIndex: "offset",
       key: "offset",
-      width: 80,
+      width: 110,
     },
-    { title: t("partition.colSize"), dataIndex: "size", key: "size", width: 64 },
-    { title: t("partition.colFlags"), dataIndex: "flags", key: "flags" },
+    { title: t("partition.colSize"), dataIndex: "size", key: "size", width: 100 },
+    { title: t("partition.colFlags"), dataIndex: "flags", key: "flags", width: 80 },
   ]);
 
   return { columns };

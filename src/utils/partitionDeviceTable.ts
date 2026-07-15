@@ -28,8 +28,8 @@ export function buildPartitionTableFromFlash(
     flags: "",
   }));
 
-  const rows: PartitionRow[] = fields.map((f) => ({
-    key: f.name,
+  const rows: PartitionRow[] = fields.map((f, i) => ({
+    key: `${partitions[i].name}@${partitions[i].offset}`,
     ...f,
   }));
 

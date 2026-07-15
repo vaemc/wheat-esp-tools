@@ -14,12 +14,18 @@
           >
             {{ col.title }}
           </th>
+          <th v-if="showActions" class="actions-col">
+            {{ actionsTitle }}
+          </th>
         </tr>
       </thead>
       <tbody>
-        <tr v-for="row in rows" :key="row.key">
+        <tr v-for="(row, index) in rows" :key="row.key">
           <td v-for="col in columns" :key="col.key">
             {{ row[col.dataIndex] }}
+          </td>
+          <td v-if="showActions" class="actions-cell">
+            <slot name="actions" :row="row" :index="index" />
           </td>
         </tr>
       </tbody>
@@ -34,14 +40,22 @@ import PlaceholderHint from "@/components/PlaceholderHint.vue";
 import type { PartitionDetailColumn } from "../composables/usePartitionColumns";
 import type { PartitionRow } from "@/utils/partitionTable";
 
-defineProps<{
-  rows: PartitionRow[];
-  columns: PartitionDetailColumn[];
-  emptyText: string;
-  maxHeight?: number;
-  /** 填满父级高度并内部滚动 */
-  fill?: boolean;
-}>();
+withDefaults(
+  defineProps<{
+    rows: PartitionRow[];
+    columns: PartitionDetailColumn[];
+    emptyText: string;
+    maxHeight?: number;
+    /** 填满父级高度并内部滚动 */
+    fill?: boolean;
+    showActions?: boolean;
+    actionsTitle?: string;
+  }>(),
+  {
+    showActions: false,
+    actionsTitle: "",
+  }
+);
 </script>
 <style scoped>
 .partition-detail-table-wrap {
@@ -67,11 +81,12 @@ defineProps<{
 
 .partition-detail-table {
   width: 100%;
+  min-width: 720px;
   border-collapse: collapse;
   table-layout: fixed;
-  font-size: 13px;
-  line-height: 1.45;
-  color: rgba(255, 255, 255, 0.85);
+  font-size: 14px;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.88);
   user-select: text;
   -webkit-user-select: text;
 }
@@ -80,21 +95,23 @@ defineProps<{
   position: sticky;
   top: 0;
   z-index: 1;
-  padding: 8px 10px;
+  padding: 12px 14px;
   text-align: left;
-  font-weight: 500;
-  color: rgba(255, 255, 255, 0.65);
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.7);
   background: #1f1f1f;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.14);
   white-space: nowrap;
   user-select: text;
   -webkit-user-select: text;
 }
 
 .partition-detail-table tbody td {
-  padding: 7px 10px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 12px 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   font-family: Consolas, "Courier New", monospace;
+  font-size: 14px;
   white-space: nowrap;
   user-select: text;
   -webkit-user-select: text;
@@ -106,6 +123,18 @@ defineProps<{
 }
 
 .partition-detail-table tbody tr:hover td {
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.actions-col {
+  width: 200px;
+}
+
+.actions-cell {
+  font-family: inherit !important;
+  font-size: 13px !important;
+  cursor: default !important;
+  user-select: none !important;
+  -webkit-user-select: none !important;
 }
 </style>

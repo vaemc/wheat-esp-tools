@@ -8,7 +8,7 @@
             v-model:value="tableOffset"
             placeholder="0x8000"
             class="offset-input mono"
-            :disabled="loading"
+            :disabled="loading || opsBusy"
             allow-clear
           />
         </label>
@@ -18,7 +18,7 @@
             v-model:value="baudRate"
             class="baud-select"
             :options="baudOptions"
-            :disabled="loading"
+            :disabled="loading || opsBusy"
           />
         </label>
       </div>
@@ -29,6 +29,7 @@
         <a-button
           type="primary"
           :loading="loading"
+          :disabled="opsBusy"
           @click="onReadFromDevice"
         >
           {{ $t("partition.readFromDevice") }}
@@ -60,7 +61,7 @@
           </div>
           <a-button
             size="small"
-            :disabled="!result?.csv"
+            :disabled="!result?.csv || opsBusy"
             @click="copyCsv"
           >
             {{ $t("partition.copy") }}
@@ -71,27 +72,64 @@
             :rows="result?.rows ?? []"
             :columns="columns"
             :empty-text="$t('partition.emptyDevicePreview')"
+            :actions-title="$t('partition.colActions')"
+            show-actions
             fill
-          />
+          >
+            <template #actions="{ index }">
+              <span class="row-actions">
+                <a-button
+                  type="link"
+                  size="small"
+                  :disabled="actionsDisabled && !isRowBusy(index, 'read')"
+                  :loading="isRowBusy(index, 'read')"
+                  @click="onReadPartition(index)"
+                >
+                  {{ $t("partition.opRead") }}
+                </a-button>
+                <a-button
+                  type="link"
+                  size="small"
+                  :disabled="actionsDisabled && !isRowBusy(index, 'write')"
+                  :loading="isRowBusy(index, 'write')"
+                  @click="onWritePartition(index)"
+                >
+                  {{ $t("partition.opWrite") }}
+                </a-button>
+                <a-button
+                  type="link"
+                  size="small"
+                  danger
+                  :disabled="actionsDisabled && !isRowBusy(index, 'erase')"
+                  :loading="isRowBusy(index, 'erase')"
+                  @click="onErasePartition(index)"
+                >
+                  {{ $t("partition.opErase") }}
+                </a-button>
+              </span>
+            </template>
+          </PartitionDetailTable>
         </div>
       </section>
     </div>
   </div>
 </template>
 <script setup lang="ts">
-import { ref } from "vue";
+import { computed, h, ref } from "vue";
 import { storeToRefs } from "pinia";
 import { useI18n } from "vue-i18n";
-import { message } from "ant-design-vue";
+import { Modal, message } from "ant-design-vue";
 import PartitionCharts from "@/components/PartitionCharts.vue";
 import PartitionDetailTable from "./PartitionDetailTable.vue";
 import { usePartitionFromDevice } from "../composables/usePartitionFromDevice";
 import { usePartitionColumns } from "../composables/usePartitionColumns";
+import { usePartitionOps } from "../composables/usePartitionOps";
 import {
   READ_BAUD_RATE_OPTIONS,
   toBaudSelectOptions,
 } from "@/composables/useFlashOptions";
 import { usePartitionTableStore } from "@/stores/partitionTable";
+import type { FlashPartition } from "@/utils/partitionBin";
 
 const { t } = useI18n();
 const baudRate = ref("460800");
@@ -99,6 +137,48 @@ const { tableOffset } = storeToRefs(usePartitionTableStore());
 const baudOptions = toBaudSelectOptions(READ_BAUD_RATE_OPTIONS);
 const { loading, partitions, result, readFromDevice } = usePartitionFromDevice();
 const { columns } = usePartitionColumns();
+const {
+  busy: opsBusy,
+  busyKey,
+  partitionKey,
+  formatPartitionLabel,
+  readPartition,
+  erasePartition,
+  writePartition,
+  pickBinaryFile,
+} = usePartitionOps();
+
+const activeOp = ref<"read" | "write" | "erase" | "">("");
+
+const actionsDisabled = computed(() => loading.value || opsBusy.value);
+
+function partitionAt(index: number): FlashPartition | null {
+  return partitions.value[index] ?? null;
+}
+
+function isRowBusy(index: number, op: "read" | "write" | "erase"): boolean {
+  const p = partitionAt(index);
+  if (!p || !opsBusy.value) return false;
+  return busyKey.value === partitionKey(p) && activeOp.value === op;
+}
+
+function handleOpsError(e: unknown, fallbackKey: string) {
+  if (e instanceof Error) {
+    if (e.message === "NO_PORT") {
+      message.warning(t("partition.noPort"));
+      return;
+    }
+    if (e.message === "BUSY") {
+      message.warning(t("partition.opBusy"));
+      return;
+    }
+    if (e.message === "FILE_TOO_LARGE") {
+      message.warning(t("partition.fileTooLarge"));
+      return;
+    }
+  }
+  message.error(t(fallbackKey));
+}
 
 async function onReadFromDevice() {
   try {
@@ -127,6 +207,103 @@ async function copyCsv() {
   } catch {
     message.error(t("partition.copyFailed"));
   }
+}
+
+async function onReadPartition(index: number) {
+  const p = partitionAt(index);
+  if (!p) return;
+  activeOp.value = "read";
+  try {
+    const path = await readPartition(baudRate.value, p);
+    message.success(t("partition.readPartSuccess", { path }));
+  } catch (e) {
+    handleOpsError(e, "partition.readPartFailed");
+  } finally {
+    activeOp.value = "";
+  }
+}
+
+async function onWritePartition(index: number) {
+  const p = partitionAt(index);
+  if (!p) return;
+
+  let inputPath: string | null = null;
+  try {
+    inputPath = await pickBinaryFile();
+  } catch {
+    message.error(t("partition.writePartFailed"));
+    return;
+  }
+  if (!inputPath) {
+    return;
+  }
+  const firmwarePath = inputPath;
+
+  Modal.confirm({
+    title: t("partition.confirmWriteTitle"),
+    content: () =>
+      h("div", null, [
+        h("p", { style: "margin:0 0 6px;" }, t("partition.confirmWriteBody")),
+        h(
+          "p",
+          { class: "mono", style: "margin:0 0 6px;" },
+          formatPartitionLabel(p)
+        ),
+        h(
+          "p",
+          { class: "mono", style: "margin:0; opacity:0.65;" },
+          firmwarePath
+        ),
+      ]),
+    okText: t("partition.confirmOk"),
+    cancelText: t("partition.confirmCancel"),
+    async onOk() {
+      activeOp.value = "write";
+      try {
+        await writePartition(baudRate.value, p, firmwarePath);
+        message.success(t("partition.writePartSuccess"));
+      } catch (e) {
+        handleOpsError(e, "partition.writePartFailed");
+        throw e;
+      } finally {
+        activeOp.value = "";
+      }
+    },
+  });
+}
+
+function onErasePartition(index: number) {
+  const p = partitionAt(index);
+  if (!p) return;
+
+  Modal.confirm({
+    title: t("partition.confirmEraseTitle"),
+    content: () =>
+      h("div", null, [
+        h("p", { style: "margin:0 0 6px;" }, t("partition.confirmEraseBody")),
+        h("p", { class: "mono", style: "margin:0;" }, formatPartitionLabel(p)),
+        h(
+          "p",
+          { style: "margin:8px 0 0; color:#fa8c16; font-size:12px;" },
+          t("partition.confirmEraseWarn")
+        ),
+      ]),
+    okText: t("partition.confirmOk"),
+    okType: "danger",
+    cancelText: t("partition.confirmCancel"),
+    async onOk() {
+      activeOp.value = "erase";
+      try {
+        await erasePartition(baudRate.value, p);
+        message.success(t("partition.erasePartSuccess"));
+      } catch (e) {
+        handleOpsError(e, "partition.erasePartFailed");
+        throw e;
+      } finally {
+        activeOp.value = "";
+      }
+    },
+  });
 }
 </script>
 <style scoped>
@@ -201,7 +378,7 @@ async function copyCsv() {
   flex: 1;
   min-height: 0;
   display: grid;
-  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.25fr);
   gap: 12px;
 }
 
@@ -262,5 +439,18 @@ async function copyCsv() {
 
 .panel-body > :deep(*) {
   height: 100%;
+}
+
+.row-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0;
+}
+
+.row-actions :deep(.ant-btn-link) {
+  height: 28px;
+  padding: 0 6px;
+  font-size: 13px;
+  line-height: 28px;
 }
 </style>

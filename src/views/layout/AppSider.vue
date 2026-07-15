@@ -42,6 +42,9 @@
 
     <div class="sider-footer">
       <LanguageSwitch />
+      <div class="esptool-version" :title="esptoolVersionLabel">
+        {{ esptoolVersionLabel }}
+      </div>
     </div>
   </aside>
 </template>
@@ -52,7 +55,8 @@ import MenuIcon from "@/components/icons/MenuIcon.vue";
 import { useAppSplash } from "@/composables/useAppSplash";
 import { useMenuNavigation } from "@/composables/useMenuNavigation";
 import { getMenuGroups } from "@/router/menu";
-import { computed } from "vue";
+import { fetchEsptoolVersion } from "@/utils/esptoolVersion";
+import { computed, onMounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRoute, useRouter } from "vue-router";
 
@@ -62,7 +66,15 @@ const { t } = useI18n();
 const { navigateTo } = useMenuNavigation();
 const { show: showSplash } = useAppSplash();
 
+const esptoolVersion = ref<string | null>(null);
+
 const menuGroups = computed(() => getMenuGroups(router));
+
+const esptoolVersionLabel = computed(() =>
+  esptoolVersion.value
+    ? t("common.esptoolVersion", { version: esptoolVersion.value })
+    : t("common.esptoolVersionUnknown")
+);
 
 function isActive(name: string) {
   return route.name === name;
@@ -71,6 +83,12 @@ function isActive(name: string) {
 function onSelect(name: string) {
   void navigateTo(name);
 }
+
+onMounted(() => {
+  void fetchEsptoolVersion().then((version) => {
+    esptoolVersion.value = version;
+  });
+});
 </script>
 
 <style scoped>
@@ -275,8 +293,21 @@ function onSelect(name: string) {
 
 .sider-footer {
   flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
   padding: 12px 14px;
   border-top: 1px solid var(--sider-border);
   background: rgba(0, 0, 0, 0.18);
+}
+
+.esptool-version {
+  font-size: 11px;
+  line-height: 1.3;
+  color: rgba(255, 255, 255, 0.35);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 </style>
