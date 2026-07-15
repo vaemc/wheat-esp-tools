@@ -1,5 +1,5 @@
 import { computed, ref } from "vue";
-import type { SjpgEncodeResult } from "@/utils/sjpgEncoder";
+import type { SjpgEncodeResult } from "@/utils/image/sjpg";
 
 export type ImageItemStatus = "idle" | "converting" | "done" | "error";
 
@@ -50,7 +50,7 @@ async function loadImageElement(blob: Blob): Promise<{
   return { image, objectUrl };
 }
 
-export function useImageBatch() {
+export function useSjpgBatch() {
   const items = ref<ImageBatchItem[]>([]);
   const loading = ref(false);
   const selectedId = ref<string | null>(null);

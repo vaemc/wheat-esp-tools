@@ -9,8 +9,8 @@
   >
     <div v-if="items.length === 0" class="batch-empty" @click="emit('pick')">
       <PictureOutlined class="empty-icon" />
-      <p class="empty-title">{{ $t("image.dropTitle") }}</p>
-      <p class="empty-hint">{{ $t("image.dropHint") }}</p>
+      <p class="empty-title">{{ dropTitle || $t("image.dropTitle") }}</p>
+      <p class="empty-hint">{{ dropHint || $t("image.dropHint") }}</p>
     </div>
 
     <template v-else>
@@ -35,13 +35,23 @@
             selected: item.id === selectedId,
             done: item.status === 'done',
             error: item.status === 'error',
-            converting: item.status === 'converting',
+            converting:
+              item.status === 'converting' || item.status === 'loading',
           }"
           @click="emit('select', item.id)"
         >
           <div class="card-thumb">
-            <img :src="item.objectUrl" :alt="item.fileName" draggable="false" />
-            <span v-if="item.status === 'converting'" class="card-badge">
+            <img
+              :src="item.objectUrl"
+              :alt="item.fileName"
+              draggable="false"
+              loading="lazy"
+              decoding="async"
+            />
+            <span
+              v-if="item.status === 'converting' || item.status === 'loading'"
+              class="card-badge"
+            >
               <LoadingOutlined spin />
             </span>
             <span v-else-if="item.status === 'done'" class="card-badge card-badge--ok">
@@ -50,14 +60,38 @@
             <span v-else-if="item.status === 'error'" class="card-badge card-badge--err">
               !
             </span>
+            <div
+              v-if="item.status === 'converting' && typeof item.progress === 'number'"
+              class="card-progress"
+            >
+              <div class="card-progress-bar" :style="{ width: `${item.progress}%` }" />
+              <span class="card-progress-text">{{ item.progress }}%</span>
+            </div>
           </div>
           <div class="card-body">
             <div class="card-name" :title="item.fileName">{{ item.fileName }}</div>
             <div class="card-meta">
-              {{ item.naturalWidth }} × {{ item.naturalHeight }}
-              <template v-if="item.result">
-                · {{ formatBytes(item.result.bytes.length) }}
+              <template v-if="item.status === 'loading'">
+                {{ item.progressMessage || "…" }}
               </template>
+              <template v-else>
+                {{ item.naturalWidth }} × {{ item.naturalHeight }}
+                <template v-if="item.frameCount">
+                  · {{ item.frameCount }}f
+                </template>
+                <template v-if="item.result">
+                  · {{ formatBytes(item.result.bytes.length) }}
+                </template>
+              </template>
+            </div>
+            <div
+              v-if="
+                (item.status === 'converting' || item.status === 'loading') &&
+                item.progressMessage
+              "
+              class="card-progress-msg"
+            >
+              {{ item.progressMessage }}
             </div>
           </div>
           <a-button
@@ -89,11 +123,25 @@ import {
   PlusOutlined,
 } from "@ant-design/icons-vue";
 import prettyBytes from "pretty-bytes";
-import type { ImageBatchItem } from "../composables/useImageBatch";
+
+export interface ImageGridItem {
+  id: string;
+  fileName: string;
+  objectUrl: string;
+  naturalWidth: number;
+  naturalHeight: number;
+  frameCount?: number;
+  progress?: number;
+  progressMessage?: string;
+  status: "loading" | "idle" | "converting" | "done" | "error";
+  result?: { bytes: Uint8Array };
+}
 
 defineProps<{
-  items: ImageBatchItem[];
+  items: ImageGridItem[];
   selectedId: string | null;
+  dropTitle?: string;
+  dropHint?: string;
 }>();
 
 const emit = defineEmits<{
@@ -290,6 +338,46 @@ function onDrop(event: DragEvent) {
 .card-badge--err {
   background: rgba(255, 77, 79, 0.9);
   font-weight: 700;
+}
+
+.card-progress {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(2px);
+}
+
+.card-progress-bar {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  background: rgba(56, 189, 248, 0.55);
+  transition: width 0.15s ease;
+}
+
+.card-progress-text {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  text-align: center;
+  font-size: 10px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.card-progress-msg {
+  margin-top: 3px;
+  font-size: 10px;
+  color: rgba(125, 211, 252, 0.85);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .card-body {

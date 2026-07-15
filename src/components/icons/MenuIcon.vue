@@ -60,6 +60,24 @@
       <circle cx="9" cy="9" r="2" />
       <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
     </template>
+    <!-- Lucide: file-image — JPG 转 SJPG -->
+    <template v-else-if="name === 'sjpg'">
+      <path
+        d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"
+      />
+      <path d="M14 2v5a1 1 0 0 0 1 1h5" />
+      <circle cx="10" cy="12" r="2" />
+      <path d="m20 17-1.296-1.296a2.41 2.41 0 0 0-3.408 0L9 22" />
+    </template>
+    <!-- Lucide: image-play — GIF 转 EAF -->
+    <template v-else-if="name === 'eaf'">
+      <path
+        d="M15 15.003a1 1 0 0 1 1.517-.859l4.997 2.997a1 1 0 0 1 0 1.718l-4.997 2.997a1 1 0 0 1-1.517-.86z"
+      />
+      <path d="M21 12.17V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h6" />
+      <path d="m6 21 5-5" />
+      <circle cx="9" cy="9" r="2" />
+    </template>
   </svg>
 </template>
 
@@ -80,6 +98,8 @@ const ICON_COLORS: Record<string, string> = {
   ble: "#4096ff",
   pinout: "#95de64",
   image: "#ff85c0",
+  sjpg: "#ff85c0",
+  eaf: "#b37feb",
 };
 
 const color = computed(() => ICON_COLORS[props.name] ?? "#bfbfbf");

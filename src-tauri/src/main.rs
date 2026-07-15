@@ -26,6 +26,7 @@ impl Drop for BleScanFlagGuard {
 }
 
 mod classic_bluetooth;
+mod image;
 mod serial;
 
 // Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
@@ -597,6 +598,34 @@ fn get_file_info(path: &str) -> Result<FileInfo, String> {
     })
 }
 
+#[tauri::command]
+async fn probe_gif(path: String) -> Result<image::eaf::GifProbeResult, String> {
+    tokio::task::spawn_blocking(move || image::eaf::probe_gif(&path))
+        .await
+        .map_err(|e| format!("探测 GIF 失败: {e}"))?
+}
+
+#[tauri::command]
+async fn convert_gif_to_eaf(
+    window: WebviewWindow,
+    path: String,
+    options: image::eaf::EafConvertOptions,
+    job_id: String,
+) -> Result<image::eaf::EafConvertResult, String> {
+    let win = window.clone();
+    let jid = job_id.clone();
+    let path_for_job = path.clone();
+
+    tokio::task::spawn_blocking(move || {
+        let progress_cb: image::eaf::ProgressCallback = Box::new(move |event| {
+            let _ = win.emit("eaf_convert_progress", &event);
+        });
+        image::eaf::convert_gif_to_eaf(&path_for_job, options, &jid, Some(progress_cb))
+    })
+    .await
+    .map_err(|e| format!("转换任务失败: {e}"))?
+}
+
 fn main() {
     for item in ["firmware"].iter() {
         if !Path::new(item).exists() {
@@ -621,7 +650,9 @@ fn main() {
             rebuild_nvs_partition,
             generate_nvs_from_csv,
             start_ble_advertisement_scan,
-            start_classic_bluetooth_scan
+            start_classic_bluetooth_scan,
+            probe_gif,
+            convert_gif_to_eaf
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
