@@ -63,6 +63,16 @@ export function formatPartitionAddress(
   return `0x${addr.toString(16)}`;
 }
 
+/** 统计图副标题等：统一用 MB，避免 14300K / 14M 混用难读 */
+export function formatPartitionMb(bytes: number, digits = 2): string {
+  const mb = bytes / 0x100000;
+  if (Number.isInteger(mb)) {
+    return `${mb} MB`;
+  }
+  const fixed = mb.toFixed(digits).replace(/\.?0+$/, "");
+  return `${fixed} MB`;
+}
+
 export function partitionTypeLabel(type: number): string {
   return lookupName(type, TYPES);
 }

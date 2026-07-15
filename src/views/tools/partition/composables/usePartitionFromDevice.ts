@@ -32,8 +32,10 @@ export function usePartitionFromDevice() {
         throw new Error("EMPTY_PARTITION");
       }
 
-      partitions.value = parsed;
-      result.value = buildPartitionTableFromFlash(parsed);
+      // 按偏移排序，保证表格行序与图、读写操作 index 一致
+      const sorted = [...parsed].sort((a, b) => a.offset - b.offset);
+      partitions.value = sorted;
+      result.value = buildPartitionTableFromFlash(sorted);
     } finally {
       loading.value = false;
     }

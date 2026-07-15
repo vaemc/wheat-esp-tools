@@ -402,6 +402,15 @@ function onErasePartition(index: number) {
   overflow: hidden;
 }
 
+.panel-charts {
+  overflow: hidden;
+}
+
+.panel-charts .panel-body {
+  overflow: auto;
+  overflow-x: hidden;
+}
+
 .panel-head {
   display: flex;
   align-items: center;
@@ -437,8 +446,13 @@ function onErasePartition(index: number) {
   overflow: hidden;
 }
 
-.panel-body > :deep(*) {
+.panel-table .panel-body > :deep(*) {
   height: 100%;
+}
+
+.panel-charts .panel-body > :deep(*) {
+  height: auto;
+  min-height: 100%;
 }
 
 .row-actions {

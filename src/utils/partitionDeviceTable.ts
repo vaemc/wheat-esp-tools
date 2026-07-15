@@ -19,7 +19,10 @@ export function buildPartitionTableFromFlash(
     throw new PartitionTableError("分区表为空");
   }
 
-  const fields = partitions.map((p) => ({
+  // 按偏移排序，与布局图 / 容量图顺序一致
+  const sorted = [...partitions].sort((a, b) => a.offset - b.offset);
+
+  const fields = sorted.map((p) => ({
     name: p.name,
     type: partitionTypeLabel(p.type),
     subtype: partitionSubtypeLabel(p.type, p.subtype),
@@ -29,15 +32,16 @@ export function buildPartitionTableFromFlash(
   }));
 
   const rows: PartitionRow[] = fields.map((f, i) => ({
-    key: `${partitions[i].name}@${partitions[i].offset}`,
+    key: `${sorted[i].name}@${sorted[i].offset}`,
     ...f,
   }));
 
-  const totalEnd = Math.max(...partitions.map((p) => p.offset + p.size));
+  // 与图表「分区合计」、对齐模式一致：各分区 size 之和
+  const used = sorted.reduce((sum, p) => sum + p.size, 0);
 
   return {
     rows,
     csv: formatAlignedCsvLines(fields),
-    totalSizeMb: `${(totalEnd / (1024 * 1024)).toFixed(3)}M`,
+    totalSizeMb: `${(used / (1024 * 1024)).toFixed(3)}M`,
   };
 }

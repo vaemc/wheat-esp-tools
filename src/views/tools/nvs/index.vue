@@ -193,7 +193,7 @@
   </div>
 </template>
 <script setup lang="ts">
-import { computed, h, onMounted, onUnmounted, ref } from "vue";
+import { computed, h, nextTick, onMounted, onUnmounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { Modal, message } from "ant-design-vue";
 import PlaceholderHint from "@/components/PlaceholderHint.vue";
@@ -296,18 +296,39 @@ const columns = computed(() => [
 function updateTableScrollY() {
   const el = tableWrapRef.value;
   if (!el) return;
-  // header ~39 + pagination ~40
-  tableScrollY.value = Math.max(200, el.clientHeight - 80);
+  const header = el.querySelector(".ant-table-header, .ant-table-thead") as HTMLElement | null;
+  const pagination = el.querySelector(".ant-table-pagination") as HTMLElement | null;
+  const headerH = header?.offsetHeight ?? 39;
+  let paginationH = 0;
+  if (pagination) {
+    const style = getComputedStyle(pagination);
+    paginationH =
+      pagination.offsetHeight +
+      (parseFloat(style.marginTop) || 0) +
+      (parseFloat(style.marginBottom) || 0);
+  }
+  // borders / rounding buffer
+  const reserved = headerH + paginationH + 4;
+  tableScrollY.value = Math.max(160, el.clientHeight - reserved);
 }
 
 onMounted(() => {
-  updateTableScrollY();
+  void nextTick(() => updateTableScrollY());
   if (tableWrapRef.value) {
-    resizeObserver = new ResizeObserver(() => updateTableScrollY());
+    resizeObserver = new ResizeObserver(() => {
+      void nextTick(() => updateTableScrollY());
+    });
     resizeObserver.observe(tableWrapRef.value);
   }
   window.addEventListener("resize", updateTableScrollY);
 });
+
+watch(
+  () => filteredRows.value.length,
+  () => {
+    void nextTick(() => updateTableScrollY());
+  }
+);
 
 onUnmounted(() => {
   resizeObserver?.disconnect();
@@ -655,6 +676,8 @@ async function onWriteBack() {
   flex: 1;
   min-height: 0;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 .mono :deep(input) {
@@ -709,11 +732,24 @@ async function onWriteBack() {
   background: rgba(82, 196, 26, 0.1) !important;
 }
 
+/* 分页与表头在 flex 中占位，body 用 scroll.y 滚动，避免底部裁切 */
 .table-wrap :deep(.ant-table-wrapper),
 .table-wrap :deep(.ant-spin-nested-loading),
-.table-wrap :deep(.ant-spin-container),
-.table-wrap :deep(.ant-table),
-.table-wrap :deep(.ant-table-container) {
+.table-wrap :deep(.ant-spin-container) {
+  flex: 1;
+  min-height: 0;
   height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.table-wrap :deep(.ant-table) {
+  flex: 1;
+  min-height: 0;
+}
+
+.table-wrap :deep(.ant-table-pagination) {
+  flex-shrink: 0;
+  margin-bottom: 0 !important;
 }
 </style>
