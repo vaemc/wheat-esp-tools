@@ -1,6 +1,7 @@
 import type { EChartsOption } from "echarts";
 import type { FlashPartition } from "@/utils/partitionBin";
 import { formatHexDisplay } from "@/utils/partitionBin";
+import i18n from "@/locales/i18n";
 
 const CHART_COLORS = [
   "#5470c6",
@@ -130,7 +131,11 @@ export function buildPartitionBarOption(
         }
         const range = `0x${seg.start.toString(16)} ~ 0x${seg.end.toString(16)}`;
         if (seg.isGap) {
-          return ["空闲", range, formatHexDisplay(seg.value)].join("<br/>");
+          return [
+            i18n.global.t("partition.free"),
+            range,
+            formatHexDisplay(seg.value),
+          ].join("<br/>");
         }
         return [seg.name, range, formatHexDisplay(seg.value)].join("<br/>");
       },

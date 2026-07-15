@@ -13,6 +13,7 @@ export const useDeviceStore = defineStore("device", {
     deviceInfo: { ...EMPTY_DEVICE_INFO } as EspDeviceInfo,
     loadingPorts: false,
     loadingInfo: false,
+    _infoGeneration: 0,
   }),
 
   actions: {
@@ -30,11 +31,7 @@ export const useDeviceStore = defineStore("device", {
           portStore.selectedPort = "";
         }
 
-        if (
-          pickDefault &&
-          !portStore.selectedPort &&
-          list.length > 0
-        ) {
+        if (pickDefault && !portStore.selectedPort && list.length > 0) {
           portStore.selectedPort = list[0];
         }
       } finally {
@@ -45,11 +42,13 @@ export const useDeviceStore = defineStore("device", {
     onPortChange(port: string) {
       usePortStore().selectedPort = port;
       this.deviceInfo = { ...EMPTY_DEVICE_INFO };
+      this._infoGeneration += 1;
     },
 
     clearPort() {
       usePortStore().selectedPort = "";
       this.deviceInfo = { ...EMPTY_DEVICE_INFO };
+      this._infoGeneration += 1;
     },
 
     async refreshDeviceInfo() {
@@ -59,13 +58,23 @@ export const useDeviceStore = defineStore("device", {
         return;
       }
 
+      const generation = ++this._infoGeneration;
       this.loadingInfo = true;
       try {
-        this.deviceInfo = await fetchDeviceInfo(port);
+        const info = await fetchDeviceInfo(port);
+        if (generation !== this._infoGeneration) {
+          return;
+        }
+        this.deviceInfo = info;
       } catch {
+        if (generation !== this._infoGeneration) {
+          return;
+        }
         this.deviceInfo = { ...EMPTY_DEVICE_INFO };
       } finally {
-        this.loadingInfo = false;
+        if (generation === this._infoGeneration) {
+          this.loadingInfo = false;
+        }
       }
     },
   },

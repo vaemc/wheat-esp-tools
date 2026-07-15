@@ -18,25 +18,16 @@ export interface WriteFlashOptions {
 }
 
 /**
- * esptool write-flash 的"成功标志"。
+ * esptool write-flash 的终态成功标志（故意不用 "Wrote N bytes"：
+ * 多段烧录时每段都会打印，中途失败仍会误判成功）。
  *
- * Tauri Shell 在 sidecar 进程结束时偶发会先于 / 同步于 close 事件 emit error
- * （比如 hard-reset 触发设备复位时端口抖动、stdout/stderr 中带非 UTF-8 字节
- * 导致 Tauri 的 read_line 解码失败），让 listenEsptool reject。
- * 但此时数据其实已经成功写入。
- *
- * 真实的"写完了"信号其实在 esptool 的 stdout / stderr 里非常稳定，任一出现都
- * 意味着写入流程跑完了：
- *   - "Hash of data verified."         —— write-flash 默认开启 verify，写完必打印
- *   - "Leaving..."                     —— esptool 进入正常退出流程
- *   - "Hard resetting via RTS pin..."  —— 进入复位阶段
- *   - "Wrote ... bytes ... at"         —— 该地址写入完成
+ * Tauri Shell 在 sidecar 结束时偶发 spurious error（hard-reset 端口抖动 /
+ * 非 UTF-8 行），所以在看到终态成功信号后可忽略底层 processError。
  */
 const WRITE_SUCCESS_PATTERNS = [
   /hash of data verified/i,
   /leaving\.\.\./i,
   /hard resetting via rts pin/i,
-  /wrote\s+\d+\s+bytes/i,
 ];
 
 /** esptool 输出里出现的明确失败标志（少量、保守，避免误杀） */
@@ -77,11 +68,13 @@ export async function runEsptoolWriteFlash(
     flashMode,
   ];
 
-  for (const item of items) {
-    args.push(item.offset, item.path);
-  }
+  // 官方 CLI：选项在 address/filename 对之前
   if (eraseAll) {
     args.push("--erase-all");
+  }
+
+  for (const item of items) {
+    args.push(item.offset, item.path);
   }
 
   let sawSuccess = false;
@@ -98,17 +91,11 @@ export async function runEsptoolWriteFlash(
   };
 
   try {
-    // 同时扫描 stdout 和 stderr：
-    // 不同 esptool 版本 / 不同子命令把成功消息打到不同流上，stderr 里也可能藏着
-    // "Hard resetting via RTS pin..."。
     await runEsptoolWithIO(args, inspect, inspect);
   } catch (err) {
-    // listenEsptool 在收到 close/error 事件时 resolve/reject；
-    // 不立即透出，先看输出里是否已经出现了成功标志。
     processError = err;
   }
 
-  // 1. 输出里明确包含 esptool 致命错误关键字 → 真正失败
   if (sawFailure) {
     const wrap = new Error("ESPTOOL_FAILED");
     if (processError) {
@@ -116,20 +103,20 @@ export async function runEsptoolWriteFlash(
     }
     throw wrap;
   }
-  // 2. 输出里出现过任一成功标志（写入流程已完整跑完）→ 视为成功，
-  //    吃掉底层 close/error 竞态以及 utf-8 解码失败导致的 spurious error
+
   if (sawSuccess) {
     if (processError) {
-      // 写完已成功，但底层抛了非致命的错；只在 console 里留个痕迹方便排查
       console.warn(
-        "[esptoolWrite] write-flash 已识别成功标志，忽略底层非致命错误：",
+        "[esptoolWrite] write-flash 已识别终态成功标志，忽略底层非致命错误：",
         processError
       );
     }
     return;
   }
-  // 3. 没看到任何明确信号，进程层面又抛了错 → 真正失败（spawn 失败 / 启动异常等）
+
   if (processError) {
     throw processError;
   }
+
+  // 进程正常退出(code=0)且无失败关键字：视为成功（部分版本不打 Leaving）
 }

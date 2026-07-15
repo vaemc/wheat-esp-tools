@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import { join } from "@tauri-apps/api/path";
+import { dirname, join } from "@tauri-apps/api/path";
 import { readTextFile, readDir, remove } from "@tauri-apps/plugin-fs";
 import { FileInfo, Firmware } from "@/model/model";
 import type { SerialPortDetail } from "@/types/serial";
@@ -8,6 +8,20 @@ import {
   parseChipTypesFromEsptoolOutput,
   runEsptoolChipListProbe,
 } from "@/utils/esptoolChip";
+import { CONFIG_FILENAMES } from "@/utils/path";
+
+interface RustFileInfo {
+  name: string;
+  is_dir: boolean;
+  is_file: boolean;
+  len: number;
+  create_time: number;
+}
+
+interface FlashImageEntry {
+  path?: string;
+  offset?: string;
+}
 
 export async function getSerialPortList() {
   return (await invoke("get_serial_port_list")) as string[];
@@ -50,20 +64,32 @@ export async function getFirmwareList() {
 }
 
 export async function getIDFArgsConfig(path: string) {
-  let config = JSON.parse(await readTextFile(path));
-  const folderPath = path.substring(0, path.lastIndexOf("\\"));
-  let list = {
-    appName: config.app.file.split(".")[0],
-    chip: config.extra_esptool_args.chip.toUpperCase(),
+  let config: Record<string, unknown>;
+  try {
+    config = JSON.parse(await readTextFile(path)) as Record<string, unknown>;
+  } catch (e) {
+    throw new Error(`无法解析 flasher_args.json: ${e}`);
+  }
+
+  const app = config.app as { file?: string } | undefined;
+  const extra = config.extra_esptool_args as { chip?: string } | undefined;
+  const flashFiles = config.flash_files as Record<string, string> | undefined;
+  if (!app?.file || !extra?.chip || !flashFiles) {
+    throw new Error("flasher_args.json 缺少 app / extra_esptool_args / flash_files");
+  }
+
+  const folderPath = await dirname(path);
+  const list = {
+    appName: app.file.split(".")[0],
+    chip: extra.chip.toUpperCase(),
     flashFiles: [] as Firmware[],
   };
 
-  for (const item of Object.keys(config.flash_files)) {
-    const fullPath =
-      folderPath + "\\" + config.flash_files[item].replace(/\//g, "\\");
+  for (const item of Object.keys(flashFiles)) {
+    const relative = String(flashFiles[item]).replace(/\\/g, "/");
     list.flashFiles.push({
       check: true,
-      path: fullPath,
+      path: await join(folderPath, ...relative.split("/").filter(Boolean)),
       address: item,
     });
   }
@@ -72,43 +98,72 @@ export async function getIDFArgsConfig(path: string) {
 }
 
 export async function getPlatformIOArgsConfig(path: string) {
-  let config = JSON.parse(await readTextFile(path));
-  const folderPath = path.substring(0, path.lastIndexOf("\\"));
-  let list = {
-    appName: config.env_name,
+  let config: Record<string, unknown>;
+  try {
+    config = JSON.parse(await readTextFile(path)) as Record<string, unknown>;
+  } catch (e) {
+    throw new Error(`无法解析 idedata.json: ${e}`);
+  }
+
+  const extra = config.extra as {
+    application_offset?: string;
+    flash_images?: FlashImageEntry[];
+  } | undefined;
+  if (!config.env_name || !extra?.application_offset) {
+    throw new Error("idedata.json 缺少 env_name / extra.application_offset");
+  }
+
+  const folderPath = await dirname(path);
+  const list = {
+    appName: String(config.env_name),
     chip: "",
     flashFiles: [] as Firmware[],
   };
 
   list.flashFiles.push({
     check: true,
-    path: `${folderPath}\\firmware.bin`,
-    address: config.extra.application_offset,
+    path: await join(folderPath, "firmware.bin"),
+    address: String(extra.application_offset),
   });
 
-  await Promise.all(
-    config.extra.flash_images.map(async (item: any) => {
-      list.flashFiles.push({
-        check: true,
-        path: item.path,
-        address: item.offset,
-      });
-    })
-  );
+  const images = extra.flash_images ?? [];
+  for (const item of images) {
+    if (!item?.path || item.offset == null) {
+      continue;
+    }
+    const relative = String(item.path).replace(/\\/g, "/");
+    const absPath =
+      /^[a-zA-Z]:\//.test(relative) || relative.startsWith("/")
+        ? item.path
+        : await join(folderPath, ...relative.split("/").filter(Boolean));
+    list.flashFiles.push({
+      check: true,
+      path: absPath,
+      address: String(item.offset),
+    });
+  }
 
   return list;
 }
 
 export async function openFileInExplorer(path: string) {
-  invoke("open_file_in_explorer", { path: path });
+  try {
+    await invoke("open_file_in_explorer", { path });
+  } catch (err) {
+    console.error("[openFileInExplorer]", err);
+  }
 }
 
 export async function openDirectoryInExplorer(path: string) {
-  invoke("open_directory_in_explorer", { path: path });
+  try {
+    await invoke("open_directory_in_explorer", { path });
+  } catch (err) {
+    console.error("[openDirectoryInExplorer]", err);
+  }
 }
 
 export async function getFileInfo(path: string) {
-  const info = (await invoke("get_file_info", { path: path })) as any;
+  const info = (await invoke("get_file_info", { path })) as RustFileInfo;
   return {
     name: info.name,
     isFile: info.is_file,
@@ -121,3 +176,5 @@ export async function getFileInfo(path: string) {
 export async function removeFile(path: string) {
   await remove(path);
 }
+
+export { CONFIG_FILENAMES };

@@ -29,10 +29,10 @@
         </div>
       </div>
       <div class="toolbar-actions">
-        <a-button @click="eraseFlash">
+        <a-button :disabled="busy" :loading="busy" @click="runEraseFlash">
           {{ $t("flash.eraseAllFlash") }}
         </a-button>
-        <a-button @click="readFlash">
+        <a-button :disabled="busy" :loading="busy" @click="runReadFlash">
           {{ $t("flash.readFlash") }}
         </a-button>
       </div>
@@ -73,9 +73,19 @@
         </template>
         <template v-if="column.key === 'action'">
           <span class="flash-row-actions">
-            <a @click="flashFirmwareBtn(record)">{{ $t("flash.flashRow") }}</a>
+            <a
+              :class="{ 'is-disabled': busy }"
+              @click="!busy && flashFirmwareBtn(record)"
+            >
+              {{ $t("flash.flashRow") }}
+            </a>
             <span class="flash-row-actions__sep" aria-hidden="true">|</span>
-            <a @click="removeFirmwareBtn(record)">{{ $t("flash.remove") }}</a>
+            <a
+              :class="{ 'is-disabled': busy }"
+              @click="!busy && removeFirmwareBtn(record)"
+            >
+              {{ $t("flash.remove") }}
+            </a>
           </span>
         </template>
       </template>
@@ -88,13 +98,19 @@
         </a-checkbox>
       </a-tooltip>
       <div class="flash-footer__actions">
-        <a-button block :loading="exporting" @click="exportAll">
+        <a-button block :disabled="busy" :loading="exporting" @click="exportAll">
           {{ $t("flash.export") }}
         </a-button>
-        <a-button block @click="handle(merge)">
+        <a-button block :disabled="busy" @click="handle(merge)">
           {{ $t("flash.merge") }}
         </a-button>
-        <a-button block type="primary" @click="handle(flash)">
+        <a-button
+          block
+          type="primary"
+          :disabled="busy"
+          :loading="flashing"
+          @click="handle(flash)"
+        >
           {{ $t("flash.flash") }}
         </a-button>
       </div>
@@ -120,7 +136,7 @@
   </div>
 </template>
 <script setup lang="ts">
-import { onMounted, ref, watch } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 import SPIMode from "@/components/SPIMode.vue";
 import Upload from "@/components/Upload.vue";
 import { Firmware } from "@/model/model";
@@ -132,10 +148,14 @@ import {
   openDirectoryInExplorer,
   openFileInExplorer,
 } from "@/utils/common";
-import { runEsptool, runEsptoolWithStdout } from "@/utils/esptoolCli";
-import { toBaudSelectOptions } from "@/composables/useFlashOptions";
+import { runEsptoolWithStdout } from "@/utils/esptoolCli";
+import { runEsptoolWriteFlash } from "@/utils/esptoolWrite";
+import {
+  toBaudSelectOptions,
+  useFlashOptions,
+} from "@/composables/useFlashOptions";
 import { message } from "ant-design-vue";
-import moment from "moment";
+import { formatCompactTimestamp } from "@/utils/datetime";
 import prettyBytes from "pretty-bytes";
 import { storeToRefs } from "pinia";
 import { useToolsStore } from "@/stores/Tool";
@@ -144,23 +164,30 @@ import { usePortStore } from "@/stores/port";
 import { useImportToFlash } from "@/views/tools/firmware/composables/useImportToFlash";
 import { useFlashQuickActions } from "./composables/useFlashQuickActions";
 import { exportFirmwareFilesToDir } from "./composables/useExportFirmware";
+import { CONFIG_FILENAMES } from "@/utils/path";
 
 const store = useToolsStore();
 const historyStore = useHistoryStore();
 const { eraseFlash, readFlash } = useFlashQuickActions();
 const { applyFlashConfig } = useImportToFlash();
+const {
+  baudRate: selectedBaud,
+  spiMode: selectedMode,
+  eraseBeforeFlash: eraseChecked,
+} = useFlashOptions();
 
 const baudOptions = toBaudSelectOptions();
 const { firmwareList, selectedChipType } = storeToRefs(store);
 const flashCheckOption = ref({ indeterminate: false, selectAll: false });
-const selectedMode = ref("keep");
-const selectedBaud = ref("1152000");
-const eraseChecked = ref(false);
 const currentDir = ref("");
 const exporting = ref(false);
+const flashing = ref(false);
 const mergeModalOpen = ref(false);
 const mergeFileName = ref("");
 const merging = ref(false);
+const busy = computed(
+  () => flashing.value || exporting.value || merging.value
+);
 
 const columns = ref([
   {
@@ -233,47 +260,63 @@ function getPort(): string | null {
   return port;
 }
 
-function buildWriteFlashArgs(extra: string[]): string[] {
-  return [
-    "-p",
-    getPort()!,
-    "-b",
-    selectedBaud.value,
-    "--before=default-reset",
-    "--after=hard-reset",
-    "write-flash",
-    "--flash-mode",
-    selectedMode.value,
-    ...extra,
-  ];
-}
-
 const flash = async () => {
+  if (busy.value) {
+    return;
+  }
   const port = getPort();
   if (!port) {
     return;
   }
 
-  const args = buildWriteFlashArgs(
-    firmwareList.value
-      .filter((x) => x.check)
-      .flatMap((x) => [x.address, x.path])
-  );
+  const items = firmwareList.value
+    .filter((x) => x.check)
+    .map((x) => ({ offset: x.address, path: x.path }));
 
-  if (eraseChecked.value) {
-    args.push("--erase-all");
+  flashing.value = true;
+  try {
+    await runEsptoolWriteFlash(port, selectedBaud.value, items, {
+      flashMode: selectedMode.value,
+      eraseAll: eraseChecked.value,
+    });
+  } catch {
+    message.error(i18n.global.t("flash.flashFailed"));
+  } finally {
+    flashing.value = false;
   }
-
-  await runEsptool(args);
 };
 
+async function runEraseFlash() {
+  if (busy.value) return;
+  flashing.value = true;
+  try {
+    await eraseFlash();
+  } finally {
+    flashing.value = false;
+  }
+}
+
+async function runReadFlash() {
+  if (busy.value) return;
+  flashing.value = true;
+  try {
+    await readFlash();
+  } finally {
+    flashing.value = false;
+  }
+}
+
+function hasChipType(): boolean {
+  return Boolean(selectedChipType.value?.trim());
+}
+
 const merge = async () => {
-  if (selectedChipType.value == undefined) {
+  if (!hasChipType()) {
     message.warning(i18n.global.t("flash.dialog.selectedChipType"));
     return;
   }
 
-  mergeFileName.value = `${selectedChipType.value}-merge-bin-${moment().format("YYYYMMDDHHmmss")}.bin`;
+  mergeFileName.value = `${selectedChipType.value}-merge-bin-${formatCompactTimestamp()}.bin`;
   mergeModalOpen.value = true;
 };
 
@@ -290,12 +333,15 @@ function normalizeMergeFileName(raw: string): string | null {
 }
 
 const confirmMerge = async () => {
+  if (flashing.value || exporting.value || merging.value) {
+    return Promise.reject();
+  }
   const name = normalizeMergeFileName(mergeFileName.value);
   if (!name) {
     message.warning(i18n.global.t("flash.dialog.inputMergeName"));
     return Promise.reject();
   }
-  if (selectedChipType.value == undefined) {
+  if (!hasChipType()) {
     message.warning(i18n.global.t("flash.dialog.selectedChipType"));
     return Promise.reject();
   }
@@ -303,7 +349,8 @@ const confirmMerge = async () => {
   merging.value = true;
   try {
     const dir = await ensureCurrentDir();
-    const filename = `${dir}\\firmware\\${name}`;
+    const { join } = await import("@tauri-apps/api/path");
+    const filename = await join(dir, "firmware", name);
 
     await runEsptoolWithStdout(
       [
@@ -318,60 +365,58 @@ const confirmMerge = async () => {
       ],
       (line) => {
         if (line.includes("ready to flash to offset 0x0")) {
-          openFileInExplorer(filename);
+          void openFileInExplorer(filename);
         }
       }
     );
     mergeModalOpen.value = false;
+  } catch {
+    message.error(i18n.global.t("flash.mergeFailed"));
+    return Promise.reject();
   } finally {
     merging.value = false;
   }
 };
 
-const handle = (action: () => void | Promise<void>) => {
-  if (firmwareList.value.length == 0) {
-    message.warning(i18n.global.t("flash.dialog.addFirmware"));
-    return;
-  }
-
-  if (firmwareList.value.filter((x) => x.check).length == 0) {
-    message.warning(i18n.global.t("flash.dialog.selectOneFirmware"));
-    return;
-  }
-
-  if (firmwareList.value.some((x) => x.address == "")) {
-    message.warning(i18n.global.t("flash.dialog.inputAddress"));
-    return;
-  }
-
-  if (firmwareList.value.some((x) => x.path == "")) {
-    message.warning(i18n.global.t("flash.dialog.inputPath"));
-    return;
-  }
-
-  void action();
-};
-
-/** 导出勾选的固件到所选文件夹：文件名_{地址}.扩展名 */
-const exportAll = async () => {
+function assertReadySelection(selectedOnly = false): Firmware[] | null {
   if (firmwareList.value.length === 0) {
     message.warning(i18n.global.t("flash.dialog.addFirmware"));
-    return;
+    return null;
   }
 
   const selected = firmwareList.value.filter((x) => x.check);
   if (selected.length === 0) {
     message.warning(i18n.global.t("flash.dialog.selectOneFirmware"));
-    return;
+    return null;
   }
 
-  if (selected.some((x) => x.address === "")) {
+  const target = selectedOnly ? selected : firmwareList.value;
+  if (target.some((x) => x.address === "")) {
     message.warning(i18n.global.t("flash.dialog.inputAddress"));
-    return;
+    return null;
   }
 
-  if (selected.some((x) => x.path === "")) {
+  if (target.some((x) => x.path === "")) {
     message.warning(i18n.global.t("flash.dialog.inputPath"));
+    return null;
+  }
+
+  return selected;
+}
+
+const handle = (action: () => void | Promise<void>) => {
+  if (!assertReadySelection()) {
+    return;
+  }
+  void Promise.resolve(action()).catch(() => {
+    /* errors surfaced by action */
+  });
+};
+
+/** 导出勾选的固件到所选文件夹：文件名_{地址}.扩展名 */
+const exportAll = async () => {
+  const selected = assertReadySelection(true);
+  if (!selected) {
     return;
   }
 
@@ -413,11 +458,27 @@ const removeFirmwareBtn = (item: Firmware) => {
 };
 
 const flashFirmwareBtn = async (item: Firmware) => {
-  if (!getPort()) {
+  if (busy.value) {
+    return;
+  }
+  const port = getPort();
+  if (!port) {
     return;
   }
 
-  await runEsptool(buildWriteFlashArgs([item.address, item.path]));
+  flashing.value = true;
+  try {
+    await runEsptoolWriteFlash(
+      port,
+      selectedBaud.value,
+      [{ offset: item.address, path: item.path }],
+      { flashMode: selectedMode.value }
+    );
+  } catch {
+    message.error(i18n.global.t("flash.flashFailed"));
+  } finally {
+    flashing.value = false;
+  }
 };
 
 const chipTypeList = ref<{ label: string; value: string }[]>([]);
@@ -443,34 +504,46 @@ onMounted(async () => {
 
 const uploadHandle = async (paths: string | string[]) => {
   const pathList = Array.isArray(paths) ? paths : [paths];
+  if (pathList.length === 0) {
+    return;
+  }
   const filename = pathList[0].replace(/^.*[\\/]/, "");
 
   if (
     pathList.length === 1 &&
-    (filename === "flasher_args.json" || filename === "idedata.json")
+    (filename === CONFIG_FILENAMES.idf ||
+      filename === CONFIG_FILENAMES.platformio)
   ) {
-    const ok = await applyFlashConfig(pathList[0]);
-    if (ok) {
-      historyStore.addPath(pathList[0]);
-      flashCheckOption.value.selectAll = true;
+    try {
+      const ok = await applyFlashConfig(pathList[0]);
+      if (ok) {
+        historyStore.addPath(pathList[0]);
+        flashCheckOption.value.selectAll = true;
+      }
+    } catch {
+      message.error(i18n.global.t("flash.chipListFailed"));
     }
     return;
   }
 
   await Promise.all(
     pathList.map(async (item) => {
-      const fileInfo = await getFileInfo(item);
-      if (!fileInfo.isFile) {
-        return;
-      }
+      try {
+        const fileInfo = await getFileInfo(item);
+        if (!fileInfo.isFile) {
+          return;
+        }
 
-      const address = item.match(/0x[\da-f]+/gi);
-      firmwareList.value.push({
-        size: prettyBytes(fileInfo.len),
-        check: true,
-        path: item,
-        address: address?.[0] ?? "",
-      });
+        const address = item.match(/0x[\da-f]+/gi);
+        firmwareList.value.push({
+          size: prettyBytes(fileInfo.len),
+          check: true,
+          path: item,
+          address: address?.[0] ?? "",
+        });
+      } catch {
+        /* skip unreadable path */
+      }
     })
   );
 };
@@ -549,6 +622,12 @@ const flashCheckAllChange = () => {
   align-items: center;
   gap: 6px;
   white-space: nowrap;
+}
+
+.flash-row-actions a.is-disabled {
+  opacity: 0.4;
+  pointer-events: none;
+  cursor: not-allowed;
 }
 
 .flash-row-actions__sep {

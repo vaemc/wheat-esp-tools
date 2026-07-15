@@ -1,58 +1,42 @@
-import cli, { execute } from "@/utils/cli";
+import { execute, type ExecuteOptions } from "@/utils/cli";
+import { withEsptoolLock } from "@/utils/esptoolLock";
 
-interface ListenOptions {
-  onStdout?: (line: string) => void;
-  onStderr?: (line: string) => void;
+function wrapEsptoolError(cause: unknown): Error {
+  const wrapped = new Error("ESPTOOL_FAILED");
+  (wrapped as unknown as { cause?: unknown }).cause = cause;
+  return wrapped;
 }
 
-function listenEsptool(opts: ListenOptions = {}): Promise<void> {
-  const { onStdout, onStderr } = opts;
-  return new Promise((resolve, reject) => {
-    const onStdoutLine = (line: string) => {
-      onStdout?.(line);
-    };
-    const onStderrLine = (line: string) => {
-      onStderr?.(line);
-    };
-    const onClose = () => {
-      cleanup();
-      resolve();
-    };
-    const onError = (err: unknown) => {
-      cleanup();
-      // 把底层错误信息一起带出来，方便上层（runEsptoolWriteFlash）做语义判定
-      const wrapped = new Error("ESPTOOL_FAILED");
-      // 附加原始 error，方便排查
-      (wrapped as unknown as { cause?: unknown }).cause = err;
-      reject(wrapped);
-    };
-    const cleanup = () => {
-      if (onStdout) {
-        cli.off("stdout", onStdoutLine);
+/**
+ * 执行 esptool 并等待该次进程结束。
+ * 全应用互斥：keep-alive 多页也不能并行抢串口。
+ * 非 0 退出码会 reject（write-flash 上层可按日志启发式吞掉假错误）。
+ */
+async function runEsptoolSession(
+  args: string[],
+  opts: ExecuteOptions = {}
+): Promise<void> {
+  return withEsptoolLock(async () => {
+    try {
+      const close = await execute("esptool", args, opts);
+      if (close.code != null && close.code !== 0) {
+        throw wrapEsptoolError(close);
       }
-      if (onStderr) {
-        cli.off("stderr", onStderrLine);
+    } catch (err) {
+      if (
+        err instanceof Error &&
+        (err.message === "ESPTOOL_FAILED" || err.message === "ESPTOOL_BUSY")
+      ) {
+        throw err;
       }
-      cli.off("close", onClose);
-      cli.off("error", onError);
-      cli.all.clear();
-    };
-
-    if (onStdout) {
-      cli.on("stdout", onStdoutLine);
+      throw wrapEsptoolError(err);
     }
-    if (onStderr) {
-      cli.on("stderr", onStderrLine);
-    }
-    cli.on("close", onClose);
-    cli.on("error", onError);
   });
 }
 
 /** 执行 esptool 并等待进程结束 */
 export function runEsptool(args: string[]): Promise<void> {
-  execute("esptool", args);
-  return listenEsptool();
+  return runEsptoolSession(args);
 }
 
 /** 执行 esptool 并在 stdout 回调中处理输出 */
@@ -60,18 +44,16 @@ export function runEsptoolWithStdout(
   args: string[],
   onStdout: (line: string) => void
 ): Promise<void> {
-  execute("esptool", args);
-  return listenEsptool({ onStdout });
+  return runEsptoolSession(args, { onStdout });
 }
 
-/** 执行 esptool 并同时回调 stdout / stderr（任意流均会触发对应回调） */
+/** 执行 esptool 并同时回调 stdout / stderr */
 export function runEsptoolWithIO(
   args: string[],
   onStdout: (line: string) => void,
   onStderr: (line: string) => void
 ): Promise<void> {
-  execute("esptool", args);
-  return listenEsptool({ onStdout, onStderr });
+  return runEsptoolSession(args, { onStdout, onStderr });
 }
 
 /** 执行 esptool 子命令并收集全部输出 */

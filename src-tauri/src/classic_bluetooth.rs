@@ -1,8 +1,12 @@
 //! Classic Bluetooth (BR/EDR) discovery via WinRT DeviceWatcher.
 //! Matches the approach in python/BleScanner (ble_scanner.py ClassicScannerWorker).
 
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc;
 use std::thread;
+use std::time::Duration;
+
+static CLASSIC_SCANNING: AtomicBool = AtomicBool::new(false);
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
 pub struct ClassicBtDevice {
@@ -22,7 +26,6 @@ mod win {
     use super::ClassicBtDevice;
     use std::collections::HashMap;
     use std::sync::{mpsc, Arc, Mutex};
-    use std::thread;
     use std::time::Duration;
     use tauri::{Emitter, WebviewWindow};
     use windows::core::{IInspectable, Interface, Ref, HSTRING};
@@ -55,11 +58,21 @@ mod win {
         by_id: Mutex<HashMap<String, CachedEntry>>,
     }
 
-    fn init_runtime() {
+    fn init_runtime() -> Result<(), String> {
+        // 仅接受 S_OK(0) / S_FALSE(1)。RPC_E_CHANGED_MODE 表示公寓模型冲突，不应继续。
         unsafe {
-            let _ = CoInitializeEx(None, COINIT_MULTITHREADED);
-            let _ = RoInitialize(RO_INIT_MULTITHREADED);
+            let hr = CoInitializeEx(None, COINIT_MULTITHREADED);
+            let code = hr.0;
+            if code != 0 && code != 1 {
+                return Err(format!("CoInitializeEx 失败: HRESULT(0x{code:08X})"));
+            }
+            match RoInitialize(RO_INIT_MULTITHREADED) {
+                Ok(()) => {}
+                Err(e) if e.code().0 == 1 => {} // S_FALSE：已初始化
+                Err(e) => return Err(format!("RoInitialize 失败: {e:?}")),
+            }
         }
+        Ok(())
     }
 
     fn normalize_mac(raw: &str) -> String {
@@ -173,9 +186,7 @@ mod win {
 
     fn emit_entry(window: &WebviewWindow, entry: &CachedEntry) {
         let device = entry_to_device(entry);
-        if let Ok(json) = serde_json::to_string(&device) {
-            let _ = window.emit("classic_bluetooth_scan_event", json);
-        }
+        let _ = window.emit("classic_bluetooth_scan_event", &device);
     }
 
     fn merge_rssi(current: Option<i16>, next: Option<i16>) -> Option<i16> {
@@ -297,8 +308,16 @@ mod win {
         ])
     }
 
-    pub fn run_watcher(window: WebviewWindow, stop_rx: mpsc::Receiver<()>) {
-        init_runtime();
+    pub fn run_watcher(
+        window: WebviewWindow,
+        stop_rx: mpsc::Receiver<()>,
+        ready_tx: mpsc::Sender<Result<(), String>>,
+    ) {
+        if let Err(e) = init_runtime() {
+            let _ = window.emit("classic_bluetooth_scan_error", &e);
+            let _ = ready_tx.send(Err(e));
+            return;
+        }
 
         let ctx = Arc::new(WatcherContext {
             window: window.clone(),
@@ -317,13 +336,15 @@ mod win {
         ) {
             Ok(w) => w,
             Err(e) => {
-                eprintln!("[classic-bt] CreateWatcher failed: {e:?}");
+                let msg = format!("CreateWatcher 失败: {e:?}");
+                let _ = window.emit("classic_bluetooth_scan_error", &msg);
+                let _ = ready_tx.send(Err(msg));
                 return;
             }
         };
 
         let ctx_added = ctx.clone();
-        let _token_added = watcher
+        if watcher
             .Added(&TypedEventHandler::new(
                 move |_watcher: Ref<DeviceWatcher>, info: Ref<DeviceInformation>| {
                     if let Some(info) = info.as_ref() {
@@ -332,10 +353,16 @@ mod win {
                     Ok(())
                 },
             ))
-            .ok();
+            .is_err()
+        {
+            let msg = "注册 Added 失败".to_string();
+            let _ = window.emit("classic_bluetooth_scan_error", &msg);
+            let _ = ready_tx.send(Err(msg));
+            return;
+        }
 
         let ctx_updated = ctx.clone();
-        let _token_updated = watcher
+        if watcher
             .Updated(&TypedEventHandler::new(
                 move |_watcher: Ref<DeviceWatcher>, upd: Ref<DeviceInformationUpdate>| {
                     if let Some(upd) = upd.as_ref() {
@@ -344,10 +371,16 @@ mod win {
                     Ok(())
                 },
             ))
-            .ok();
+            .is_err()
+        {
+            let msg = "注册 Updated 失败".to_string();
+            let _ = window.emit("classic_bluetooth_scan_error", &msg);
+            let _ = ready_tx.send(Err(msg));
+            return;
+        }
 
         let ctx_removed = ctx.clone();
-        let _token_removed = watcher
+        if watcher
             .Removed(&TypedEventHandler::new(
                 move |_watcher: Ref<DeviceWatcher>, upd: Ref<DeviceInformationUpdate>| {
                     if let Some(upd) = upd.as_ref() {
@@ -356,38 +389,103 @@ mod win {
                     Ok(())
                 },
             ))
-            .ok();
-
-        if let Err(e) = watcher.Start() {
-            eprintln!("[classic-bt] watcher.Start failed: {e:?}");
+            .is_err()
+        {
+            let msg = "注册 Removed 失败".to_string();
+            let _ = window.emit("classic_bluetooth_scan_error", &msg);
+            let _ = ready_tx.send(Err(msg));
             return;
         }
 
+        if let Err(e) = watcher.Start() {
+            let msg = format!("启动经典蓝牙扫描失败: {e:?}");
+            let _ = window.emit("classic_bluetooth_scan_error", &msg);
+            let _ = ready_tx.send(Err(msg));
+            return;
+        }
+
+        let _ = ready_tx.send(Ok(()));
+
         loop {
-            if stop_rx.try_recv().is_ok() {
-                let _ = watcher.Stop();
-                break;
+            match stop_rx.recv_timeout(Duration::from_millis(200)) {
+                Ok(_) | Err(mpsc::RecvTimeoutError::Disconnected) => {
+                    let _ = watcher.Stop();
+                    break;
+                }
+                Err(mpsc::RecvTimeoutError::Timeout) => {}
             }
-            thread::sleep(Duration::from_millis(100));
         }
     }
 }
 
 #[cfg(windows)]
-pub async fn start_classic_scan(window: tauri::WebviewWindow) {
-    use tauri::Listener;
+pub async fn start_classic_scan(window: tauri::WebviewWindow) -> Result<(), String> {
+    use std::panic::{catch_unwind, AssertUnwindSafe};
+    use tauri::{Emitter, Listener};
+
+    if CLASSIC_SCANNING.swap(true, Ordering::SeqCst) {
+        return Err("经典蓝牙扫描已在进行中".into());
+    }
 
     let (tx, rx) = mpsc::channel();
+    let stop_tx = tx.clone();
+    let (ready_tx, ready_rx) = mpsc::channel::<Result<(), String>>();
 
     let listen = window.listen("stop_classic_bluetooth_scan", move |_event| {
         let _ = tx.send(());
     });
 
+    // 阻塞等待放在独立线程，避免占住 async runtime；门闩仅在 worker 退出时清除（禁止强制清）
     thread::spawn(move || {
-        win::run_watcher(window.clone(), rx);
+        let result = catch_unwind(AssertUnwindSafe(|| {
+            win::run_watcher(window.clone(), rx, ready_tx);
+        }));
+        if let Err(payload) = result {
+            eprintln!("[classic-bt] watcher thread panicked: {payload:?}");
+            let _ = window.emit(
+                "classic_bluetooth_scan_error",
+                "经典蓝牙扫描线程异常退出",
+            );
+        }
         window.unlisten(listen);
+        CLASSIC_SCANNING.store(false, Ordering::SeqCst);
     });
+
+    /// 等待 worker 退出清标志；绝不 force-clear（否则会叠第二路扫描）
+    fn wait_scan_idle() {
+        for _ in 0..1500 {
+            // 最长约 30s
+            if !CLASSIC_SCANNING.load(Ordering::SeqCst) {
+                return;
+            }
+            thread::sleep(Duration::from_millis(20));
+        }
+        eprintln!("[classic-bt] worker still running after wait; keeping scan lock");
+    }
+
+    // 在 blocking 池等待 ready，避免卡住 Tokio worker
+    let ready = tauri::async_runtime::spawn_blocking(move || {
+        ready_rx.recv_timeout(Duration::from_secs(5))
+    })
+    .await
+    .map_err(|e| format!("等待扫描启动失败: {e}"))?;
+
+    match ready {
+        Ok(Ok(())) => Ok(()),
+        Ok(Err(e)) => {
+            let _ = stop_tx.send(());
+            let _ = tauri::async_runtime::spawn_blocking(wait_scan_idle).await;
+            Err(e)
+        }
+        Err(_) => {
+            let _ = stop_tx.send(());
+            let _ = tauri::async_runtime::spawn_blocking(wait_scan_idle).await;
+            Err("启动经典蓝牙扫描超时".into())
+        }
+    }
 }
 
 #[cfg(not(windows))]
-pub async fn start_classic_scan(_window: tauri::WebviewWindow) {}
+pub async fn start_classic_scan(_window: tauri::WebviewWindow) -> Result<(), String> {
+    Err("经典蓝牙扫描仅支持 Windows".into())
+}

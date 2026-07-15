@@ -113,12 +113,17 @@ function openFirmwareDir() {
 }
 
 async function onQuickFlash(path: string) {
+  if (flashingPath.value) {
+    return;
+  }
   flashingPath.value = path;
   try {
     await flashFirmware(path);
   } catch (e) {
     if (e instanceof Error && e.message === "NO_PORT") {
       message.warning(t("firmware.noPort"));
+    } else if (e instanceof Error && e.message === "ESPTOOL_BUSY") {
+      message.warning(t("firmware.flashFailed"));
     } else {
       message.error(t("firmware.flashFailed"));
     }

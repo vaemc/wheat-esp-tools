@@ -1,6 +1,7 @@
 import { defineConfig } from "vite";
 import vue from "@vitejs/plugin-vue";
 import { fileURLToPath, URL } from "node:url";
+
 // https://vitejs.dev/config/
 export default defineConfig(async () => ({
   resolve: {
@@ -24,13 +25,31 @@ export default defineConfig(async () => ({
     rollupOptions: {
       output: {
         manualChunks(id) {
-          if (id.includes("node_modules")) {
-            return id
-              .toString()
-              .split("node_modules/")[1]
-              .split("/")[0]
-              .toString();
+          if (!id.includes("node_modules")) {
+            return;
           }
+          if (id.includes("ant-design-vue") || id.includes("@ant-design")) {
+            return "vendor-antd";
+          }
+          if (
+            id.includes("echarts") ||
+            id.includes("vue-echarts") ||
+            id.includes("zrender")
+          ) {
+            return "vendor-echarts";
+          }
+          if (id.includes("xterm")) {
+            return "vendor-xterm";
+          }
+          if (
+            id.includes("/vue/") ||
+            id.includes("vue-router") ||
+            id.includes("pinia") ||
+            id.includes("@vue/")
+          ) {
+            return "vendor-vue";
+          }
+          return "vendor";
         },
       },
     },

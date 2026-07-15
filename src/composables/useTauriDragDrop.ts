@@ -20,11 +20,12 @@ export function useTauriDragDrop(handlers: {
 }) {
   const active = ref(false);
   const unlisteners: UnlistenFn[] = [];
+  let cancelled = false;
 
   async function setup() {
     try {
-      unlisteners.push(
-        await listen<DragDropPayload>("tauri://drag-drop", (event) => {
+      const offs = await Promise.all([
+        listen<DragDropPayload>("tauri://drag-drop", (event) => {
           if (!active.value) {
             return;
           }
@@ -32,30 +33,39 @@ export function useTauriDragDrop(handlers: {
           if (paths.length) {
             handlers.onDrop?.(paths);
           }
-        })
-      );
-      unlisteners.push(
-        await listen("tauri://drag-enter", () => {
+        }),
+        listen("tauri://drag-enter", () => {
           if (!active.value) {
             return;
           }
           handlers.onEnter?.();
-        })
-      );
-      unlisteners.push(
-        await listen("tauri://drag-leave", () => {
+        }),
+        listen("tauri://drag-leave", () => {
           if (!active.value) {
             return;
           }
           handlers.onLeave?.();
-        })
-      );
+        }),
+      ]);
+
+      if (cancelled) {
+        for (const off of offs) {
+          try {
+            off();
+          } catch {
+            /* noop */
+          }
+        }
+        return;
+      }
+      unlisteners.push(...offs);
     } catch {
       /* browser / 非 Tauri 环境 */
     }
   }
 
   onMounted(() => {
+    cancelled = false;
     active.value = true;
     void setup();
   });
@@ -70,6 +80,7 @@ export function useTauriDragDrop(handlers: {
   });
 
   onBeforeUnmount(() => {
+    cancelled = true;
     active.value = false;
     for (const off of unlisteners) {
       try {

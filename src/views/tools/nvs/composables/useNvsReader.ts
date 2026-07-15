@@ -1,6 +1,6 @@
 import { computed, ref } from "vue";
 import { open } from "@tauri-apps/plugin-dialog";
-import moment from "moment";
+import { nowMs } from "@/utils/datetime";
 import { runEsptoolReadFlash } from "@/utils/esptoolRead";
 import { runEsptoolWriteFlash } from "@/utils/esptoolWrite";
 import {
@@ -165,6 +165,9 @@ export function useNvsReader() {
 
   /** 检测 NVS 分区后读取并解析 */
   async function readFromDevice() {
+    if (loading.value) {
+      return;
+    }
     const port = usePortStore().selectedPort;
     if (!port) {
       throw new Error("NO_PORT");
@@ -177,7 +180,7 @@ export function useNvsReader() {
     try {
       await detectNvsPartitionFromDevice(port);
 
-      const savePath = await nvsTempPath(`nvs-${moment().valueOf()}.bin`);
+      const savePath = await nvsTempPath(`nvs-${nowMs()}.bin`);
 
       await runEsptoolReadFlash(
         port,
@@ -193,6 +196,9 @@ export function useNvsReader() {
   }
 
   async function openLocalFile() {
+    if (loading.value) {
+      return;
+    }
     const selected = await open({
       multiple: false,
       filters: [{ name: "NVS Binary", extensions: ["bin"] }],
@@ -294,7 +300,7 @@ export function useNvsReader() {
       throw new Error("NO_EDITS");
     }
 
-    const savePath = await nvsTempPath(`nvs-edited-${moment().valueOf()}.bin`);
+    const savePath = await nvsTempPath(`nvs-edited-${nowMs()}.bin`);
 
     return rebuildNvsPartition({
       sourcePath: nvsBinPath.value,
@@ -311,6 +317,9 @@ export function useNvsReader() {
     /** 写回成功后刷新基准是否失败（非关键步骤；仅作日志/提示用） */
     refreshError?: unknown;
   }> {
+    if (loading.value) {
+      throw new Error("BUSY");
+    }
     const port = usePortStore().selectedPort;
     if (!port) {
       throw new Error("NO_PORT");
@@ -318,39 +327,40 @@ export function useNvsReader() {
     if (!sourceIsDevice.value) {
       throw new Error("NOT_FROM_DEVICE");
     }
-    const summary = await rebuildToFile();
-    await runEsptoolWriteFlash(
-      port,
-      baudRate.value,
-      [{ offset: offset.value, path: summary.save_path }],
-      { eraseAll: false }
-    );
-
-    // ⬇️ 走到这里 = esptool write-flash 已成功写入设备
-    // (runEsptoolWriteFlash 内部基于 stdout 的 "Hash of data verified" /
-    //  "Leaving..." 等成功标志做判定，吃掉了 Tauri Shell close/error 竞态)
-    //
-    // 下面的"刷新基准"只是为了让下次编辑有正确的 diff 起点，属于非关键步骤。
-    // 即便 parse 失败（例如生成的 bin 自身解析时碰到 esp-nvs-partition-tool 的边角问题），
-    // 也不应该让外层把整次写回判定为失败。
-    let refreshError: unknown;
+    loading.value = true;
     try {
-      await parseFile(summary.save_path, true);
-    } catch (err) {
-      refreshError = err;
-      // 兜底：用当前 UI 状态作为新基准，避免后续 diff 错乱
-      commitCurrentAsBaseline(summary.save_path);
-      console.warn(
-        "[NVS] 写回设备成功，但重新解析新 bin 失败，已使用本地状态作为基准：",
-        err
+      const summary = await rebuildToFile();
+      await runEsptoolWriteFlash(
+        port,
+        baudRate.value,
+        [{ offset: offset.value, path: summary.save_path }],
+        { eraseAll: false }
       );
-    }
 
-    return { summary, offset: offset.value, refreshError };
+      // 写回成功后刷新基准（非关键；失败不推翻写回结果）
+      let refreshError: unknown;
+      try {
+        await parseFile(summary.save_path, true);
+      } catch (err) {
+        refreshError = err;
+        commitCurrentAsBaseline(summary.save_path);
+        console.warn(
+          "[NVS] 写回设备成功，但重新解析新 bin 失败，已使用本地状态作为基准：",
+          err
+        );
+      }
+
+      return { summary, offset: offset.value, refreshError };
+    } finally {
+      loading.value = false;
+    }
   }
 
   /** 从用户选择的 ESP-IDF NVS CSV 一键生成 .bin（不直接烧录） */
   async function generateFromCsv(): Promise<NvsRebuildSummary | null> {
+    if (loading.value) {
+      return null;
+    }
     const selected = await open({
       multiple: false,
       filters: [{ name: "ESP-IDF NVS CSV", extensions: ["csv"] }],
@@ -362,15 +372,19 @@ export function useNvsReader() {
     if (!sizeBytes || sizeBytes % 0x1000 !== 0) {
       throw new Error("BAD_SIZE");
     }
-    const savePath = await nvsTempPath(`nvs-from-csv-${moment().valueOf()}.bin`);
-    const summary = await generateNvsFromCsv({
-      csvPath: selected,
-      size: sizeBytes,
-      savePath,
-    });
-    // 生成后立即用作当前编辑基准，但来源不是设备
-    await parseFile(summary.save_path, false);
-    return summary;
+    loading.value = true;
+    try {
+      const savePath = await nvsTempPath(`nvs-from-csv-${nowMs()}.bin`);
+      const summary = await generateNvsFromCsv({
+        csvPath: selected,
+        size: sizeBytes,
+        savePath,
+      });
+      await parseFile(summary.save_path, false);
+      return summary;
+    } finally {
+      loading.value = false;
+    }
   }
 
   return {

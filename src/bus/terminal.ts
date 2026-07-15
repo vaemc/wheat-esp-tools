@@ -1,5 +1,10 @@
 import mitt from "mitt";
-const emitter = mitt();
+
+type TerminalEvents = {
+  writeln: string;
+};
+
+const emitter = mitt<TerminalEvents>();
 export default emitter;
 
 export function writeln(data: string) {

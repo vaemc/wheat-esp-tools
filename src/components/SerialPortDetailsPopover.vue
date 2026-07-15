@@ -48,6 +48,8 @@ const open = ref(false);
 const loading = ref(false);
 const ports = ref<SerialPortDetail[]>([]);
 let refreshTimer: ReturnType<typeof setInterval> | null = null;
+let refreshing = false;
+let refreshSeq = 0;
 
 const stopAutoRefresh = () => {
   if (refreshTimer) {
@@ -57,11 +59,22 @@ const stopAutoRefresh = () => {
 };
 
 const refresh = async () => {
+  if (refreshing) {
+    return;
+  }
+  const seq = ++refreshSeq;
+  refreshing = true;
   loading.value = true;
   try {
-    ports.value = await getSerialPortDetails();
+    const list = await getSerialPortDetails();
+    if (seq === refreshSeq) {
+      ports.value = list;
+    }
   } finally {
-    loading.value = false;
+    if (seq === refreshSeq) {
+      loading.value = false;
+    }
+    refreshing = false;
   }
 };
 

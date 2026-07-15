@@ -1,4 +1,4 @@
-import { runEsptool } from "@/utils/esptoolCli";
+import { runEsptoolWriteFlash } from "@/utils/esptoolWrite";
 import { usePortStore } from "@/stores/port";
 import type { useFlashOptions } from "@/composables/useFlashOptions";
 
@@ -14,23 +14,15 @@ export function useQuickFlash(options: FlashOptions) {
       throw new Error("NO_PORT");
     }
 
-    const cmd = [
-      "-p",
+    await runEsptoolWriteFlash(
       port,
-      "-b",
       options.baudRate.value,
-      "write-flash",
-      "--flash-mode",
-      options.spiMode.value,
-      "0x0",
-      path,
-    ];
-
-    if (options.eraseBeforeFlash.value) {
-      cmd.push("--erase-all");
-    }
-
-    await runEsptool(cmd);
+      [{ offset: "0x0", path }],
+      {
+        flashMode: options.spiMode.value,
+        eraseAll: options.eraseBeforeFlash.value,
+      }
+    );
   }
 
   return { flashFirmware };

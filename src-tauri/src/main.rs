@@ -7,15 +7,23 @@ use btleplug::platform::{Adapter, Manager, PeripheralId};
 use esp_nvs_partition_tool::partition::{DataValue, EntryContent, NvsEntry};
 use esp_nvs_partition_tool::NvsPartition;
 use futures::stream::StreamExt;
-use serialport::available_ports;
 use std::collections::HashMap;
 use std::env;
 use std::fs;
 use std::path::Path;
 use std::process::Command;
-use std::sync::mpsc::{self, TryRecvError};
-use std::time::SystemTime;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::time::{Duration, SystemTime};
 use tauri::{Emitter, Listener, WebviewWindow};
+
+static BLE_SCANNING: AtomicBool = AtomicBool::new(false);
+
+struct BleScanFlagGuard;
+impl Drop for BleScanFlagGuard {
+    fn drop(&mut self) {
+        BLE_SCANNING.store(false, Ordering::SeqCst);
+    }
+}
 
 mod classic_bluetooth;
 mod serial;
@@ -196,8 +204,20 @@ fn parse_data_value(value_type: &str, raw_value: &str) -> Result<DataValue, Stri
             }
             Ok(DataValue::I32(v as i32))
         }
-        "u64" => Ok(DataValue::U64(parse_unsigned(raw_value)? as u64)),
-        "i64" => Ok(DataValue::I64(parse_signed(raw_value)? as i64)),
+        "u64" => {
+            let v = parse_unsigned(raw_value)?;
+            if v > u64::MAX as u128 {
+                return Err("u64 超出范围".into());
+            }
+            Ok(DataValue::U64(v as u64))
+        }
+        "i64" => {
+            let v = parse_signed(raw_value)?;
+            if v < i64::MIN as i128 || v > i64::MAX as i128 {
+                return Err("i64 超出范围".into());
+            }
+            Ok(DataValue::I64(v as i64))
+        }
         "string" | "str" | "sz" => Ok(DataValue::String(raw_value.to_string())),
         "binary" | "blob" | "blob_data" | "bin" => {
             // 允许 "0xAABB" 或纯十六进制
@@ -223,7 +243,7 @@ fn apply_edits(partition: &mut NvsPartition, edits: &[NvsEdit]) -> Result<(), St
                 let mut hit = false;
                 for entry in &mut partition.entries {
                     if entry.namespace == edit.namespace && entry.key == edit.key {
-                        entry.set_data(dv.clone());
+                        entry.set_data(dv);
                         hit = true;
                         break;
                     }
@@ -242,6 +262,15 @@ fn apply_edits(partition: &mut NvsPartition, edits: &[NvsEdit]) -> Result<(), St
                 }
                 if edit.key.len() > 15 {
                     return Err(format!("键长度超过 15: {}", edit.key));
+                }
+                let exists = partition.entries.iter().any(|e| {
+                    e.namespace == edit.namespace && e.key == edit.key
+                });
+                if exists {
+                    return Err(format!(
+                        "键已存在，请使用 update: {}/{}",
+                        edit.namespace, edit.key
+                    ));
                 }
                 partition.entries.push(NvsEntry::new_data(
                     edit.namespace.clone(),
@@ -285,30 +314,7 @@ fn rebuild_nvs_partition(
         NvsPartition::try_from_bytes(bytes).map_err(|e| format!("解析源 NVS 分区失败: {e}"))?;
 
     apply_edits(&mut partition, &edits)?;
-
-    let entries_count = partition
-        .entries
-        .iter()
-        .filter(|e| !e.namespace.is_empty() && !e.key.is_empty())
-        .count();
-
-    let blob = partition
-        .generate_partition(size as usize)
-        .map_err(|e| format!("生成 NVS 二进制失败: {e}"))?;
-
-    if let Some(parent) = Path::new(save_path).parent() {
-        if !parent.as_os_str().is_empty() {
-            fs::create_dir_all(parent).map_err(|e| format!("创建目录失败: {e}"))?;
-        }
-    }
-    let written = blob.len() as u64;
-    fs::write(save_path, blob).map_err(|e| format!("写入文件失败: {e}"))?;
-
-    Ok(NvsRebuildSummary {
-        save_path: save_path.to_string(),
-        written_size: written,
-        entries: entries_count,
-    })
+    write_partition_blob(partition, size, save_path)
 }
 
 /// 从 ESP-IDF 标准 NVS CSV 直接生成新的 NVS 二进制。
@@ -326,6 +332,18 @@ fn generate_nvs_from_csv(
     let csv = fs::read_to_string(csv_path).map_err(|e| format!("读取 CSV 失败: {e}"))?;
     let partition =
         NvsPartition::try_from_str(csv).map_err(|e| format!("解析 NVS CSV 失败: {e}"))?;
+    write_partition_blob(partition, size, save_path)
+}
+
+fn write_partition_blob(
+    partition: NvsPartition,
+    size: u64,
+    save_path: &str,
+) -> Result<NvsRebuildSummary, String> {
+    // 防止异常 size 导致巨量分配（最大 64 MiB）
+    if size > 64 * 1024 * 1024 {
+        return Err("分区大小超过上限 (64 MiB)".into());
+    }
 
     let entries_count = partition
         .entries
@@ -361,9 +379,15 @@ struct FileInfo {
     create_time: u64,
 }
 
-async fn get_central(manager: &Manager) -> Adapter {
-    let adapters = manager.adapters().await.unwrap();
-    adapters.into_iter().nth(0).unwrap()
+async fn get_central(manager: &Manager) -> Result<Adapter, String> {
+    let adapters = manager
+        .adapters()
+        .await
+        .map_err(|e| format!("获取蓝牙适配器列表失败: {e}"))?;
+    adapters
+        .into_iter()
+        .next()
+        .ok_or_else(|| "未找到蓝牙适配器".to_string())
 }
 
 async fn emit_ble_device(window: &WebviewWindow, central: &Adapter, id: &PeripheralId) {
@@ -374,142 +398,211 @@ async fn emit_ble_device(window: &WebviewWindow, central: &Adapter, id: &Periphe
         return;
     };
 
+    let service_data: HashMap<String, Vec<u8>> = props
+        .service_data
+        .into_iter()
+        .map(|(uuid, data)| (uuid.to_string(), data))
+        .collect();
+    // btleplug 未暴露原始 adv 包；此处保留空数组，避免把 service_data 误标为 adv
+    let adv: Vec<u8> = Vec::new();
+
     let mr = BleDevice {
         address: props.address.to_string(),
         local_name: props.local_name.unwrap_or_default(),
         rssi: props.rssi.unwrap_or(0),
         manufacturer_data: props.manufacturer_data,
         services: props.services.iter().map(|x| x.to_string()).collect(),
-        service_data: props
-            .service_data
-            .iter()
-            .map(|(uuid, data)| (uuid.to_string(), data.clone()))
-            .collect(),
-        adv: props.service_data.values().flatten().cloned().collect(),
+        service_data,
+        adv,
     };
 
-    let _ = window.emit(
-        "ble_advertisement_scan_event",
-        serde_json::to_string(&mr).unwrap(),
-    );
+    let _ = window.emit("ble_advertisement_scan_event", &mr);
 }
 
+/// 启动 BLE 扫描：校验适配器后立即返回，扫描在后台任务中运行。
 #[tauri::command]
-async fn start_ble_advertisement_scan(window: WebviewWindow) {
-    let (tx, rx) = mpsc::channel();
-
-    let manager = Manager::new().await.unwrap();
-
-    // get the first bluetooth adapter
-    // connect to the adapter
-    let central = get_central(&manager).await;
-
-    // Each adapter has an event stream, we fetch via events(),
-    // simplifying the type, this will return what is essentially a
-    // Future<Result<Stream<Item=CentralEvent>>>.
-    let mut events = central.events().await.unwrap();
-
-    // start scanning for devices
-    central
-        .start_scan(ScanFilter::default())
-        .await
-        .expect("msg");
-
-    let listen = window.listen("stop_ble_advertisement_scan", move |_event| {
-        tx.send(()).unwrap();
-    });
-
-    // Print based on whatever the event receiver outputs. Note that the event
-    // receiver blocks, so in a real program, this should be run in its own
-    // thread (not task, as this library does not yet use async channels).
-    while let Some(event) = events.next().await {
-        match rx.try_recv() {
-            Ok(_) | Err(TryRecvError::Disconnected) => {
-                window.unlisten(listen);
-                break;
-            }
-            Err(TryRecvError::Empty) => {}
-        }
-        match event {
-            CentralEvent::DeviceDiscovered(id)
-            | CentralEvent::ManufacturerDataAdvertisement { id, .. }
-            | CentralEvent::ServicesAdvertisement { id, .. }
-            | CentralEvent::ServiceDataAdvertisement { id, .. } => {
-                emit_ble_device(&window, &central, &id).await;
-            }
-            CentralEvent::DeviceConnected(_id) => {}
-            CentralEvent::DeviceDisconnected(_id) => {}
-            _ => {}
-        }
+async fn start_ble_advertisement_scan(window: WebviewWindow) -> Result<(), String> {
+    if BLE_SCANNING.swap(true, Ordering::SeqCst) {
+        return Err("BLE 扫描已在进行中".into());
     }
+
+    let start_result: Result<(), String> = async {
+        let manager = Manager::new()
+            .await
+            .map_err(|e| format!("初始化蓝牙失败: {e}"))?;
+        let central = get_central(&manager).await?;
+        let mut events = central
+            .events()
+            .await
+            .map_err(|e| format!("订阅蓝牙事件失败: {e}"))?;
+        central
+            .start_scan(ScanFilter::default())
+            .await
+            .map_err(|e| format!("启动 BLE 扫描失败: {e}"))?;
+
+        let (stop_tx, mut stop_rx) = tokio::sync::mpsc::channel::<()>(1);
+        let listen = window.listen("stop_ble_advertisement_scan", move |_event| {
+            let _ = stop_tx.try_send(());
+        });
+
+        tauri::async_runtime::spawn(async move {
+            let _flag_guard = BleScanFlagGuard; // panic/提前 return 也清门闩
+            let _manager = manager; // 保持 Manager 存活至扫描结束
+            loop {
+                tokio::select! {
+                    _ = stop_rx.recv() => break,
+                    event = events.next() => {
+                        match event {
+                            Some(
+                                CentralEvent::DeviceDiscovered(id)
+                                | CentralEvent::ManufacturerDataAdvertisement { id, .. }
+                                | CentralEvent::ServicesAdvertisement { id, .. }
+                                | CentralEvent::ServiceDataAdvertisement { id, .. },
+                            ) => {
+                                let _ = tokio::time::timeout(
+                                    Duration::from_millis(800),
+                                    emit_ble_device(&window, &central, &id),
+                                )
+                                .await;
+                            }
+                            Some(_) => {}
+                            None => break,
+                        }
+                    }
+                }
+            }
+            let _ = central.stop_scan().await;
+            window.unlisten(listen);
+        });
+
+        Ok(())
+    }
+    .await;
+
+    if start_result.is_err() {
+        BLE_SCANNING.store(false, Ordering::SeqCst);
+    }
+    start_result
 }
 
 #[tauri::command]
-async fn start_classic_bluetooth_scan(window: WebviewWindow) {
-    classic_bluetooth::start_classic_scan(window).await;
+async fn start_classic_bluetooth_scan(window: WebviewWindow) -> Result<(), String> {
+    classic_bluetooth::start_classic_scan(window).await
 }
 
 #[tauri::command]
-fn get_serial_port_list() -> Vec<String> {
-    let port_info_list = available_ports().unwrap();
-    port_info_list
-        .iter()
-        .map(|x| x.port_name.to_string())
-        .collect()
+fn get_serial_port_list() -> Result<Vec<String>, String> {
+    // list_ports_with_details 内部已含 SetupAPI → serialport 回退
+    Ok(serial::port_info::list_ports_with_details()?
+        .into_iter()
+        .map(|p| p.port_name)
+        .collect())
 }
 
 #[tauri::command]
-fn get_serial_port_details() -> Vec<serial::port_info::SerialPortEntry> {
+fn get_serial_port_details() -> Result<Vec<serial::port_info::SerialPortEntry>, String> {
     serial::port_info::list_ports_with_details()
 }
 
 #[tauri::command]
-fn get_current_dir() -> String {
-    let path = env::current_dir().unwrap();
-    path.display().to_string()
+fn get_current_dir() -> Result<String, String> {
+    env::current_dir()
+        .map(|p| p.display().to_string())
+        .map_err(|e| format!("获取当前目录失败: {e}"))
 }
 
 #[tauri::command]
-fn open_file_in_explorer(path: &str) {
-    let file_path = format!(r#"{}"#, path);
-    Command::new("explorer")
-        .arg("/select,")
-        .arg(file_path)
-        .status()
-        .unwrap();
+fn open_file_in_explorer(path: &str) -> Result<(), String> {
+    #[cfg(target_os = "windows")]
+    {
+        Command::new("explorer")
+            .arg("/select,")
+            .arg(path)
+            .status()
+            .map_err(|e| format!("打开资源管理器失败: {e}"))?;
+        Ok(())
+    }
+    #[cfg(target_os = "macos")]
+    {
+        Command::new("open")
+            .args(["-R", path])
+            .status()
+            .map_err(|e| format!("打开 Finder 失败: {e}"))?;
+        Ok(())
+    }
+    #[cfg(all(unix, not(target_os = "macos")))]
+    {
+        let parent = Path::new(path)
+            .parent()
+            .map(|p| p.to_path_buf())
+            .unwrap_or_else(|| Path::new(".").to_path_buf());
+        Command::new("xdg-open")
+            .arg(parent)
+            .spawn()
+            .map_err(|e| format!("打开文件管理器失败: {e}"))?;
+        Ok(())
+    }
 }
 
 #[tauri::command]
-fn open_directory_in_explorer(path: &str) {
-    Command::new("explorer").arg(path).spawn().unwrap();
+fn open_directory_in_explorer(path: &str) -> Result<(), String> {
+    #[cfg(target_os = "windows")]
+    {
+        Command::new("explorer")
+            .arg(path)
+            .spawn()
+            .map_err(|e| format!("打开资源管理器失败: {e}"))?;
+        Ok(())
+    }
+    #[cfg(target_os = "macos")]
+    {
+        Command::new("open")
+            .arg(path)
+            .status()
+            .map_err(|e| format!("打开 Finder 失败: {e}"))?;
+        Ok(())
+    }
+    #[cfg(all(unix, not(target_os = "macos")))]
+    {
+        Command::new("xdg-open")
+            .arg(path)
+            .spawn()
+            .map_err(|e| format!("打开文件管理器失败: {e}"))?;
+        Ok(())
+    }
 }
 
 #[tauri::command]
-fn get_file_info(path: &str) -> FileInfo {
-    let metadata = fs::metadata(path).unwrap();
-    FileInfo {
-        name: Path::new(path)
-            .file_name()
-            .unwrap()
-            .to_str()
-            .unwrap()
-            .to_string(),
+fn get_file_info(path: &str) -> Result<FileInfo, String> {
+    let metadata = fs::metadata(path).map_err(|e| format!("读取文件信息失败: {e}"))?;
+    let name = Path::new(path)
+        .file_name()
+        .map(|n| n.to_string_lossy().into_owned())
+        .unwrap_or_else(|| path.to_string());
+
+    let create_time = metadata
+        .created()
+        .or_else(|_| metadata.modified())
+        .ok()
+        .and_then(|t| t.duration_since(SystemTime::UNIX_EPOCH).ok())
+        .map(|d| d.as_secs())
+        .unwrap_or(0);
+
+    Ok(FileInfo {
+        name,
         is_dir: metadata.is_dir(),
         is_file: metadata.is_file(),
         len: metadata.len(),
-        create_time: metadata
-            .created()
-            .unwrap()
-            .duration_since(SystemTime::UNIX_EPOCH)
-            .unwrap()
-            .as_secs(),
-    }
+        create_time,
+    })
 }
 
 fn main() {
     for item in ["firmware"].iter() {
         if !Path::new(item).exists() {
-            fs::create_dir(item).unwrap();
+            if let Err(e) = fs::create_dir(item) {
+                eprintln!("创建目录 {item} 失败: {e}");
+            }
         }
     }
 

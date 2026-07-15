@@ -1,7 +1,7 @@
 import { computed, ref, shallowRef } from "vue";
 import { open } from "@tauri-apps/plugin-dialog";
 import { readFile, writeFile } from "@tauri-apps/plugin-fs";
-import moment from "moment";
+import { nowMs } from "@/utils/datetime";
 import { openFileInExplorer } from "@/utils/common";
 import { runEsptoolEraseRegion } from "@/utils/esptoolErase";
 import { runEsptoolReadFlash } from "@/utils/esptoolRead";
@@ -87,13 +87,16 @@ export function useOtaTool() {
       port,
       otadata.offset,
       otadata.size,
-      `otadata-${moment().valueOf()}.bin`
+      `otadata-${nowMs()}.bin`
     );
     otadataRaw.value = raw;
     otadataInfo.value = parseOtadata(raw, apps.length);
   }
 
   async function loadFromDevice(): Promise<void> {
+    if (loading.value) {
+      return;
+    }
     const port = requirePort();
     loading.value = true;
     try {
@@ -143,6 +146,9 @@ export function useOtaTool() {
   }
 
   async function eraseOtadata(): Promise<void> {
+    if (loading.value) {
+      return;
+    }
     const port = requirePort();
     const otadata = otadataPart.value;
     if (!otadata) {
@@ -163,6 +169,9 @@ export function useOtaTool() {
   }
 
   async function switchToSelected(): Promise<void> {
+    if (loading.value) {
+      return;
+    }
     const port = requirePort();
     const otadata = otadataPart.value;
     const target = selectedPartition.value;
@@ -180,7 +189,7 @@ export function useOtaTool() {
     loading.value = true;
     try {
       const next = buildSwitchedOtadata(raw, target, otaApps.value);
-      const path = await tempPath(`otadata-switch-${moment().valueOf()}.bin`);
+      const path = await tempPath(`otadata-switch-${nowMs()}.bin`);
       await writeFile(path, next);
       await runEsptoolWriteFlash(
         port,
@@ -195,6 +204,9 @@ export function useOtaTool() {
   }
 
   async function readOtaPartition(): Promise<string> {
+    if (loading.value) {
+      return "";
+    }
     const port = requirePort();
     const target = selectedPartition.value;
     if (!target) {
@@ -203,7 +215,7 @@ export function useOtaTool() {
     loading.value = true;
     try {
       const path = await tempPath(
-        `ota_${otaSlotOf(target)}-${moment().valueOf()}.bin`
+        `ota_${otaSlotOf(target)}-${nowMs()}.bin`
       );
       await runEsptoolReadFlash(
         port,
@@ -220,6 +232,9 @@ export function useOtaTool() {
   }
 
   async function writeOtaPartition(inputPath: string): Promise<void> {
+    if (loading.value) {
+      return;
+    }
     const port = requirePort();
     const target = selectedPartition.value;
     if (!target) {
@@ -250,6 +265,9 @@ export function useOtaTool() {
   }
 
   async function eraseOtaPartition(): Promise<void> {
+    if (loading.value) {
+      return;
+    }
     const port = requirePort();
     const target = selectedPartition.value;
     if (!target) {

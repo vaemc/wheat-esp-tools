@@ -18,7 +18,7 @@ serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 serialport = "4.2.0"
 btleplug = "0.12.0"
-tokio = { version = "1.32.0", features = ["rt", "sync", "full"] }
+tokio = { version = "1.32.0", features = ["rt", "sync", "time", "macros"] }
 futures = "0.3.28"
 esp-nvs-partition-tool = "0.1"
 tauri-plugin-shell = "2"

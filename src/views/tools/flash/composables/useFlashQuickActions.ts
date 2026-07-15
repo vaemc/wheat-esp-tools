@@ -1,7 +1,8 @@
+import { join } from "@tauri-apps/api/path";
 import { getCurrentDir, openFileInExplorer } from "@/utils/common";
 import { runEsptool, runEsptoolWithStdout } from "@/utils/esptoolCli";
 import { usePortStore } from "@/stores/port";
-import moment from "moment";
+import { nowMs } from "@/utils/datetime";
 import { message } from "ant-design-vue";
 import { useI18n } from "vue-i18n";
 
@@ -23,7 +24,11 @@ export function useFlashQuickActions() {
     if (!port) {
       return;
     }
-    await runEsptool(["-p", port, "-b", "115200", "erase-flash"]);
+    try {
+      await runEsptool(["-p", port, "-b", "115200", "erase-flash"]);
+    } catch {
+      message.error(t("flash.flashFailed"));
+    }
   }
 
   async function readFlash() {
@@ -33,16 +38,24 @@ export function useFlashQuickActions() {
     }
 
     const currentDir = await getCurrentDir();
-    const savePath = `${currentDir}\\firmware\\read-${moment().valueOf()}.bin`;
-
-    await runEsptoolWithStdout(
-      ["-p", port, "-b", "460800", "read-flash", "0", "ALL", savePath],
-      (line) => {
-        if (line.includes("Hard resetting via RTS pin...")) {
-          openFileInExplorer(savePath);
-        }
-      }
+    const savePath = await join(
+      currentDir,
+      "firmware",
+      `read-${nowMs()}.bin`
     );
+
+    try {
+      await runEsptoolWithStdout(
+        ["-p", port, "-b", "460800", "read-flash", "0", "ALL", savePath],
+        (line) => {
+          if (line.includes("Hard resetting via RTS pin...")) {
+            void openFileInExplorer(savePath);
+          }
+        }
+      );
+    } catch {
+      message.error(t("flash.flashFailed"));
+    }
   }
 
   return {

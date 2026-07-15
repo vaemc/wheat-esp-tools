@@ -1,7 +1,14 @@
-import { computed, onUnmounted, reactive, ref } from "vue";
+import {
+  computed,
+  onDeactivated,
+  onUnmounted,
+  reactive,
+  ref,
+} from "vue";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import { invoke } from "@tauri-apps/api/core";
 import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
+import { message } from "ant-design-vue";
 import type { BleDevicePayload, BleDeviceRecord, BleFilterState } from "../types";
 import { bytesToHex } from "../utils/bleFormat";
 
@@ -9,6 +16,9 @@ const appWindow = getCurrentWebviewWindow();
 
 const STALE_TTL_SEC = 10;
 const PRUNE_INTERVAL_MS = 1000;
+const FLUSH_MS = 150;
+const RESTART_RETRY_MS = 80;
+const RESTART_RETRY_MAX = 8;
 
 function defaultFilter(): BleFilterState {
   return {
@@ -63,13 +73,71 @@ function matchesFilter(device: BleDeviceRecord, filter: BleFilterState): boolean
   return true;
 }
 
+function asByteArray(value: unknown): number[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  return value.filter((x): x is number => typeof x === "number");
+}
+
+function asStringArray(value: unknown): string[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  return value.filter((x): x is string => typeof x === "string");
+}
+
+function asRecordNumberArrays(value: unknown): Record<string, number[]> {
+  if (!value || typeof value !== "object") {
+    return {};
+  }
+  const out: Record<string, number[]> = {};
+  for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
+    out[k] = asByteArray(v);
+  }
+  return out;
+}
+
+function parsePayload(payload: unknown): BleDevicePayload | null {
+  try {
+    const data =
+      typeof payload === "string" ? JSON.parse(payload) : payload;
+    if (!data || typeof data !== "object") {
+      return null;
+    }
+    const raw = data as Record<string, unknown>;
+    const address = typeof raw.address === "string" ? raw.address : "";
+    if (!address) {
+      return null;
+    }
+    return {
+      address,
+      local_name: typeof raw.local_name === "string" ? raw.local_name : "",
+      rssi: typeof raw.rssi === "number" ? raw.rssi : 0,
+      manufacturer_data: asRecordNumberArrays(raw.manufacturer_data),
+      services: asStringArray(raw.services),
+      service_data: asRecordNumberArrays(raw.service_data),
+      adv: asByteArray(raw.adv),
+    };
+  } catch {
+    return null;
+  }
+}
+
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 export function useBleScanner() {
   const scanning = ref(false);
   const devices = ref(new Map<string, BleDeviceRecord>());
   const filter = reactive(defaultFilter());
 
   let unlisten: UnlistenFn | null = null;
+  let setupPromise: Promise<void> | null = null;
   let pruneTimer: ReturnType<typeof setInterval> | null = null;
+  let flushTimer: ReturnType<typeof setTimeout> | null = null;
+  let dirty = false;
 
   const deviceList = computed(() =>
     [...devices.value.values()].sort((a, b) => b.rssi - a.rssi)
@@ -84,6 +152,19 @@ export function useBleScanner() {
     visible: filteredDevices.value.length,
     strongest: filteredDevices.value[0]?.rssi ?? null,
   }));
+
+  function scheduleFlush() {
+    if (flushTimer) {
+      return;
+    }
+    flushTimer = setTimeout(() => {
+      flushTimer = null;
+      if (dirty) {
+        dirty = false;
+        devices.value = new Map(devices.value);
+      }
+    }, FLUSH_MS);
+  }
 
   function upsert(payload: BleDevicePayload) {
     const now = Date.now();
@@ -106,7 +187,8 @@ export function useBleScanner() {
       adv: payload.adv.length > 0 ? payload.adv : (prev?.adv ?? []),
     };
     devices.value.set(payload.address, next);
-    devices.value = new Map(devices.value);
+    dirty = true;
+    scheduleFlush();
   }
 
   function pruneStale() {
@@ -131,6 +213,35 @@ export function useBleScanner() {
     devices.value = new Map();
   }
 
+  function clearTimers() {
+    if (pruneTimer) {
+      clearInterval(pruneTimer);
+      pruneTimer = null;
+    }
+    if (flushTimer) {
+      clearTimeout(flushTimer);
+      flushTimer = null;
+    }
+  }
+
+  async function invokeStartWithRetry() {
+    let lastErr: unknown;
+    for (let i = 0; i < RESTART_RETRY_MAX; i++) {
+      try {
+        await invoke("start_ble_advertisement_scan");
+        return;
+      } catch (err) {
+        lastErr = err;
+        const msg = typeof err === "string" ? err : String(err ?? "");
+        if (!msg.includes("已在进行中") || i === RESTART_RETRY_MAX - 1) {
+          throw err;
+        }
+        await sleep(RESTART_RETRY_MS);
+      }
+    }
+    throw lastErr;
+  }
+
   async function startScan() {
     if (scanning.value) {
       return;
@@ -138,7 +249,15 @@ export function useBleScanner() {
     clearDevices();
     scanning.value = true;
     pruneTimer = setInterval(pruneStale, PRUNE_INTERVAL_MS);
-    await invoke("start_ble_advertisement_scan");
+    try {
+      await invokeStartWithRetry();
+    } catch (err) {
+      scanning.value = false;
+      clearTimers();
+      message.error(
+        typeof err === "string" ? err : "启动 BLE 扫描失败"
+      );
+    }
   }
 
   async function stopScan() {
@@ -146,10 +265,11 @@ export function useBleScanner() {
       return;
     }
     scanning.value = false;
-    await appWindow.emit("stop_ble_advertisement_scan", {});
-    if (pruneTimer) {
-      clearInterval(pruneTimer);
-      pruneTimer = null;
+    clearTimers();
+    try {
+      await appWindow.emit("stop_ble_advertisement_scan", {});
+    } catch {
+      /* ignore */
     }
   }
 
@@ -165,26 +285,39 @@ export function useBleScanner() {
     if (unlisten) {
       return;
     }
-    unlisten = await listen<string>("ble_advertisement_scan_event", (event) => {
+    if (setupPromise) {
+      await setupPromise;
+      return;
+    }
+    setupPromise = (async () => {
       try {
-        const payload = JSON.parse(event.payload) as BleDevicePayload;
-        if (payload.address) {
-          upsert(payload);
-        }
-      } catch {
-        /* ignore malformed */
+        unlisten = await listen<unknown>(
+          "ble_advertisement_scan_event",
+          (event) => {
+            const payload = parsePayload(event.payload);
+            if (payload) {
+              upsert(payload);
+            }
+          }
+        );
+      } catch (err) {
+        unlisten = null;
+        throw err;
+      } finally {
+        setupPromise = null;
       }
-    });
+    })();
+    await setupPromise;
   }
+
+  onDeactivated(() => {
+    void stopScan();
+  });
 
   onUnmounted(() => {
     unlisten?.();
-    if (pruneTimer) {
-      clearInterval(pruneTimer);
-    }
-    if (scanning.value) {
-      appWindow.emit("stop_ble_advertisement_scan", {});
-    }
+    unlisten = null;
+    void stopScan();
   });
 
   return {

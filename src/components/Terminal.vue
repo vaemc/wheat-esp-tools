@@ -8,10 +8,10 @@ import "xterm/css/xterm.css";
 import "xterm/lib/xterm.js";
 import { Terminal } from "xterm";
 import { FitAddon } from "xterm-addon-fit";
-import { onMounted } from "vue";
+import { onMounted, onUnmounted } from "vue";
 import bus from "@/bus/terminal";
 import kleur from "kleur";
-import moment from "moment";
+import { formatDateTime } from "@/utils/datetime";
 
 const fitAddon = new FitAddon();
 
@@ -36,25 +36,34 @@ terminal.attachCustomKeyEventHandler((arg) => {
   return true;
 });
 
-window.onresize = () => {
+function fit() {
   fitAddon.fit();
-};
+}
 
-window.onpageshow = () => {
-  fitAddon.fit();
-};
-
-bus.on("writeln", (data) => {
+function onWriteLn(data: string) {
   terminal.writeln(
-    `${kleur
-      .bold()
-      .blue(`[${moment().format("YYYY-MM-DD HH:mm:ss")}] `)}${data}`
+    `${kleur.bold().blue(`[${formatDateTime()}] `)}${data}`
   );
-});
+}
 
 onMounted(() => {
+  const el = document.getElementById("terminal");
+  if (!el) {
+    console.error("[Terminal] #terminal element not found");
+    return;
+  }
   terminal.loadAddon(fitAddon);
-  terminal.open(document.getElementById("terminal") as HTMLElement);
+  terminal.open(el);
   fitAddon.fit();
+  window.addEventListener("resize", fit);
+  window.addEventListener("pageshow", fit);
+  bus.on("writeln", onWriteLn);
+});
+
+onUnmounted(() => {
+  window.removeEventListener("resize", fit);
+  window.removeEventListener("pageshow", fit);
+  bus.off("writeln", onWriteLn);
+  terminal.dispose();
 });
 </script>
