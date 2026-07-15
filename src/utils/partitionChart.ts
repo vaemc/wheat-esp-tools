@@ -203,7 +203,6 @@ export function buildPartitionMapOption(
       max: displayEnd,
       axisTick: {
         customValues: tickValues,
-        alignWithLabel: true,
       },
       axisLabel: {
         customValues: tickValues,
