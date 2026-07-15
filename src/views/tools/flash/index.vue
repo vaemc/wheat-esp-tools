@@ -69,7 +69,14 @@
           <a-checkbox v-model:checked="record.check" />
         </template>
         <template v-if="column.key === 'address'">
-          <a-input :bordered="false" v-model:value="record.address" />
+          <a-input
+            :bordered="false"
+            v-model:value="record.address"
+            :class="{
+              'address-input--alert': highlightedAddressPaths.has(record.path),
+            }"
+            @animationend="clearAddressHighlight(record.path)"
+          />
         </template>
         <template v-if="column.key === 'action'">
           <span class="flash-row-actions">
@@ -185,9 +192,33 @@ const flashing = ref(false);
 const mergeModalOpen = ref(false);
 const mergeFileName = ref("");
 const merging = ref(false);
+const highlightedAddressPaths = ref(new Set<string>());
 const busy = computed(
   () => flashing.value || exporting.value || merging.value
 );
+
+function highlightEmptyAddresses(items: Firmware[]) {
+  const paths = items
+    .filter((x) => x.address === "")
+    .map((x) => x.path);
+  if (paths.length === 0) {
+    return;
+  }
+  // 先清空再赋值，确保重复触发时能重新播动画
+  highlightedAddressPaths.value = new Set();
+  requestAnimationFrame(() => {
+    highlightedAddressPaths.value = new Set(paths);
+  });
+}
+
+function clearAddressHighlight(path: string) {
+  if (!highlightedAddressPaths.value.has(path)) {
+    return;
+  }
+  const next = new Set(highlightedAddressPaths.value);
+  next.delete(path);
+  highlightedAddressPaths.value = next;
+}
 
 const columns = ref([
   {
@@ -378,7 +409,7 @@ const confirmMerge = async () => {
   }
 };
 
-function assertReadySelection(selectedOnly = false): Firmware[] | null {
+function assertReadySelection(): Firmware[] | null {
   if (firmwareList.value.length === 0) {
     message.warning(i18n.global.t("flash.dialog.addFirmware"));
     return null;
@@ -390,13 +421,14 @@ function assertReadySelection(selectedOnly = false): Firmware[] | null {
     return null;
   }
 
-  const target = selectedOnly ? selected : firmwareList.value;
-  if (target.some((x) => x.address === "")) {
+  const missingAddress = selected.filter((x) => x.address === "");
+  if (missingAddress.length > 0) {
     message.warning(i18n.global.t("flash.dialog.inputAddress"));
+    highlightEmptyAddresses(missingAddress);
     return null;
   }
 
-  if (target.some((x) => x.path === "")) {
+  if (selected.some((x) => x.path === "")) {
     message.warning(i18n.global.t("flash.dialog.inputPath"));
     return null;
   }
@@ -415,7 +447,7 @@ const handle = (action: () => void | Promise<void>) => {
 
 /** 导出勾选的固件到所选文件夹：文件名_{地址}.扩展名 */
 const exportAll = async () => {
-  const selected = assertReadySelection(true);
+  const selected = assertReadySelection();
   if (!selected) {
     return;
   }
@@ -459,6 +491,11 @@ const removeFirmwareBtn = (item: Firmware) => {
 
 const flashFirmwareBtn = async (item: Firmware) => {
   if (busy.value) {
+    return;
+  }
+  if (item.address === "") {
+    message.warning(i18n.global.t("flash.dialog.inputAddress"));
+    highlightEmptyAddresses([item]);
     return;
   }
   const port = getPort();
@@ -663,5 +700,19 @@ const flashCheckAllChange = () => {
   margin: 0 0 10px;
   color: rgba(255, 255, 255, 0.55);
   font-size: 13px;
+}
+
+.address-input--alert {
+  animation: address-alert-blink 0.55s ease-in-out 3;
+}
+
+@keyframes address-alert-blink {
+  0%,
+  100% {
+    background-color: rgba(255, 77, 79, 0);
+  }
+  50% {
+    background-color: rgba(255, 77, 79, 0.45);
+  }
 }
 </style>
