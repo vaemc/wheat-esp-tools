@@ -103,6 +103,18 @@ export const layoutChildren: RouteRecordRaw[] = [
       menuOrder: 8,
     },
   },
+  {
+    path: "settings",
+    name: "settings",
+    component: () => import("@/views/settings/index.vue"),
+    meta: {
+      icon: "settings",
+      titleKey: "menu.settings",
+      menu: true,
+      menuGroup: "system",
+      menuOrder: 100,
+    },
+  },
 ];
 
 export const routes: RouteRecordRaw[] = [

@@ -31,3 +31,9 @@ src-tauri/gen/
 *.njsproj
 *.sln
 *.sw?
+
+# Tauri updater signing keys (never commit)
+.tauri-keys/
+*.key
+*.key.pub
+

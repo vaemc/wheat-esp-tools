@@ -1,9 +1,19 @@
+# 手动发版 + 应用内静默更新：
+# 1. 改 src-tauri/tauri.conf.json 的 version（如 1.0.1）
+# 2. 在 GitHub Releases 手动 Publish：tag = v{version}
+# 3. 本工作流签名构建、上传安装包，并生成 latest.json
+# 4. 客户端 check() → 确认 → downloadAndInstall() → relaunch()
+#
+# 必需 Secret：
+#   TAURI_SIGNING_PRIVATE_KEY = .tauri-keys/wheat-esp-tools.key 文件全文
+#
+# 不会在 push main 时自动创建 Release。
+
 name: Build Release
 
 on:
-  push:
-    branches:
-      - main
+  release:
+    types: [published]
   workflow_dispatch:
 
 env:
@@ -20,16 +30,30 @@ jobs:
         include:
           - platform: windows-latest
             args: ""
+            updater_key: windows-x86_64
           - platform: ubuntu-22.04
             args: ""
+            updater_key: linux-x86_64
           - platform: macos-latest
             args: ""
+            updater_key: darwin-aarch64
 
     runs-on: ${{ matrix.platform }}
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.tag_name || github.ref }}
+
+      - name: Require updater signing key
+        shell: bash
+        run: |
+          if [ -z "${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}" ]; then
+            echo "Missing secret TAURI_SIGNING_PRIVATE_KEY"
+            echo "将本地 .tauri-keys/wheat-esp-tools.key 全文添加到 GitHub Actions Secrets。"
+            exit 1
+          fi
 
       - name: Install Linux dependencies
         if: matrix.platform == 'ubuntu-22.04'
@@ -67,44 +91,75 @@ jobs:
       - name: Install frontend dependencies
         run: yarn install --frozen-lockfile
 
-      - name: Get version
+      - name: Resolve version from tauri.conf.json
         id: version
         shell: bash
         run: |
           VERSION=$(node -p "require('./src-tauri/tauri.conf.json').version")
+          if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+([.-][0-9A-Za-z.-]+)?$ ]]; then
+            echo "Invalid tauri.conf.json version: $VERSION"
+            exit 1
+          fi
+          TAG="v${VERSION}"
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-          echo "tag=v$VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "Tauri version=$VERSION → release tag=$TAG"
 
-      - name: Build Tauri app
+      - name: Verify release tag matches Tauri version
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          EVENT_NAME: ${{ github.event_name }}
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+          EXPECTED_TAG: ${{ steps.version.outputs.tag }}
+        run: |
+          set -euo pipefail
+          EXPECTED="$EXPECTED_TAG"
+
+          if [ "$EVENT_NAME" = "release" ]; then
+            if [ -z "$RELEASE_TAG" ]; then
+              echo "Release event missing tag_name"
+              exit 1
+            fi
+            if [ "$RELEASE_TAG" != "$EXPECTED" ]; then
+              echo "Release tag mismatch."
+              echo "  GitHub Release tag : $RELEASE_TAG"
+              echo "  tauri.conf.json    : $EXPECTED"
+              exit 1
+            fi
+            TARGET_TAG="$RELEASE_TAG"
+          else
+            TARGET_TAG="$EXPECTED"
+          fi
+
+          if ! gh release view "$TARGET_TAG" >/dev/null 2>&1; then
+            echo "Release \"$TARGET_TAG\" does not exist."
+            echo "请先手动 Publish Release（tag=$TARGET_TAG）。"
+            exit 1
+          fi
+
+          echo "Uploading assets to existing release: $TARGET_TAG"
+
+      - name: Build Tauri app (signed updater artifacts)
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         run: yarn tauri build ${{ matrix.args }}
 
       - name: Rename release assets
         shell: bash
         env:
           APP_SLUG: ${{ env.APP_SLUG }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
         run: node .github/scripts/rename-release-assets.mjs "${{ matrix.platform }}" "${{ steps.version.outputs.version }}"
 
-      - name: Publish release assets
+      - name: Upload assets to existing release
         shell: bash
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          set -euo pipefail
           TAG="${{ steps.version.outputs.tag }}"
-          VERSION="${{ steps.version.outputs.version }}"
-          SLUG="${{ env.APP_SLUG }}"
-          TITLE="${{ env.APP_TITLE }}"
-
-          if ! gh release view "$TAG" >/dev/null 2>&1; then
-            gh release create "$TAG" \
-              --title "${TITLE} v${VERSION}" \
-              --notes "多平台安装包（自动构建）
-
-          | 平台 | 文件名示例 |
-          | --- | --- |
-          | Windows x64 | \`${SLUG}-${VERSION}-windows-x64.msi\` / \`${SLUG}-${VERSION}-windows-x64-setup.exe\` |
-          | Linux amd64 | \`${SLUG}-${VERSION}-linux-amd64.deb\` / \`${SLUG}-${VERSION}-linux-amd64.AppImage\` |
-          | macOS arm64 | \`${SLUG}-${VERSION}-macos-aarch64.dmg\` |"
-          fi
 
           if [ ! -s .github/release-assets.txt ]; then
             echo "No release assets found"
@@ -121,8 +176,95 @@ jobs:
 
           if [ ${#UPLOAD[@]} -eq 0 ]; then
             echo "Release asset list is empty"
-            cat .github/release-assets.txt || true
+            exit 1
+          fi
+
+          if ! gh release view "$TAG" >/dev/null 2>&1; then
+            echo "Release \"$TAG\" disappeared; refusing to auto-create."
             exit 1
           fi
 
           gh release upload "$TAG" "${UPLOAD[@]}" --clobber
+          echo "Uploaded ${#UPLOAD[@]} file(s) to $TAG"
+
+      - name: Prepare updater meta artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ ! -s .github/updater-platform.json ]; then
+            echo "Missing .github/updater-platform.json"
+            exit 1
+          fi
+          cp .github/updater-platform.json ".github/updater-platform-${{ matrix.updater_key }}.json"
+
+      - name: Upload updater platform meta
+        uses: actions/upload-artifact@v4
+        with:
+          name: updater-meta-${{ matrix.updater_key }}
+          path: .github/updater-platform-${{ matrix.updater_key }}.json
+          if-no-files-found: error
+
+  latest-json:
+    name: Publish latest.json
+    needs: release
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.tag_name || github.ref }}
+
+      - name: Resolve version
+        id: version
+        shell: bash
+        run: |
+          VERSION=$(node -p "require('./src-tauri/tauri.conf.json').version")
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=v$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Download updater meta artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: updater-meta-*
+          path: .github/updater-meta
+          merge-multiple: true
+
+      - name: Normalize updater meta filenames
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p .github/updater-meta-norm
+          i=0
+          # download-artifact may nest dirs; flatten json files
+          while IFS= read -r -d '' file; do
+            i=$((i + 1))
+            cp "$file" ".github/updater-meta-norm/platform-$i.json"
+            echo "Found meta: $file"
+            cat "$file"
+          done < <(find .github/updater-meta -type f -name '*.json' -print0)
+
+          count=$(find .github/updater-meta-norm -type f -name '*.json' | wc -l)
+          if [ "$count" -lt 1 ]; then
+            echo "No updater meta json found"
+            find .github/updater-meta -type f || true
+            exit 1
+          fi
+
+      - name: Build latest.json
+        run: node .github/scripts/build-latest-json.mjs "${{ steps.version.outputs.version }}" .github/updater-meta-norm latest.json
+
+      - name: Upload latest.json to release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          TAG="${{ steps.version.outputs.tag }}"
+          if ! gh release view "$TAG" >/dev/null 2>&1; then
+            echo "Release $TAG not found"
+            exit 1
+          fi
+          gh release upload "$TAG" latest.json --clobber
+          echo "Uploaded latest.json to $TAG"
+          cat latest.json

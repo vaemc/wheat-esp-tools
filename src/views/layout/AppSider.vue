@@ -252,6 +252,7 @@ function onSelect(name: string) {
 .nav-icon[data-icon="ble"] { --icon-tint: rgba(64, 150, 255, 0.14); }
 .nav-icon[data-icon="pinout"] { --icon-tint: rgba(149, 222, 100, 0.14); }
 .nav-icon[data-icon="image"] { --icon-tint: rgba(255, 133, 192, 0.14); }
+.nav-icon[data-icon="settings"] { --icon-tint: rgba(140, 140, 140, 0.18); }
 
 .nav-item:hover .nav-icon {
   filter: brightness(1.12);
