@@ -70,11 +70,14 @@ function onSummary(payload: { count: number; done: number }) {
 .image-page {
   display: grid;
   grid-template-columns: 220px minmax(0, 1fr) 300px;
+  grid-template-rows: minmax(0, 1fr);
   gap: 12px;
   height: 100%;
   min-height: 520px;
   padding: 12px 16px;
   box-sizing: border-box;
+  overflow: hidden;
+  align-items: stretch;
 }
 
 .panel {

@@ -185,8 +185,10 @@ function onDrop(event: DragEvent) {
 .batch-grid-wrap {
   display: flex;
   flex-direction: column;
-  flex: 1;
+  flex: 1 1 0;
   min-height: 0;
+  min-width: 0;
+  width: 100%;
   height: 100%;
   border-radius: 8px;
   border: 1px solid rgba(255, 255, 255, 0.08);
@@ -252,20 +254,26 @@ function onDrop(event: DragEvent) {
 }
 
 .batch-grid {
-  flex: 1;
+  flex: 1 1 0;
   min-height: 0;
-  overflow: auto;
+  overflow-x: hidden;
+  overflow-y: auto;
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(148px, 1fr));
+  grid-auto-rows: max-content;
   gap: 10px;
   padding: 12px;
   align-content: start;
+  align-items: start;
 }
 
 .batch-card {
   position: relative;
   display: flex;
   flex-direction: column;
+  width: 100%;
+  min-width: 0;
+  align-self: start;
   border-radius: 8px;
   border: 1px solid rgba(255, 255, 255, 0.1);
   background: rgba(0, 0, 0, 0.32);
@@ -295,7 +303,9 @@ function onDrop(event: DragEvent) {
 
 .card-thumb {
   position: relative;
+  width: 100%;
   aspect-ratio: 1;
+  flex-shrink: 0;
   background:
     linear-gradient(45deg, rgba(255, 255, 255, 0.04) 25%, transparent 25%),
     linear-gradient(-45deg, rgba(255, 255, 255, 0.04) 25%, transparent 25%),
@@ -420,7 +430,9 @@ function onDrop(event: DragEvent) {
   align-items: center;
   justify-content: center;
   gap: 6px;
-  min-height: 148px;
+  width: 100%;
+  min-height: 168px;
+  align-self: start;
   border-radius: 8px;
   border: 1px dashed rgba(255, 255, 255, 0.18);
   background: rgba(255, 255, 255, 0.02);

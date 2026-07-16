@@ -605,6 +605,8 @@ onBeforeUnmount(() => {
 }
 
 .image-settings {
+  min-height: 0;
+  height: 100%;
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -614,6 +616,7 @@ onBeforeUnmount(() => {
 .image-workspace {
   min-width: 0;
   min-height: 0;
+  height: 100%;
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -622,14 +625,21 @@ onBeforeUnmount(() => {
 
 .workspace-main {
   flex: 1 1 0;
-  min-height: 160px;
+  min-height: 0;
   display: flex;
+  flex-direction: column;
   overflow: hidden;
+}
+
+.workspace-main > :deep(*) {
+  flex: 1 1 0;
+  min-height: 0;
 }
 
 .workspace-preview {
   flex: 0 0 auto;
   max-height: 38%;
+  min-height: 0;
   overflow: auto;
 }
 
