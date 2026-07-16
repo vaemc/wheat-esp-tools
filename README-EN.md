@@ -1,6 +1,6 @@
 # Wheat ESP Tools
 
-A desktop toolkit for ESP series chips — firmware flashing, merging, partition table editing, NVS read/write, chip pinout reference, and BLE advertisement scanning. Built with [Tauri](https://tauri.app/) and [Vue 3](https://vuejs.org/), with [esptool](https://github.com/espressif/esptool) built in — no separate CLI installation required.
+A desktop toolkit for ESP series chips. Covers firmware flash and merge, partition tables, OTA, NVS, Bluetooth scanning, chip pinout diagrams, and embedded image format conversion. Built with [Tauri](https://tauri.app/) and [Vue 3](https://vuejs.org/), with [esptool](https://github.com/espressif/esptool) built in — no separate CLI install required.
 
 [简体中文](./README.md) | English
 
@@ -8,16 +8,20 @@ A desktop toolkit for ESP series chips — firmware flashing, merging, partition
 
 ## Table of Contents
 
-- [Features](#features)
+- [Overview](#overview)
+- [Feature Summary](#feature-summary)
 - [Requirements](#requirements)
 - [Installation](#installation)
+- [UI Layout](#ui-layout)
 - [Device Connection](#device-connection)
-- [Flash & Merge](#flash--merge)
-- [Partition Table](#partition-table)
-- [Bluetooth BLE](#bluetooth-ble)
+- [Firmware Flash](#firmware-flash)
 - [Firmware Management](#firmware-management)
-- [NVS Partition Reader](#nvs-partition-reader)
+- [Partition Table](#partition-table)
+- [OTA Partitions](#ota-partitions)
+- [NVS Partition](#nvs-partition)
+- [Bluetooth](#bluetooth)
 - [Chip Pinout](#chip-pinout)
+- [Image Tools](#image-tools)
 - [Terminal Output](#terminal-output)
 - [Data Directories](#data-directories)
 - [Feature Status](#feature-status)
@@ -25,166 +29,254 @@ A desktop toolkit for ESP series chips — firmware flashing, merging, partition
 
 ---
 
-## Features
+## Overview
+
+Wheat ESP Tools gathers common ESP development tasks into one desktop app — from serial flashing and partition maintenance to Bluetooth discovery and asset conversion. Serial operations run through the built-in esptool; Bluetooth scanning and capabilities such as NVS parsing and GIF→EAF conversion are implemented in the Tauri native layer.
+
+The sidebar is grouped by purpose:
+
+| Group | Modules |
+|-------|---------|
+| Flash & partitions | Firmware Flash, Firmware Management, Partition Table, OTA Partitions, NVS Partition |
+| Bluetooth & pinout | Bluetooth, Chip Pinout |
+| Utilities | Image Tools |
+
+UI language supports Simplified Chinese and English; switch inside the app.
+
+---
+
+## Feature Summary
 
 | Module | Description |
 |--------|-------------|
-| **Flash & Merge** | Multi-firmware batch flash, merge into a single `.bin`, full Flash erase/read |
-| **Partition Table** | Auto-align CSV offsets, read partition table from device with visualization |
-| **Firmware Management** | Recent project configs (ESP-IDF / PlatformIO), local firmware quick flash |
-| **NVS** | Read NVS partition from device or local file, parse and edit key-value pairs, write back to device, generate from CSV |
-| **Chip Pinout** | Interactive ESP32-family pinout with category filtering and pin details |
-| **BLE** | Scan nearby BLE advertisements with multi-criteria filtering |
-| **Device Info** | Auto-read chip model, MAC, Flash size after selecting a serial port |
+| Firmware Flash | Multi-firmware list, batch/single-row flash, merge to one `.bin`, export copies, full-chip erase/read |
+| Firmware Management | ESP-IDF / PlatformIO project history, local firmware library, quick flash |
+| Partition Table | CSV offset alignment, read from device with visualization, per-partition read/write/erase |
+| OTA Partitions | Parse otadata, switch boot slot, OTA app partition read/write/erase |
+| NVS Partition | Read from device or file, edit key-values, write back, generate image from CSV |
+| Bluetooth | BLE advertisement scan and filters; classic Bluetooth (BR/EDR) discovery on Windows |
+| Chip Pinout | Interactive ESP32-family pinout with category filter and datasheet links |
+| Image Tools | JPG→SJPG, GIF→EAF for LVGL / embedded displays |
 
 ---
 
 ## Requirements
 
-- **OS**: Windows (primary supported platform)
-- **Hardware**: ESP dev board + USB serial driver (CH340, CP2102, etc.)
-- **Build from source** (optional): Node.js 18+, Yarn, Rust toolchain
+| Item | Requirement |
+|------|-------------|
+| OS | Windows (primary platform; classic Bluetooth depends on WinRT) |
+| Hardware | ESP board and a working USB serial driver (e.g. CH340, CP2102) |
+| Build from source (optional) | Node.js 18+, Yarn, Rust toolchain |
 
 ---
 
 ## Installation
 
-### Pre-built Installer
+### Pre-built installer
 
-Download the installer from [Releases](https://github.com/vaemc/wheat-esp-tools/releases) and run the setup wizard to launch **Wheat ESP Tools**.
+Download from [Releases](https://github.com/vaemc/wheat-esp-tools/releases), run the setup wizard, then launch **Wheat ESP Tools**.
 
-### Build from Source
+### Build from source
 
 ```bash
-# Install dependencies
 yarn install
-
-# Development mode (hot reload)
-yarn tauri dev
-
-# Production build
-yarn tauri build
+yarn tauri dev      # development
+yarn tauri build    # production installer
 ```
 
-Built artifacts are located at `src-tauri/target/release/bundle/`.
+Artifacts are under `src-tauri/target/release/bundle/`.
+
+---
+
+## UI Layout
+
+| Area | Content |
+|------|---------|
+| Top bar | Serial port selector, device info, **Get device info** |
+| Left sidebar | Feature menu (grouped) |
+| Main area | Active tool page; recent pages kept alive (up to 6) |
+| Bottom bar | xterm terminal for esptool logs and progress |
+
+Default page: **Firmware Flash**.
 
 ---
 
 ## Device Connection
 
-1. Connect your ESP board to the PC via USB.
-2. Click **Serial port** in the top bar and select the correct COM port (the list refreshes when opened).
-3. After selection, esptool reads device info automatically. The bar shows:
-   - Chip model (e.g. ESP32, ESP32-S3)
-   - MAC address (click to copy)
-   - Flash size
-   - More details: revision, Flash ID, PSRAM, crystal, features, security info
-4. Click the refresh button to re-read device info.
+Device-facing features (flash, partition table, OTA, NVS, etc.) require a serial port selected in the top bar. Without one, related actions prompt you to select a port first.
 
-> **Tip**: Most device-dependent actions (flash, read partition table, read NVS, etc.) require a selected port. You'll see "Select a serial port first" if none is chosen.
+### Steps
+
+1. Connect the board to the PC over USB.
+2. Open **Serial port** in the top bar (the COM list refreshes when opened) and pick the target port.
+3. Click **Get device info** to read chip and Flash details via esptool.
+4. Changing the port clears cached device info; fetch again as needed.
+
+### Information shown
+
+- Chip model and revision
+- MAC address (click to copy)
+- Flash size, type, Flash ID
+- PSRAM, crystal frequency, feature summary
+- Security and other details (**More** panel)
+
+Serial port details can also show friendly name, USB description, and serial number.
+
+> Device info is not read automatically after selecting a port. Click **Get device info** manually.
 
 ---
 
-## Flash & Merge
+## Firmware Flash
 
-![](images/en-flash.png)
+Main entry for multi-firmware flash, merge, and Flash-level shortcuts.
 
-### Adding Firmware
+![Firmware Flash](images/en-flash.png)
 
-Three ways to populate the firmware list:
+### Adding firmware
 
-#### 1. Drag & drop / select `.bin` files
+Three sources are supported:
 
-The tool parses the flash address from the filename (hex `0x` prefix):
+#### 1. Drop or select `.bin`
+
+The first hex flash address (`0x` prefix) can be parsed from the filename:
 
 ```
-FirmwareName_0xFlashAddress.bin
+name_0xaddress.bin
 ```
 
-Example: `ESP32_0x10000.bin` → flash address `0x10000`
+Example: `ESP32_0x10000.bin` → address `0x10000`. Multiple files can be added at once; addresses are editable in the list.
 
-Multiple `.bin` files can be added at once.
+#### 2. ESP-IDF project config
 
-#### 2. Import ESP-IDF project config
-
-Drop or select:
+Select or drop:
 
 ```
 your_project/build/flasher_args.json
 ```
 
-Parses `flash_files`, chip type, paths, and flash addresses automatically. The config is also saved under **Firmware Management → Recent Projects**.
+Parses `flash_files` and chip type, fills the list, and records the config under **Firmware Management → Recent projects**.
 
-#### 3. Import PlatformIO project config
+#### 3. PlatformIO project config
 
-Drop or select:
+Select or drop:
 
 ```
 your_project/.pio/build/your_board/idedata.json
 ```
 
-Same auto-fill behavior; saved to recent projects.
+Same idea as ESP-IDF; also saved to recent projects.
 
-### Toolbar Options
+### Toolbar parameters
 
-| Option | Description |
-|--------|-------------|
-| **SPI mode** | `keep` / `qio` / `qout` / `dio` / `dout` — Flash SPI mode for write |
-| **Flash baud rate** | Default 1152000; options from 115200 to 1500000 |
-| **Chip type** | Required for merge; auto-detected from esptool |
+| Parameter | Description |
+|-----------|-------------|
+| SPI mode | `keep` / `qio` / `qout` / `dio` / `dout`, default `keep` |
+| Flash baud rate | Default `1152000`, roughly `115200`–`1500000` |
+| Chip type | Detected by esptool; **required for merge** |
 
-### Firmware List Actions
+### List actions
 
-- **Checkbox**: Only checked items are flashed/merged; header checkbox toggles all.
-- **Flash address**: Editable per row.
-- **Flash item (row)**: Write a single firmware file.
-- **Remove**: Remove from the list.
+- Checkboxes: batch flash / merge / export only checked rows; header toggles all
+- Flash address: edit per row
+- Flash this row: write the current row only
+- Delete: remove from the list
 
-### Flashing
+### Flash
 
-1. Check the firmware entries and verify flash addresses.
-2. (Optional) Enable **Erase all before flashing** (`--erase-all`) for a full erase first.
-3. Click **Flash** — progress appears in the bottom terminal.
+1. Check target firmware and confirm addresses.
+2. Optionally check **Erase flash before flashing** (`--erase-all`).
+3. Click **Flash**; progress and logs appear in the bottom terminal.
 
-Equivalent to:
+Equivalent command example:
 
 ```bash
 esptool.py -p COMx -b 1152000 write-flash --flash-mode keep 0x10000 firmware.bin ...
 ```
 
-### Merging Firmware
+### Merge firmware
 
-Combine multiple `.bin` files by flash address into one file (no device write):
+Merge multiple `.bin` files by address into one file (does not write to the device):
 
-1. Select a **Chip type** (required).
+1. Select chip type.
 2. Check the firmware to merge.
-3. Click **Merge**.
+3. Click **Merge**; you can confirm the output filename.
 
-Output is saved to the app's `firmware/` folder as `{chip}-merge-bin-{timestamp}.bin` and opened in the file explorer when ready.
+Output is saved under the app `firmware/` directory, default name `{chip}-merge-bin-{timestamp}.bin`, then the folder opens.
 
-### Quick Actions
+### Export
 
-The toolbar also provides:
+Copy checked firmware to a user-chosen folder, named like `{stem}_{address}.bin`.
 
-- **Erase entire flash**: Full chip erase (`erase-flash`)
-- **Read flash**: Dump entire Flash to `firmware/read-{timestamp}.bin`
+### Shortcuts
+
+| Action | Description |
+|--------|-------------|
+| Erase flash | `erase-flash` (baud fixed at 115200) |
+| Read Flash | `read-flash 0 ALL`, saved as `firmware/read-{timestamp}.bin` (baud 460800) |
+
+---
+
+## Firmware Management
+
+Manages recent project configs and a local firmware library, plus quick flash.
+
+![Firmware Management](images/en-firmware.png)
+
+Quick-flash parameters at the top: SPI mode, baud rate, erase-before-flash (same model as the Flash page; defaults baud `1152000`, SPI `keep`).
+
+### Recent projects
+
+Automatically records ESP-IDF / PlatformIO configs imported from the Flash page:
+
+- Shows project name and config path; **IDF** / **PIO** tags
+- Search by name or path
+- **Import to Flash page**: load config and jump to Flash
+- **Open**: reveal the config file in Explorer
+- **Delete**: remove the history entry
+
+### Local firmware
+
+Scans `.bin` files under the app `firmware/` directory:
+
+- **Open folder**: drop files there, then refresh to list them
+- **Quick flash**: write at address `0x0` with current quick-flash parameters (serial port required)
+- Search, open file, delete list items
 
 ---
 
 ## Partition Table
 
-Two tabs: **Offset align** and **From device**.
+Two sub-pages: **Device read** and **Offset alignment**. Partition table offset defaults to `0x8000` and can be changed and persisted in the app.
 
-### Offset Align
+### Device read
 
-![](images/en-partition1.png)
+Read the partition table from a connected device and operate on individual partitions.
 
-Auto-calculates **Offset** for ESP-IDF partition CSV:
+![Partition Table · Device read](images/en-partition1.png)
 
-1. Paste ESP-IDF-format partition CSV in the left text area.
-2. Rows with **empty Offset** are aligned per ESP-IDF rules.
-3. The right panel shows a live preview table and total Flash usage.
-4. Click **Copy** to copy the aligned CSV to the clipboard.
+1. Confirm partition table offset and read baud rate (default `460800`).
+2. Click **Read partition table**.
+3. Display includes:
+   - Flash layout and capacity charts
+   - Detail table: name, type, subtype, offset, size, flags
+   - Standard CSV (copyable)
+4. Each row supports **Read / Write / Erase**:
+   - Read: export a temporary `.bin` and open its folder
+   - Write: pick a `.bin` no larger than the partition; hard-reset afterward
+   - Erase: requires confirmation
+
+Partition table binary backups go to the system temp directory `wheat-esp-tools/partitions/`; single-partition dumps go to `wheat-esp-tools/partition/`.
+
+### Offset alignment
+
+Auto-align Offset fields in ESP-IDF partition CSV — no device required.
+
+![Partition Table · Offset alignment](images/en-partition2.png)
+
+1. Paste the partition CSV on the left.
+2. Rows with **empty Offset** are filled by ESP-IDF alignment rules.
+3. The right side previews the result and total Flash usage in real time.
+4. **Copy** places the aligned CSV on the clipboard.
 
 Example input:
 
@@ -196,191 +288,214 @@ phy_init, data, phy,     , 0x1000,
 factory,  app,  factory, , 1M,
 ```
 
-### From Device
+---
 
-![](images/en-partition2.png)
+## OTA Partitions
 
-Read the partition table from Flash offset `0x8000` on a connected device:
+Read the device partition table and `otadata`, inspect the active boot slot, and maintain OTA app partitions. Requires a selected serial port, plus `otadata` and OTA app partitions (e.g. `ota_0`, `ota_1`) in the table.
 
-1. Set baud rate (default 460800).
-2. Click **Read partition table**.
-3. On success, view:
-   - **Layout chart**: Visual Flash usage by partition
-   - **Details table**: Name, Type, SubType, Offset, Size, Flags
-   - **CSV output**: Copy as standard CSV
+![OTA Partitions](images/en-ota.png)
 
-Binary backups go to the system temp directory (`wheat-esp-tools/partitions`), not the project folder.
+### Load info
+
+Set partition table offset (default `0x8000`) and baud rate (default `460800`), then click **Read OTA info**. On success:
+
+- otadata dual copies: SEQ, CRC, valid/invalid
+- Active boot slot
+- Detected otadata offset and size
+
+### Actions
+
+| Category | Action | Notes |
+|----------|--------|-------|
+| Boot switch | Switch boot to the selected OTA partition | Rewrites otadata; takes effect after reset |
+| Partition I/O | Read / write the selected OTA partition | Write does **not** auto-switch the boot slot |
+| Dangerous | Erase otadata / erase selected OTA partition | Confirmation required; erasing otadata usually falls back to factory or default policy |
+
+Read-out example path: `{temp}/wheat-esp-tools/ota/ota_{n}-{timestamp}.bin`.
 
 ---
 
-## Bluetooth BLE
+## NVS Partition
 
-![](images/en-ble.png)
+Read, edit, and write back ESP NVS (Non-Volatile Storage) key-value data; also open a local image or generate a partition from CSV.
 
-Scan nearby BLE advertisement broadcasts (no ESP serial port required).
+![NVS Partition](images/en-nvs.png)
 
-### Scanning
+### Read from device
 
-1. Click **Start Scanning**.
-2. Devices are sorted by RSSI (strongest first).
-3. Click **Stop Scanning** to end; **Clear list** removes current results.
+1. Select a serial port; confirm partition table offset (default `0x8000`) and baud rate (default `460800`).
+2. Click **Read from device**: read the partition table, locate NVS offset/size, then read and parse key-values.
+3. The table shows namespace, key, type, and value.
 
-Devices not seen for 10 seconds are automatically removed.
+Placeholder offset/size defaults are `0x9000` / `0x6000` and are overwritten after a successful probe. Partition size must be a multiple of `0x1000`.
 
-### Filters
+### Open local file
 
-The right panel supports combined filtering:
-
-| Filter | Description |
-|--------|-------------|
-| **Name** | Fuzzy match on advertised device name |
-| **MAC** | Match Bluetooth address |
-| **UUID** | Match advertised service UUID |
-| **Advertisement** | Hex substring matching raw payload / manufacturer / service data |
-| **Min RSSI** | Slider — show only devices stronger than the threshold |
-
-Click **Reset** to restore defaults.
-
-### Device Details
-
-Select a device to view manufacturer data, advertised service UUIDs, service data, raw payload, and advertisement count.
-
-> **Note**: This version supports **advertisement scanning and filtering only**. BLE connection and GATT read/write are not implemented.
-
----
-
-## Firmware Management
-
-![](images/en-firmware.png)
-
-Two panels: **Recent Projects** and **Local Firmware**.
-
-### Recent Projects
-
-Automatically records ESP-IDF / PlatformIO configs imported from the Flash page:
-
-- Shows project name and config file path
-- Tags: **IDF** (blue) vs **PIO** (green)
-- **Open in Flash page**: Load config and jump to the Flash page
-- **Open**: Reveal config file in explorer
-- **Remove**: Delete from history
-
-Search by name or path is supported.
-
-### Local Firmware
-
-Manages `.bin` files in the app's `firmware/` folder:
-
-- **Open Folder** opens the directory — drop `.bin` files there to list them
-- **Quick Flash**: One-click write to flash address `0x0` by default with current flash options
-- Flash options (SPI mode, baud rate, erase before write) are configurable next to the button
-- Search, open file, and remove list entries
-
----
-
-## NVS Partition Reader
-
-![](images/en-nvs.png)
-
-Read, edit, and write back ESP NVS (Non-Volatile Storage) key-value data.
-
-### Read from Device
-
-1. Ensure a serial port is selected.
-2. Set baud rate (default 460800).
-3. Click **Read from device**. The workflow:
-   - Read partition table from Flash `0x8000`
-   - Auto-detect NVS partition offset and size
-   - Read NVS binary and parse entries
-4. The table shows namespace, key, type, and value.
-
-### Open Local File
-
-Click **Open local file** to parse a `.bin` NVS partition image without a connected device.
+Open a `.bin` NVS partition image and parse it without a device.
 
 ### Generate from CSV
 
-Click **Generate from CSV** and select an ESP-IDF standard NVS CSV file to produce a `.bin` partition image (no direct flash). Output goes to the system temp directory.
+Pick an ESP-IDF standard NVS CSV and generate a `.bin` image (not flashed automatically). Output goes to the system temp directory.
 
-### Edit & Write Back
-
-After reading or opening an NVS image, you can edit entries in the table:
-
-- **Value**: Non-binary entries support inline editing
-- **Delete / Undo**: Mark keys for deletion; undo is supported
-- **Revert**: Revert a single row or all pending changes
-
-When edits are ready:
+### Edit and write back
 
 | Action | Description |
 |--------|-------------|
-| **Export .bin** | Rebuild the modified NVS into a new binary file |
-| **Write back to device** | Rebuild and write back to the device's NVS partition (only available after **Read from device**) |
+| Edit value | Inline edit for non-binary entries |
+| Delete / restore | Mark for deletion; can undo |
+| Revert | Undo one row or all changes |
+| Export `.bin` | Rebuild binary from current edits |
+| Write to device | Only when source is **Read from device**; overwrites the NVS partition after confirmation |
 
-A confirmation dialog shows target offset, size, and pending entry count before flashing. Binary-type entries cannot be edited inline.
+Before write-back, the dialog shows target offset, size, and entry count. Binary-type entries do not support inline edit yet.
 
-### Search
+### Search and copy
 
-Filter by namespace, key, or value content. Unmodified cells can be clicked to copy.
+Filter by namespace, key, or value. Click an unmodified cell to copy.
 
-> **Note**: Empty or encrypted partitions may yield no parseable entries. Write-back overwrites the target NVS partition — verify offset and size before proceeding.
+> Empty or encrypted partitions may yield no usable keys. Write-back overwrites the target NVS partition — confirm offset and size. Temp files live under `{temp}/wheat-esp-tools/nvs/`.
 
-Backups from read, export, and CSV generation go to the system temp directory (`wheat-esp-tools/nvs`), not the project folder.
+---
+
+## Bluetooth
+
+Scan nearby Bluetooth devices. This page does not require an ESP serial port. Two modes: **BLE advertisements** and **Classic Bluetooth** (Windows).
+
+![Bluetooth](images/en-ble.png)
+
+### BLE advertisements
+
+1. Select **BLE** mode and click **Start scan**.
+2. Devices sort by RSSI descending; entries not seen for about 10 seconds are removed.
+3. **Stop scan** / **Clear list** end scanning or clear results.
+
+Filters on the right can be combined:
+
+| Filter | Description |
+|--------|-------------|
+| Name | Fuzzy match on advertisement name |
+| MAC | Bluetooth address |
+| UUID | Advertised service UUID |
+| Adv data | Hex fragment matching raw payload / manufacturer / service data |
+| RSSI floor | Slider, default about -100 dBm |
+
+Expand a row for manufacturer data, service UUIDs, service data, raw payload, advertisement count, and more.
+
+> Scan and filter only — connection and GATT read/write are not supported.
+
+### Classic Bluetooth (Windows)
+
+Discover BR/EDR devices via the system device watcher. The list can show name, MAC, Class of Device, major class, paired/connected/authenticated state, and system-reported RSSI (some devices have none).
+
+Filters: name, MAC, paired only, connected only, RSSI floor. No connection or protocol-level I/O.
 
 ---
 
 ## Chip Pinout
 
-![](images/en-pinout.png)
+Interactive ESP32-family pin function diagrams. Data comes from Espressif datasheets; no device connection required.
 
-Interactive pin-function viewer for the ESP32 chip family. Data is sourced from Espressif official datasheets — no device connection required.
+![Chip Pinout](images/en-pinout.png)
 
-### Supported Chips
+### Supported chips
 
-ESP32, ESP32-S3, ESP32-C3, ESP32-C5, ESP32-C6, ESP32-P4 (some chips support multiple package variants).
+| Chip | Package |
+|------|---------|
+| ESP32 | QFN-48 |
+| ESP32-S3 | QFN-56+1 |
+| ESP32-C3 | QFN-32+1 |
+| ESP32-C5 | QFN-40+1 |
+| ESP32-C6 | QFN-40+1 |
+| ESP32-P4 | QFN-104+1 (package/revision variants) |
 
-### Basic Usage
+### Usage
 
-1. Select the target chip and package from the **Chip** dropdown at the top.
-2. **Hover** any pin to preview details in the right panel; **click** to lock selection.
-3. Use **Search** to filter by pin or function name (e.g. `GPIO15`, `UART`, `ADC`).
-4. Click a category in the **Function Legend** on the left to highlight all matching pins.
+1. Select chip model and package.
+2. **Hover** a pin to preview details on the right; **click** to lock selection.
+3. Search by pin or function name (e.g. `GPIO15`, `UART`, `ADC`) to highlight matches.
+4. Click a category in the left legend to highlight all pins in that category.
 
-### Pin Details
+### Pin details
 
-The right panel shows for the selected pin:
+- Function categories (GPIO, UART, SPI, ADC, …)
+- Boot / strapping notes
+- Levels before/after reset
+- IO MUX / LP IO MUX multiplexing
+- Analog functions (ADC, DAC, …)
 
-- Function categories (GPIO, UART, SPI, ADC, etc.)
-- Boot / Strapping notes (reset sampling timing and caveats)
-- Reset state before and after release
-- IO MUX / LP IO MUX alternate functions
-- Analog capabilities (ADC, DAC, etc.)
+The footer shows CPU, package, and pin count, with links to the matching datasheet.
 
-The footer shows CPU model, package, and total pin count, with a link to the full datasheet.
+---
+
+## Image Tools
+
+Convert common images to formats usable in embedded / LVGL projects. Pick a converter on the left, manage a batch in the center, set output options on the right.
+
+### JPG to SJPG
+
+![JPG to SJPG](images/en-jpg-to-sjpg.png)
+
+Targets LVGL SJPG (magic `_SJPG__`, version V1.00), compatible with the official `jpg_to_sjpg.py` flow: slice by split height, then JPEG-compress each strip.
+
+| Item | Description |
+|------|-------------|
+| Input | JPG / PNG / WebP / BMP, batch supported |
+| Output | `.sjpg` binary or `.c` source array |
+| Output size | Original by default; width/height 1–4096, aspect lock optional |
+| JPEG quality | Default 90 (about 50–100) |
+| Split height | Default 16 px (about 8–64, step 8) |
+
+Flow: add images → tune parameters → batch convert → save one or all outputs.
+
+### GIF to EAF
+
+![GIF to EAF](images/en-gif-to-eaf.png)
+
+Convert GIF to `.eaf` animation binaries with playback preview.
+
+| Item | Description |
+|------|-------------|
+| Input | GIF (multiple files OK) |
+| Output | `.eaf` |
+| Encoding | **RLE** (default), RLE+Huffman, JPEG |
+| Color depth | RLE: 4 / 8 bit (default 8); JPEG fixed 24 bit |
+| JPEG quality | Default 85 (about 11–100, JPEG mode only) |
+| Split height | Default 32 px (commonly 16–32) |
+| Output size | Follows GIF by default; editable (1–4096, must be > 10) |
+
+Encoding trade-offs: RLE is fast to decode with moderate size; RLE+Huffman is smaller but slightly slower; JPEG tunes quality vs size. Conversion runs natively; preview supports play/pause/loop; you can also open an existing `.eaf` for preview.
 
 ---
 
 ## Terminal Output
 
-The bottom xterm panel shows:
+The bottom xterm is used for:
 
-- Real-time stdout from esptool
-- Progress bar during flash/read operations
-- Timestamped command logs for troubleshooting
+- esptool stdout
+- Progress for flash/read and similar operations
+- Timestamped command logs (`[YYYY-MM-DD HH:mm:ss]`)
 
-Do not close the app during flashing. On failure, check port conflicts, drivers, wiring, and baud rate.
+Do not close the app while flashing. On failure, check port occupancy, drivers, wiring, and baud rate first. Ctrl+C copies selected text in the terminal.
 
 ---
 
 ## Data Directories
 
-The app creates these folders at runtime:
+### App working directory
 
-| Directory | Contents |
-|-----------|----------|
-| `firmware/` | Merged firmware, full Flash dumps, local firmware library |
+| Path | Contents |
+|------|----------|
+| `firmware/` | Merged firmware, full Flash read backups, local firmware library |
 
-Partition table / OTA / NVS temporary `.bin` files are stored in the system temp directory.
+### System temp (`{temp}/wheat-esp-tools/`)
+
+| Subdir | Contents |
+|--------|----------|
+| `partitions/` | Partition table read backups |
+| `partition/` | Single-partition dumps |
+| `nvs/` | NVS read, export, CSV generation |
+| `ota/` | OTA / otadata related backups |
 
 ---
 
@@ -388,24 +503,24 @@ Partition table / OTA / NVS temporary `.bin` files are stored in the system temp
 
 | Feature | Status |
 |---------|--------|
-| Multi-firmware flash / merge | ✅ Done |
-| ESP-IDF / PlatformIO config import | ✅ Done |
-| Filename flash address parsing | ✅ Done |
-| Full Flash erase / read | ✅ Done |
-| Partition table offset alignment | ✅ Done |
-| Read partition table from device | ✅ Done |
-| OTA partition R/W / switch boot slot | ✅ Done |
-| NVS partition read & parse | ✅ Done |
-| NVS edit / export / write back to device | ✅ Done |
-| NVS generate from CSV | ✅ Done |
-| ESP32-family chip pinout | ✅ Done |
-| Recent projects / local firmware | ✅ Done |
-| BLE advertisement scan | ✅ Done |
-| BLE multi-criteria filtering | ✅ Done |
-| BLE connect & GATT operations | ❌ Not implemented |
+| Multi-firmware flash / merge / export | Done |
+| ESP-IDF / PlatformIO config import | Done |
+| Parse flash address from filename | Done |
+| Full Flash erase / read | Done |
+| Partition CSV offset alignment | Done |
+| Read partition table from device + visualization | Done |
+| Per-partition read / write / erase | Done |
+| OTA I/O, boot slot switch, erase otadata | Done |
+| NVS read, edit, export, write-back, CSV generate | Done |
+| Recent projects / local firmware quick flash | Done |
+| BLE advertisement scan and multi-filter | Done |
+| Classic Bluetooth scan (Windows) | Done |
+| ESP32-family interactive pinout | Done |
+| JPG→SJPG / GIF→EAF | Done |
+| Bluetooth connect and GATT | Not implemented |
 
 ---
 
 ## License
 
-This project is licensed under the [MIT License](./LICENSE).
+This project is released under the [MIT License](./LICENSE).
