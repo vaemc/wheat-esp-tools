@@ -1,7 +1,7 @@
 # 发版 + 应用内静默更新：
 # 1. 改 src-tauri/tauri.conf.json 的 version（如 1.0.1）并推送到仓库
 # 2. Actions → Build Release → Run workflow（无需手动建 Release）
-# 3. 工作流自动创建 tag=v{version}、title={version} 的 Release，签名构建并上传，生成 latest.json
+# 3. 工作流自动创建 tag=v{version}、title=v{version} 的 Release，签名构建并上传，生成 latest.json
 # 4. 客户端 check() → 确认 → downloadAndInstall() → relaunch()
 #
 # 必需 Secret：
@@ -73,10 +73,10 @@ jobs:
             echo "Release ${TAG} already exists; will upload assets to it."
           else
             gh release create "${TAG}" \
-              --title "${VERSION}" \
+              --title "${TAG}" \
               --target "${GITHUB_SHA}" \
               --generate-notes
-            echo "Created release ${TAG} (title=${VERSION})"
+            echo "Created release ${TAG} (title=${TAG})"
           fi
 
   release:
