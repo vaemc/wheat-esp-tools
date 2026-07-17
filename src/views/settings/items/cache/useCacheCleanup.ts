@@ -6,17 +6,15 @@ import { openDirectoryInExplorer } from "@/utils/common";
 import {
   calcDirSizeBytes,
   clearDirContents,
-  getFirmwareDir,
   getTempWorkRoot,
 } from "@/utils/tempWorkDir";
 
-/** 设置页 · 缓存清理：统计 firmware + 临时工作目录 */
+/** 设置页 · 缓存清理：仅清理临时工作目录，不动 firmware 固件 */
 export function useCacheCleanup() {
   const { t } = useI18n();
   const loading = ref(false);
   const clearing = ref(false);
   const totalBytes = ref(0);
-  const firmwareDir = ref("");
   const tempRoot = ref("");
 
   const sizeLabel = computed(() => prettyBytes(totalBytes.value));
@@ -24,17 +22,9 @@ export function useCacheCleanup() {
   async function refresh() {
     loading.value = true;
     try {
-      const [fw, tmp] = await Promise.all([
-        getFirmwareDir(),
-        getTempWorkRoot(),
-      ]);
-      firmwareDir.value = fw;
+      const tmp = await getTempWorkRoot();
       tempRoot.value = tmp;
-      const [fwSize, tmpSize] = await Promise.all([
-        calcDirSizeBytes(fw),
-        calcDirSizeBytes(tmp),
-      ]);
-      totalBytes.value = fwSize + tmpSize;
+      totalBytes.value = await calcDirSizeBytes(tmp);
     } catch (error) {
       console.error("[settings/cache] refresh failed:", error);
       message.error(t("settings.cacheRefreshFailed"));
@@ -45,7 +35,6 @@ export function useCacheCleanup() {
 
   async function openFolder() {
     try {
-      // 优先打开临时工作根（含 nvs/ota/partition 等产出）
       await openDirectoryInExplorer(tempRoot.value || (await getTempWorkRoot()));
     } catch (error) {
       console.error("[settings/cache] open failed:", error);
@@ -63,9 +52,8 @@ export function useCacheCleanup() {
       async onOk() {
         clearing.value = true;
         try {
-          const fw = firmwareDir.value || (await getFirmwareDir());
           const tmp = tempRoot.value || (await getTempWorkRoot());
-          await Promise.all([clearDirContents(fw), clearDirContents(tmp)]);
+          await clearDirContents(tmp);
           message.success(t("settings.cacheClearSuccess"));
           await refresh();
         } catch (error) {
