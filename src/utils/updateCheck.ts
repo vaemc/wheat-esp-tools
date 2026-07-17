@@ -5,19 +5,22 @@ import { getVersion } from "@tauri-apps/api/app";
 import { check, type Update } from "@tauri-apps/plugin-updater";
 import { relaunch } from "@tauri-apps/plugin-process";
 
-export const GITHUB_REPO = "vaemc/wheat-esp-tools";
-export const GITHUB_RELEASES_URL = `https://github.com/${GITHUB_REPO}/releases`;
-
 export interface UpdateCheckResult {
   currentVersion: string;
   latestVersion: string | null;
   hasUpdate: boolean;
-  body: string | null;
-  date: string | null;
 }
 
 export async function getAppVersion(): Promise<string> {
   return getVersion();
+}
+
+/** 展示用版本号统一加 v 前缀（已有则不重复） */
+export function formatAppVersion(version: string | null | undefined): string {
+  if (!version || version === "—") {
+    return version || "—";
+  }
+  return /^v/i.test(version) ? version : `v${version}`;
 }
 
 /** 检查更新；有更新时一并返回原始 Update 句柄（勿放入深层 reactive） */
@@ -34,8 +37,6 @@ export async function checkForAppUpdate(): Promise<{
         currentVersion,
         latestVersion: currentVersion,
         hasUpdate: false,
-        body: null,
-        date: null,
       },
       update: null,
     };
@@ -46,18 +47,19 @@ export async function checkForAppUpdate(): Promise<{
       currentVersion,
       latestVersion: update.version,
       hasUpdate: true,
-      body: update.body ?? null,
-      date: update.date ?? null,
     },
     update,
   };
 }
 
-/** 下载并静默安装，然后重启 */
+/**
+ * 下载并安装更新。
+ * @returns 是否已触发重启（relaunch 成功）
+ */
 export async function downloadAndInstallUpdate(
   update: Update,
   onProgress?: (percent: number | null) => void
-): Promise<void> {
+): Promise<{ relaunched: boolean }> {
   let downloaded = 0;
   let contentLength: number | null = null;
 
@@ -83,5 +85,11 @@ export async function downloadAndInstallUpdate(
     }
   });
 
-  await relaunch();
+  try {
+    await relaunch();
+    return { relaunched: true };
+  } catch (error) {
+    console.error("[update] relaunch failed:", error);
+    return { relaunched: false };
+  }
 }

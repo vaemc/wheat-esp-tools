@@ -59,9 +59,9 @@ onMounted(async () => {
 }
 
 .hero-logo {
-  width: 72px;
-  height: 72px;
-  border-radius: 16px;
+  width: 140px;
+  height: 140px;
+  border-radius: 28px;
   object-fit: cover;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
 }

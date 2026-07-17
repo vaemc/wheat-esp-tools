@@ -1,81 +1,46 @@
 <template>
-  <div class="update-stack">
-    <SettingsItemRow
-      :title="$t('settings.versionTitle')"
-      :description="versionDesc"
-      tone="version"
+  <SettingsItemRow
+    :title="$t('settings.versionTitle')"
+    :description="statusText"
+    tone="update"
+  >
+    <template #icon>
+      <CloudSyncOutlined />
+    </template>
+    <a-button
+      v-if="result?.hasUpdate && !installing"
+      size="small"
+      type="primary"
+      :disabled="checking"
+      @click="upgradeNow"
     >
-      <template #icon>
-        <TagOutlined />
-      </template>
-      <a-button size="small" :loading="loadingVersion" @click="loadCurrentVersion">
-        {{ $t("settings.refresh") }}
-      </a-button>
-    </SettingsItemRow>
-
-    <SettingsItemRow
-      :title="$t('settings.updateTitle')"
-      :description="statusText"
-      tone="update"
+      {{ $t("settings.updateUpgrade") }}
+    </a-button>
+    <a-button
+      size="small"
+      type="primary"
+      ghost
+      :loading="checking || installing"
+      :disabled="installing"
+      @click="checkUpdate"
     >
-      <template #icon>
-        <CloudSyncOutlined />
-      </template>
-      <a-button
-        v-if="result?.hasUpdate && !installing"
-        size="small"
-        type="primary"
-        :disabled="checking"
-        @click="upgradeNow"
-      >
-        {{ $t("settings.updateUpgrade") }}
-      </a-button>
-      <a-button
-        size="small"
-        type="primary"
-        ghost
-        :loading="checking || installing"
-        :disabled="installing"
-        @click="checkUpdate"
-      >
-        {{ $t("settings.updateCheck") }}
-      </a-button>
-    </SettingsItemRow>
-  </div>
+      {{ $t("settings.updateCheck") }}
+    </a-button>
+  </SettingsItemRow>
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
-import { useI18n } from "vue-i18n";
-import { CloudSyncOutlined, TagOutlined } from "@ant-design/icons-vue";
+import { onMounted } from "vue";
+import { storeToRefs } from "pinia";
+import { CloudSyncOutlined } from "@ant-design/icons-vue";
 import SettingsItemRow from "../../shared/components/SettingsItemRow.vue";
-import { useUpdateCheck } from "./useUpdateCheck";
+import { useUpdateStore } from "@/stores/update";
 
-const { t } = useI18n();
-const {
-  loadingVersion,
-  checking,
-  installing,
-  currentVersion,
-  result,
-  statusText,
-  loadCurrentVersion,
-  checkUpdate,
-  upgradeNow,
-} = useUpdateCheck();
+const updateStore = useUpdateStore();
+const { checking, installing, result, statusText } = storeToRefs(updateStore);
+const { loadCurrentVersion, checkUpdate, upgradeNow } = updateStore;
 
-const versionDesc = computed(() => {
-  if (loadingVersion.value && !currentVersion.value) {
-    return t("settings.versionLoading");
-  }
-  return t("settings.versionDesc", { version: currentVersion.value || "—" });
+onMounted(() => {
+  void loadCurrentVersion();
 });
 </script>
-
-<style scoped>
-.update-stack {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-</style>
