@@ -104,6 +104,18 @@ export const layoutChildren: RouteRecordRaw[] = [
     },
   },
   {
+    path: "tools/audio",
+    name: "audio",
+    component: () => import("@/views/tools/audio/index.vue"),
+    meta: {
+      icon: "audio",
+      titleKey: "menu.audio",
+      menu: true,
+      menuGroup: "utils",
+      menuOrder: 9,
+    },
+  },
+  {
     path: "settings",
     name: "settings",
     component: () => import("@/views/settings/index.vue"),

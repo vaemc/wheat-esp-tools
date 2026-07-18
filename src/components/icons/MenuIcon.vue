@@ -60,6 +60,25 @@
       <circle cx="9" cy="9" r="2" />
       <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
     </template>
+    <!-- Lucide: audio-lines — 音频处理 -->
+    <template v-else-if="name === 'audio'">
+      <path d="M2 10v3" />
+      <path d="M6 6v11" />
+      <path d="M10 3v18" />
+      <path d="M14 8v7" />
+      <path d="M18 5v13" />
+      <path d="M22 10v3" />
+    </template>
+    <!-- Lucide: file-audio — WAV 转 OGG -->
+    <template v-else-if="name === 'wav2ogg'">
+      <path
+        d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"
+      />
+      <path d="M14 2v5a1 1 0 0 0 1 1h5" />
+      <path d="M8 15h.01" />
+      <path d="M11.5 13.5a2.5 2.5 0 0 1 0 3" />
+      <path d="M15 12a5 5 0 0 1 0 6" />
+    </template>
     <!-- Lucide: file-image — JPG 转 SJPG -->
     <template v-else-if="name === 'sjpg'">
       <path
@@ -105,6 +124,8 @@ const ICON_COLORS: Record<string, string> = {
   ble: "#4096ff",
   pinout: "#95de64",
   image: "#ff85c0",
+  audio: "#36cfc9",
+  wav2ogg: "#36cfc9",
   sjpg: "#ff85c0",
   eaf: "#b37feb",
   settings: "#8c8c8c",

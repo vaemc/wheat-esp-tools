@@ -1,6 +1,6 @@
 # Wheat ESP Tools
 
-A desktop toolkit for ESP series chips. Covers firmware flash and merge, partition tables, OTA, NVS, Bluetooth scanning, chip pinout diagrams, and embedded image format conversion. Built with [Tauri](https://tauri.app/) and [Vue 3](https://vuejs.org/), with [esptool](https://github.com/espressif/esptool) built in — no separate CLI install required.
+A desktop toolkit for ESP series chips. Covers firmware flash and merge, partition tables, OTA, NVS, Bluetooth scanning, chip pinout diagrams, and embedded image and audio format conversion. Built with [Tauri](https://tauri.app/) and [Vue 3](https://vuejs.org/), with [esptool](https://github.com/espressif/esptool) built in — no separate CLI install required.
 
 [简体中文](./README.md) | English
 
@@ -22,6 +22,7 @@ A desktop toolkit for ESP series chips. Covers firmware flash and merge, partiti
 - [Bluetooth](#bluetooth)
 - [Chip Pinout](#chip-pinout)
 - [Image Tools](#image-tools)
+- [Audio Tools](#audio-tools)
 - [Terminal Output](#terminal-output)
 - [Data Directories](#data-directories)
 - [Feature Status](#feature-status)
@@ -39,7 +40,7 @@ The sidebar is grouped by purpose:
 |-------|---------|
 | Flash & partitions | Firmware Flash, Firmware Management, Partition Table, OTA Partitions, NVS Partition |
 | Bluetooth & pinout | Bluetooth, Chip Pinout |
-| Utilities | Image Tools |
+| Utilities | Image Tools, Audio Tools |
 
 UI language supports Simplified Chinese and English; switch inside the app.
 
@@ -57,6 +58,7 @@ UI language supports Simplified Chinese and English; switch inside the app.
 | Bluetooth | BLE advertisement scan and filters; classic Bluetooth (BR/EDR) discovery on Windows |
 | Chip Pinout | Interactive ESP32-family pinout with category filter and datasheet links |
 | Image Tools | JPG→SJPG, GIF→EAF for LVGL / embedded displays |
+| Audio Tools | WAV→OGG (Opus); can detect Opus / Vorbis / FLAC |
 
 ---
 
@@ -468,6 +470,34 @@ Encoding trade-offs: RLE is fast to decode with moderate size; RLE+Huffman is sm
 
 ---
 
+## Audio Tools
+
+Convert WAV to Ogg Opus (`.ogg`) commonly used on embedded devices. Layout matches Image Tools: pick a converter on the left, manage a batch in the center, set output options on the right, preview results at the bottom. Conversion runs in the frontend (`libopus-wasm`) — no local ffmpeg install required.
+
+### WAV to OGG
+![WAV to OGG](images/en-wav-to-ogg.png)
+
+Convert PCM / IEEE Float WAV (including WAVE_FORMAT_EXTENSIBLE) to Ogg Opus.
+
+| Item | Description |
+|------|-------------|
+| Input | `.wav`, batch drop or system file dialog |
+| Output | `.ogg` (Opus) |
+| Codec | Conversion is **Opus** only for now; opening a file can detect Opus / Vorbis / FLAC |
+| Sample rate | 8000 / 12000 / 16000 / 24000 / 48000 Hz (default 16000) |
+| Bitrate | Target bitrate in kbps (default 16) |
+| Bit depth | Intermediate PCM quantization before Opus: 16 / 24 / 32 bit (default 16) |
+| Compression quality | Opus complexity 0–10 (default 10); mainly quality/CPU, almost no size change |
+| Channels | Mono by default; keep original or force stereo |
+| Trim duration | Full length by default; optional trim in seconds |
+| Frame size | 20 / 40 / 60 ms (default 60) |
+
+Flow: add WAV → tune parameters → batch convert → save one or all `.ogg` files. Bottom preview supports play/pause/loop; you can also open an existing `.ogg` / `.opus` / `.oga` and see the detected codec.
+
+> With `ffprobe`, `sample_rate` often shows 48000 (Opus decode clock), which is not the encoding rate you set. A `~` bitrate in preview is size-based and looks higher on short clips.
+
+---
+
 ## Terminal Output
 
 The bottom xterm is used for:
@@ -517,6 +547,7 @@ Do not close the app while flashing. On failure, check port occupancy, drivers, 
 | Classic Bluetooth scan (Windows) | Done |
 | ESP32-family interactive pinout | Done |
 | JPG→SJPG / GIF→EAF | Done |
+| WAV→OGG (Opus) | Done |
 | Bluetooth connect and GATT | Not implemented |
 
 ---
