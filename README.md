@@ -1,5 +1,7 @@
 # Wheat ESP Tools
 
+<img src="images/banner.jpg" alt="Wheat ESP Tools" width="800">
+
 面向 ESP 系列芯片的桌面工具。集成固件烧录与合并、分区表、OTA、NVS、蓝牙扫描、芯片引脚图、嵌入式图片与音频格式转换等功能。基于 [Tauri](https://tauri.app/) 与 [Vue 3](https://vuejs.org/) 构建，内置 [esptool](https://github.com/espressif/esptool)，无需另行安装命令行工具。
 
 简体中文 | [English](./README-EN.md)
@@ -133,7 +135,7 @@ yarn tauri build    # 生产安装包
 多固件烧录、合并与 Flash 级快捷操作的主入口。
 
 <!-- 截图占位：固件烧录主界面 -->
-![固件烧录](images/cn-flash.png)
+![固件烧录](images/cn-flash.jpg)
 
 ### 添加固件
 
@@ -224,7 +226,7 @@ esptool.py -p COMx -b 1152000 write-flash --flash-mode keep 0x10000 firmware.bin
 管理历史工程配置与本地固件库，并提供快速烧录入口。
 
 <!-- 截图占位：固件管理 -->
-![固件管理](images/cn-firmware.png)
+![固件管理](images/cn-firmware.jpg)
 
 页面顶部可配置快速烧录参数：SPI 模式、波特率、是否烧录前擦除（与烧录页参数体系一致，默认波特率 `1152000`、SPI `keep`）。
 
@@ -257,7 +259,7 @@ esptool.py -p COMx -b 1152000 write-flash --flash-mode keep 0x10000 firmware.bin
 从已连接设备读取分区表，并支持按分区操作。
 
 <!-- 截图占位：分区表 · 设备读取 -->
-![分区表 · 设备读取](images/cn-partition1.png)
+![分区表 · 设备读取](images/cn-partition1.jpg)
 
 1. 确认分区表偏移与读取波特率（默认 `460800`）。
 2. 点击 **读取分区表**。
@@ -277,7 +279,7 @@ esptool.py -p COMx -b 1152000 write-flash --flash-mode keep 0x10000 firmware.bin
 用于 ESP-IDF 分区 CSV 的 Offset 自动对齐，无需连接设备。
 
 <!-- 截图占位：分区表 · 偏移计算 -->
-![分区表 · 偏移计算](images/cn-partition2.png)
+![分区表 · 偏移计算](images/cn-partition2.jpg)
 
 1. 在左侧粘贴分区 CSV。
 2. **Offset 留空** 的行按 ESP-IDF 对齐规则自动计算。
@@ -301,7 +303,7 @@ factory,  app,  factory, , 1M,
 读取设备分区表与 `otadata`，查看当前启动槽，并对 OTA App 分区进行维护。需已选串口，且分区表中存在 `otadata` 与 OTA App 分区（如 `ota_0`、`ota_1`）。
 
 <!-- 截图占位：OTA 分区 -->
-![OTA 分区](images/cn-ota.png)
+![OTA 分区](images/cn-ota.jpg)
 
 ### 读取信息
 
@@ -328,7 +330,7 @@ factory,  app,  factory, , 1M,
 读取、编辑并写回 ESP NVS（Non-Volatile Storage）键值数据；也可从本地镜像或 CSV 生成分区文件。
 
 <!-- 截图占位：NVS 分区 -->
-![NVS 分区](images/cn-nvs.png)
+![NVS 分区](images/cn-nvs.jpg)
 
 ### 从设备读取
 
@@ -371,7 +373,7 @@ factory,  app,  factory, , 1M,
 扫描附近蓝牙设备。本页不依赖 ESP 串口。提供两种模式：**BLE 广播** 与 **经典蓝牙**（Windows）。
 
 <!-- 截图占位：蓝牙 -->
-![蓝牙](images/cn-ble.png)
+![蓝牙](images/cn-ble.jpg)
 
 ### BLE 广播
 
@@ -406,7 +408,7 @@ factory,  app,  factory, , 1M,
 ESP32 系列交互式引脚功能图。数据来自 Espressif 官方数据手册，无需连接设备。
 
 <!-- 截图占位：芯片引脚 -->
-![芯片引脚](images/cn-pinout.png)
+![芯片引脚](images/cn-pinout.jpg)
 
 ### 支持的芯片
 
@@ -443,7 +445,7 @@ ESP32 系列交互式引脚功能图。数据来自 Espressif 官方数据手册
 将常见图片转换为嵌入式/LVGL 可用格式。左侧选择转换工具，中间为批量任务区，右侧为输出参数。
 
 ### JPG 转 SJPG
-![JPG 转 SJPG](images/cn-jpg-to-sjpg.png)
+![JPG 转 SJPG](images/cn-jpg-to-sjpg.jpg)
 
 面向 LVGL SJPG 格式（magic `_SJPG__`，版本 V1.00），与官方 `jpg_to_sjpg.py` 流程兼容：按分片高度切条后 JPEG 压缩。
 
@@ -458,7 +460,7 @@ ESP32 系列交互式引脚功能图。数据来自 Espressif 官方数据手册
 流程：添加图片 → 调整参数 → 批量转换 → 保存单个或全部输出。
 
 ### GIF 转 EAF
-![GIF 转 EAF](images/cn-gif-to-eaf.png)
+![GIF 转 EAF](images/cn-gif-to-eaf.jpg)
 
 将 GIF 转为 `.eaf` 动画二进制，并支持预览播放。
 
@@ -481,7 +483,7 @@ ESP32 系列交互式引脚功能图。数据来自 Espressif 官方数据手册
 将 WAV 转为嵌入式常用的 Ogg Opus（`.ogg`）。布局与图片处理一致：左侧选择转换工具，中间为批量任务区，右侧为输出参数，底部可预览结果。转换在前端完成（`libopus-wasm`），无需本机安装 ffmpeg。
 
 ### WAV 转 OGG
-![WAV 转 OGG](images/cn-wav-to-ogg.png)
+![WAV 转 OGG](images/cn-wav-to-ogg.jpg)
 
 将 PCM / IEEE Float WAV（含 WAVE_FORMAT_EXTENSIBLE）转为 Ogg Opus。
 

@@ -1,5 +1,7 @@
 # Wheat ESP Tools
 
+<img src="images/banner.jpg" alt="Wheat ESP Tools" width="800">
+
 A desktop toolkit for ESP series chips. Covers firmware flash and merge, partition tables, OTA, NVS, Bluetooth scanning, chip pinout diagrams, and embedded image and audio format conversion. Built with [Tauri](https://tauri.app/) and [Vue 3](https://vuejs.org/), with [esptool](https://github.com/espressif/esptool) built in — no separate CLI install required.
 
 [简体中文](./README.md) | English
@@ -132,7 +134,7 @@ Serial port details can also show friendly name, USB description, and serial num
 
 Main entry for multi-firmware flash, merge, and Flash-level shortcuts.
 
-![Firmware Flash](images/en-flash.png)
+![Firmware Flash](images/en-flash.jpg)
 
 ### Adding firmware
 
@@ -222,7 +224,7 @@ Copy checked firmware to a user-chosen folder, named like `{stem}_{address}.bin`
 
 Manages recent project configs and a local firmware library, plus quick flash.
 
-![Firmware Management](images/en-firmware.png)
+![Firmware Management](images/en-firmware.jpg)
 
 Quick-flash parameters at the top: SPI mode, baud rate, erase-before-flash (same model as the Flash page; defaults baud `1152000`, SPI `keep`).
 
@@ -254,7 +256,7 @@ Two sub-pages: **Device read** and **Offset alignment**. Partition table offset 
 
 Read the partition table from a connected device and operate on individual partitions.
 
-![Partition Table · Device read](images/en-partition1.png)
+![Partition Table · Device read](images/en-partition1.jpg)
 
 1. Confirm partition table offset and read baud rate (default `460800`).
 2. Click **Read partition table**.
@@ -273,7 +275,7 @@ Partition table binary backups go to the system temp directory `wheat-esp-tools/
 
 Auto-align Offset fields in ESP-IDF partition CSV — no device required.
 
-![Partition Table · Offset alignment](images/en-partition2.png)
+![Partition Table · Offset alignment](images/en-partition2.jpg)
 
 1. Paste the partition CSV on the left.
 2. Rows with **empty Offset** are filled by ESP-IDF alignment rules.
@@ -296,7 +298,7 @@ factory,  app,  factory, , 1M,
 
 Read the device partition table and `otadata`, inspect the active boot slot, and maintain OTA app partitions. Requires a selected serial port, plus `otadata` and OTA app partitions (e.g. `ota_0`, `ota_1`) in the table.
 
-![OTA Partitions](images/en-ota.png)
+![OTA Partitions](images/en-ota.jpg)
 
 ### Load info
 
@@ -322,7 +324,7 @@ Read-out example path: `{temp}/wheat-esp-tools/ota/ota_{n}-{timestamp}.bin`.
 
 Read, edit, and write back ESP NVS (Non-Volatile Storage) key-value data; also open a local image or generate a partition from CSV.
 
-![NVS Partition](images/en-nvs.png)
+![NVS Partition](images/en-nvs.jpg)
 
 ### Read from device
 
@@ -364,7 +366,7 @@ Filter by namespace, key, or value. Click an unmodified cell to copy.
 
 Scan nearby Bluetooth devices. This page does not require an ESP serial port. Two modes: **BLE advertisements** and **Classic Bluetooth** (Windows).
 
-![Bluetooth](images/en-ble.png)
+![Bluetooth](images/en-ble.jpg)
 
 ### BLE advertisements
 
@@ -398,7 +400,7 @@ Filters: name, MAC, paired only, connected only, RSSI floor. No connection or pr
 
 Interactive ESP32-family pin function diagrams. Data comes from Espressif datasheets; no device connection required.
 
-![Chip Pinout](images/en-pinout.png)
+![Chip Pinout](images/en-pinout.jpg)
 
 ### Supported chips
 
@@ -436,7 +438,7 @@ Convert common images to formats usable in embedded / LVGL projects. Pick a conv
 
 ### JPG to SJPG
 
-![JPG to SJPG](images/en-jpg-to-sjpg.png)
+![JPG to SJPG](images/en-jpg-to-sjpg.jpg)
 
 Targets LVGL SJPG (magic `_SJPG__`, version V1.00), compatible with the official `jpg_to_sjpg.py` flow: slice by split height, then JPEG-compress each strip.
 
@@ -452,7 +454,7 @@ Flow: add images → tune parameters → batch convert → save one or all outpu
 
 ### GIF to EAF
 
-![GIF to EAF](images/en-gif-to-eaf.png)
+![GIF to EAF](images/en-gif-to-eaf.jpg)
 
 Convert GIF to `.eaf` animation binaries with playback preview.
 
@@ -475,7 +477,7 @@ Encoding trade-offs: RLE is fast to decode with moderate size; RLE+Huffman is sm
 Convert WAV to Ogg Opus (`.ogg`) commonly used on embedded devices. Layout matches Image Tools: pick a converter on the left, manage a batch in the center, set output options on the right, preview results at the bottom. Conversion runs in the frontend (`libopus-wasm`) — no local ffmpeg install required.
 
 ### WAV to OGG
-![WAV to OGG](images/en-wav-to-ogg.png)
+![WAV to OGG](images/en-wav-to-ogg.jpg)
 
 Convert PCM / IEEE Float WAV (including WAVE_FORMAT_EXTENSIBLE) to Ogg Opus.
 
