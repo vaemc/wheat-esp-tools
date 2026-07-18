@@ -69,6 +69,20 @@
       <path d="M18 5v13" />
       <path d="M22 10v3" />
     </template>
+    <!-- Lucide: type — 字体处理 -->
+    <template v-else-if="name === 'font'">
+      <polyline points="4 7 4 4 20 4 20 7" />
+      <line x1="9" x2="15" y1="20" y2="20" />
+      <line x1="12" x2="12" y1="4" y2="20" />
+    </template>
+    <!-- Lucide: whole-word — LVGL 字体转换 -->
+    <template v-else-if="name === 'lvglfont'">
+      <circle cx="7" cy="12" r="3" />
+      <path d="M10 9v6" />
+      <circle cx="17" cy="12" r="3" />
+      <path d="M14 7v8" />
+      <path d="M22 17v1c0 .5-.5 1-1 1H3c-.5 0-1-.5-1-1v-1" />
+    </template>
     <!-- Lucide: file-audio — WAV 转 OGG -->
     <template v-else-if="name === 'wav2ogg'">
       <path
@@ -125,7 +139,9 @@ const ICON_COLORS: Record<string, string> = {
   pinout: "#95de64",
   image: "#ff85c0",
   audio: "#36cfc9",
+  font: "#faad14",
   wav2ogg: "#36cfc9",
+  lvglfont: "#faad14",
   sjpg: "#ff85c0",
   eaf: "#b37feb",
   settings: "#8c8c8c",

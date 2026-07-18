@@ -116,6 +116,18 @@ export const layoutChildren: RouteRecordRaw[] = [
     },
   },
   {
+    path: "tools/font",
+    name: "font",
+    component: () => import("@/views/tools/font/index.vue"),
+    meta: {
+      icon: "font",
+      titleKey: "menu.font",
+      menu: true,
+      menuGroup: "utils",
+      menuOrder: 10,
+    },
+  },
+  {
     path: "settings",
     name: "settings",
     component: () => import("@/views/settings/index.vue"),
