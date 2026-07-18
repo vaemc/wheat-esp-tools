@@ -23,6 +23,7 @@
         <OggPreview
           :src="previewSrc"
           :file-name="previewMeta.fileName"
+          :codec="previewMeta.codec"
           :sample-rate="previewMeta.sampleRate"
           :channels="previewMeta.channels"
           :bit-depth="previewMeta.bitDepth"
@@ -74,6 +75,25 @@
       <div class="settings-block">
         <div class="block-title">{{ $t("audio.oggOptions") }}</div>
         <p class="block-hint">{{ $t("audio.oggOptionsHint") }}</p>
+
+        <label class="field field--full">
+          <span class="field-label-with-tip">
+            {{ $t("audio.codec") }}
+            <a-tooltip>
+              <template #title>
+                <div>{{ $t("audio.codecHint") }}</div>
+                <div>{{ $t("audio.codecHintMore") }}</div>
+              </template>
+              <span class="tip-icon">?</span>
+            </a-tooltip>
+          </span>
+          <a-select
+            v-model:value="batch.codec.value"
+            :disabled="!batch.hasItems.value"
+            style="width: 100%"
+            :options="codecOptions"
+          />
+        </label>
 
         <label class="field field--full">
           <span class="field-label-with-tip">
@@ -209,7 +229,8 @@ import OggPreview from "./components/OggPreview.vue";
 import { useWav2OggBatch } from "./composables/useWav2OggBatch";
 import { useTauriDragDrop } from "@/composables/useTauriDragDrop";
 import { convertWavToOgg } from "@/utils/audio/ogg/encoder";
-import { probeOggOpus } from "@/utils/audio/ogg/probe";
+import { probeOgg } from "@/utils/audio/ogg/probe";
+import type { OggCodec } from "@/utils/audio/ogg/types";
 import { formatDuration } from "@/utils/audio/formatDuration";
 import {
   saveBytesWithDialog,
@@ -228,6 +249,7 @@ const batch = useWav2OggBatch();
 const externalPreview = shallowRef<{
   objectUrl: string;
   fileName: string;
+  codec: OggCodec;
   sampleRate: number;
   channels: number;
   bitDepth: number;
@@ -235,6 +257,20 @@ const externalPreview = shallowRef<{
   complexity: number;
   byteLength: number;
 } | null>(null);
+
+const codecOptions = computed(() => [
+  { value: "opus", label: t("audio.codecOpus") },
+  {
+    value: "vorbis",
+    label: t("audio.codecVorbis"),
+    disabled: true,
+  },
+  {
+    value: "flac",
+    label: t("audio.codecFlac"),
+    disabled: true,
+  },
+]);
 
 const sampleRateOptions = [
   { value: 8000, label: "8000 Hz" },
@@ -287,6 +323,7 @@ const previewMeta = computed(() => {
   if (externalPreview.value) {
     return {
       fileName: externalPreview.value.fileName,
+      codec: externalPreview.value.codec,
       sampleRate: externalPreview.value.sampleRate,
       channels: externalPreview.value.channels,
       bitDepth: externalPreview.value.bitDepth,
@@ -300,6 +337,7 @@ const previewMeta = computed(() => {
   if (!result) {
     return {
       fileName: "",
+      codec: "" as const,
       sampleRate: 0,
       channels: 0,
       bitDepth: 0,
@@ -310,6 +348,7 @@ const previewMeta = computed(() => {
   }
   return {
     fileName: `${batch.baseNameFrom(item!.fileName)}.ogg`,
+    codec: result.codec ?? "opus",
     sampleRate: result.sampleRate,
     channels: result.channels,
     bitDepth: result.bitDepth || batch.bitDepth.value,
@@ -347,8 +386,12 @@ function reportLoadError(error: unknown, where: string) {
     message.error(t("audio.unsupportedWav"));
     return;
   }
-  if (code === "NOT_OGG_OPUS") {
+  if (code === "NOT_OGG") {
     message.error(t("audio.onlyOggSupported"));
+    return;
+  }
+  if (code === "UNSUPPORTED_CODEC") {
+    message.warning(t("audio.codecUnsupported"));
     return;
   }
   message.error(
@@ -417,32 +460,39 @@ function onDurationChange(value: number | string | null) {
   }
 }
 
+function setExternalOggPreview(bytes: Uint8Array, fileName: string) {
+  const info = probeOgg(bytes);
+  clearExternalPreview();
+  externalPreview.value = {
+    objectUrl: URL.createObjectURL(
+      new Blob([new Uint8Array(bytes)], { type: "audio/ogg" })
+    ),
+    fileName,
+    codec: info.codec,
+    sampleRate: info.sampleRate,
+    channels: info.channels,
+    bitDepth: 16,
+    bitrateKbps: 0,
+    complexity: -1,
+    byteLength: info.byteLength,
+  };
+  if (info.codec !== "opus") {
+    message.info(t("audio.codecDetected", { codec: info.codec.toUpperCase() }));
+  }
+}
+
 async function pickExternalOgg() {
   try {
     const selected = await open({
       multiple: false,
-      filters: [{ name: "OGG", extensions: ["ogg", "opus"] }],
+      filters: [{ name: "OGG", extensions: ["ogg", "opus", "oga"] }],
     });
     if (selected == null || Array.isArray(selected)) {
       return;
     }
     const bytes = new Uint8Array(await readFile(selected));
-    const info = probeOggOpus(bytes);
     const name = selected.split(/[/\\]/).pop() ?? "audio.ogg";
-    clearExternalPreview();
-    const objectUrl = URL.createObjectURL(
-      new Blob([new Uint8Array(bytes)], { type: "audio/ogg" })
-    );
-    externalPreview.value = {
-      objectUrl,
-      fileName: name,
-      sampleRate: info.sampleRate,
-      channels: info.channels,
-      bitDepth: 16,
-      bitrateKbps: 0,
-      complexity: -1,
-      byteLength: info.byteLength,
-    };
+    setExternalOggPreview(bytes, name);
   } catch (error) {
     reportLoadError(error, "open ogg preview failed");
   }
@@ -461,6 +511,10 @@ async function onConvert() {
   if (!batch.hasItems.value) {
     return;
   }
+  if (batch.codec.value !== "opus") {
+    message.warning(t("audio.codecUnsupported"));
+    return;
+  }
   converting.value = true;
   clearExternalPreview();
   let success = 0;
@@ -470,6 +524,7 @@ async function onConvert() {
       batch.setStatus(item.id, "converting");
       try {
         const result = await convertWavToOgg(item.sourceBytes, {
+          codec: batch.codec.value,
           sampleRate: batch.sampleRate.value,
           bitrateKbps: batch.bitrateKbps.value,
           bitDepth: batch.bitDepth.value,
@@ -539,7 +594,7 @@ async function downloadAllOgg() {
 useTauriDragDrop({
   onDrop(paths) {
     const wavPaths = paths.filter((path) => /\.wav$/i.test(path));
-    const oggPaths = paths.filter((path) => /\.(ogg|opus)$/i.test(path));
+    const oggPaths = paths.filter((path) => /\.(ogg|opus|oga)$/i.test(path));
     if (wavPaths.length) {
       void loadFromPaths(wavPaths);
       return;
@@ -549,21 +604,8 @@ useTauriDragDrop({
         try {
           const path = oggPaths[0]!;
           const bytes = new Uint8Array(await readFile(path));
-          const info = probeOggOpus(bytes);
           const name = path.split(/[/\\]/).pop() ?? "audio.ogg";
-          clearExternalPreview();
-          externalPreview.value = {
-            objectUrl: URL.createObjectURL(
-              new Blob([new Uint8Array(bytes)], { type: "audio/ogg" })
-            ),
-            fileName: name,
-            sampleRate: info.sampleRate,
-            channels: info.channels,
-            bitDepth: 16,
-            bitrateKbps: 0,
-            complexity: -1,
-            byteLength: info.byteLength,
-          };
+          setExternalOggPreview(bytes, name);
         } catch (error) {
           reportLoadError(error, "drop ogg failed");
         }

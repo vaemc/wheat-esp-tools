@@ -2,6 +2,7 @@ import { computed, ref } from "vue";
 import {
   DEFAULT_WAV_TO_OGG_OPTIONS,
   type ChannelMode,
+  type OggCodec,
   type WavToOggResult,
 } from "@/utils/audio/ogg/types";
 import { decodeWav } from "@/utils/audio/ogg/wav";
@@ -72,6 +73,7 @@ export function useWav2OggBatch() {
   const loading = ref(false);
   const selectedId = ref<string | null>(null);
 
+  const codec = ref<OggCodec>(DEFAULT_WAV_TO_OGG_OPTIONS.codec);
   const sampleRate = ref<8000 | 12000 | 16000 | 24000 | 48000>(
     DEFAULT_WAV_TO_OGG_OPTIONS.sampleRate
   );
@@ -225,6 +227,7 @@ export function useWav2OggBatch() {
     loading,
     selectedId,
     selectedItem,
+    codec,
     sampleRate,
     bitrateKbps,
     bitDepth,

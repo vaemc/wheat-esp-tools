@@ -1,9 +1,20 @@
 /** 声道：保持源文件 / 强制单声道 / 强制立体声 */
 export type ChannelMode = "keep" | "mono" | "stereo";
 
-/** WAV → OGG(Opus) 转换参数（常用 libopus 配置） */
+/**
+ * Ogg 容器内的编码格式。
+ * 同为 .ogg 后缀时，实际可能是 Opus / Vorbis / FLAC。
+ */
+export type OggCodec = "opus" | "vorbis" | "flac";
+
+/** WAV → OGG 转换参数 */
 export interface WavToOggOptions {
-  /** 输出采样率 Hz，默认 16000 */
+  /**
+   * 编码格式，默认 opus。
+   * 当前仅实现 Opus；Vorbis / FLAC 用于识别与预留。
+   */
+  codec?: OggCodec;
+  /** 输出采样率 Hz，默认 16000（Opus） */
   sampleRate?: 8000 | 12000 | 16000 | 24000 | 48000;
   /** Opus 码率 kbps，默认 16 */
   bitrateKbps?: number;
@@ -35,6 +46,7 @@ export interface WavProbeInfo {
 
 export interface WavToOggResult {
   bytes: Uint8Array;
+  codec: OggCodec;
   sampleRate: number;
   channels: number;
   bitrateKbps: number;
@@ -47,6 +59,7 @@ export interface WavToOggResult {
 export const DEFAULT_WAV_TO_OGG_OPTIONS: Required<
   Omit<WavToOggOptions, "durationSec">
 > & { durationSec: number | null } = {
+  codec: "opus",
   sampleRate: 16000,
   bitrateKbps: 16,
   bitDepth: 16,

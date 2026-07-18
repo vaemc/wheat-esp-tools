@@ -237,10 +237,19 @@ const messages = {
       previewPlay: "播放",
       previewPause: "暂停",
       previewLoop: "循环",
-      onlyOggSupported: "仅支持 Ogg Opus 文件",
-      oggOptions: "OGG / Opus 参数",
+      onlyOggSupported: "无法识别为有效的 Ogg 音频（需含 Opus / Vorbis / FLAC 头）",
+      oggOptions: "OGG 参数",
       oggOptionsHint:
-        "默认：16 kHz、16 kbps、60 ms 帧、单声道；压缩质量 10（Opus complexity 0–10）。可按需调整。",
+        "默认 Opus：16 kHz、16 kbps、60 ms 帧、单声道；压缩质量 10。可按需调整。",
+      codec: "编码格式",
+      codecHint:
+        "Opus：低延迟，适合语音/直播；Vorbis：经典有损，适合音乐；FLAC：无损。",
+      codecHintMore: "当前仅支持转换为 Opus，打开文件时可识别这三种。",
+      codecOpus: "Opus",
+      codecVorbis: "Vorbis",
+      codecFlac: "FLAC",
+      codecUnsupported: "当前仅支持转换为 Opus，Vorbis / FLAC 转换尚未实现",
+      codecDetected: "已识别为 {codec} 编码",
       sampleRate: "采样率",
       sampleRateHint:
         "这里设置的是实际编码采样率（如 16k / 24k）。用 ffprobe 查看时经常会看到 48000，那是 Opus 固定的解码时钟，不代表文件被转成了 48k。",
@@ -792,10 +801,22 @@ const messages = {
       previewPlay: "Play",
       previewPause: "Pause",
       previewLoop: "Loop",
-      onlyOggSupported: "Only Ogg Opus files are supported",
-      oggOptions: "OGG / Opus options",
+      onlyOggSupported:
+        "Unrecognized Ogg audio (need Opus / Vorbis / FLAC header)",
+      oggOptions: "OGG options",
       oggOptionsHint:
-        "Defaults: 16 kHz, 16 kbps, 60 ms frames, mono; compression quality 10 (Opus complexity 0–10). Adjust as needed.",
+        "Default Opus: 16 kHz, 16 kbps, 60 ms frames, mono; compression quality 10. Adjust as needed.",
+      codec: "Codec",
+      codecHint:
+        "Opus: low latency, good for voice/streaming; Vorbis: classic lossy music; FLAC: lossless.",
+      codecHintMore:
+        "Conversion supports Opus only; opening a file can detect all three.",
+      codecOpus: "Opus",
+      codecVorbis: "Vorbis",
+      codecFlac: "FLAC",
+      codecUnsupported:
+        "Only Opus conversion is available; Vorbis / FLAC encoding is not implemented yet",
+      codecDetected: "Detected {codec} codec",
       sampleRate: "Sample rate",
       sampleRateHint:
         "This is the encoding sample rate (e.g. 16k / 24k). ffprobe often shows 48000—that is Opus’s fixed decode clock, not proof the file was converted to 48 kHz.",

@@ -19,6 +19,16 @@
     </div>
 
     <div v-if="hasSource" class="preview-meta">
+      <span v-if="codecLabel" class="meta-with-tip">
+        {{ codecLabel }}
+        <a-tooltip>
+          <template #title>
+            <div>{{ $t("audio.codecHint") }}</div>
+            <div>{{ $t("audio.codecHintMore") }}</div>
+          </template>
+          <span class="tip-icon">?</span>
+        </a-tooltip>
+      </span>
       <span v-if="sampleRate" class="meta-with-tip">
         {{ sampleRate }} Hz
         <a-tooltip :title="$t('audio.sampleRateHint')">
@@ -76,13 +86,18 @@
 
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref, watch } from "vue";
+import { useI18n } from "vue-i18n";
 import prettyBytes from "pretty-bytes";
 import { formatDuration } from "@/utils/audio/formatDuration";
+import type { OggCodec } from "@/utils/audio/ogg/types";
+
+const { t } = useI18n();
 
 const props = withDefaults(
   defineProps<{
     src: string | null;
     fileName?: string;
+    codec?: OggCodec | "";
     sampleRate?: number;
     channels?: number;
     bitDepth?: number;
@@ -98,6 +113,7 @@ const props = withDefaults(
   }>(),
   {
     fileName: "",
+    codec: "",
     sampleRate: 0,
     channels: 0,
     bitDepth: 0,
@@ -121,6 +137,18 @@ const bars = [28, 52, 38, 72, 44, 66, 36, 80, 48, 60, 42, 70, 34, 58, 46, 64];
 
 const hasSource = computed(() => Boolean(props.src));
 const hasComplexity = computed(() => (props.complexity ?? -1) >= 0);
+const codecLabel = computed(() => {
+  if (props.codec === "opus") {
+    return t("audio.codecOpus");
+  }
+  if (props.codec === "vorbis") {
+    return t("audio.codecVorbis");
+  }
+  if (props.codec === "flac") {
+    return t("audio.codecFlac");
+  }
+  return "";
+});
 const seekPercent = computed(() => {
   if (!duration.value) {
     return 0;

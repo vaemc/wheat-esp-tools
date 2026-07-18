@@ -58,7 +58,7 @@ UI language supports Simplified Chinese and English; switch inside the app.
 | Bluetooth | BLE advertisement scan and filters; classic Bluetooth (BR/EDR) discovery on Windows |
 | Chip Pinout | Interactive ESP32-family pinout with category filter and datasheet links |
 | Image Tools | JPG→SJPG, GIF→EAF for LVGL / embedded displays |
-| Audio Tools | WAV→OGG (Opus) for wake-word / embedded playback and similar use cases |
+| Audio Tools | WAV→OGG (Opus); can detect Opus / Vorbis / FLAC |
 
 ---
 
@@ -483,6 +483,7 @@ Convert PCM / IEEE Float WAV (including WAVE_FORMAT_EXTENSIBLE) to Ogg Opus.
 |------|-------------|
 | Input | `.wav`, batch drop or system file dialog |
 | Output | `.ogg` (Opus) |
+| Codec | Conversion is **Opus** only for now; opening a file can detect Opus / Vorbis / FLAC |
 | Sample rate | 8000 / 12000 / 16000 / 24000 / 48000 Hz (default 16000) |
 | Bitrate | Target bitrate in kbps (default 16) |
 | Bit depth | Intermediate PCM quantization before Opus: 16 / 24 / 32 bit (default 16) |
@@ -491,9 +492,9 @@ Convert PCM / IEEE Float WAV (including WAVE_FORMAT_EXTENSIBLE) to Ogg Opus.
 | Trim duration | Full length by default; optional trim in seconds |
 | Frame size | 20 / 40 / 60 ms (default 60) |
 
-Flow: add WAV → tune parameters → batch convert → save one or all `.ogg` files. Bottom preview supports play/pause/loop; you can also open an existing `.ogg` to listen.
+Flow: add WAV → tune parameters → batch convert → save one or all `.ogg` files. Bottom preview supports play/pause/loop; you can also open an existing `.ogg` / `.opus` / `.oga` and see the detected codec.
 
-> With `ffprobe`, `sample_rate` often shows 48000 (Opus decode clock), which is not the same field as the encoding rate written to OpusHead. A `~` bitrate in preview is estimated from file size and looks higher on short clips due to container overhead.
+> With `ffprobe`, `sample_rate` often shows 48000 (Opus decode clock), which is not the encoding rate you set. A `~` bitrate in preview is size-based and looks higher on short clips.
 
 ---
 

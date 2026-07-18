@@ -15,6 +15,7 @@ import { decodeWav, floatToInt16, resampleInterleaved } from "./wav";
 
 function resolveOptions(options?: WavToOggOptions) {
   return {
+    codec: options?.codec ?? DEFAULT_WAV_TO_OGG_OPTIONS.codec,
     sampleRate: (options?.sampleRate ??
       DEFAULT_WAV_TO_OGG_OPTIONS.sampleRate) as SampleRate,
     bitrateKbps: options?.bitrateKbps ?? DEFAULT_WAV_TO_OGG_OPTIONS.bitrateKbps,
@@ -32,14 +33,17 @@ function resolveOptions(options?: WavToOggOptions) {
 }
 
 /**
- * WAV → OGG Opus。
- * 默认：16kbps / 16kHz / 单声道 / complexity=10 / frame_duration=60。
+ * WAV → OGG。
+ * 当前仅实现 Opus；默认：16kbps / 16kHz / 单声道 / complexity=10 / frame_duration=60。
  */
 export async function convertWavToOgg(
   wavBytes: ArrayBuffer | Uint8Array,
   options?: WavToOggOptions
 ): Promise<WavToOggResult> {
   const opts = resolveOptions(options);
+  if (opts.codec !== "opus") {
+    throw new Error("UNSUPPORTED_CODEC");
+  }
   const buffer =
     wavBytes instanceof ArrayBuffer
       ? wavBytes
@@ -116,6 +120,7 @@ export async function convertWavToOgg(
     const durationSec = pcmFloat.length / outChannels / opts.sampleRate;
     return {
       bytes,
+      codec: "opus",
       sampleRate: opts.sampleRate,
       channels: outChannels,
       bitrateKbps: opts.bitrateKbps,
