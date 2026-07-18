@@ -481,8 +481,6 @@ ESP32 系列交互式引脚功能图。数据来自 Espressif 官方数据手册
 将 WAV 转为嵌入式常用的 Ogg Opus（`.ogg`）。布局与图片处理一致：左侧选择转换工具，中间为批量任务区，右侧为输出参数，底部可预览结果。转换在前端完成（`libopus-wasm`），无需本机安装 ffmpeg。
 
 ### WAV 转 OGG
-
-<!-- 截图占位：WAV 转 OGG -->
 ![WAV 转 OGG](images/cn-wav-to-ogg.png)
 
 将 PCM / IEEE Float WAV（含 WAVE_FORMAT_EXTENSIBLE）转为 Ogg Opus。

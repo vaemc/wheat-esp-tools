@@ -475,8 +475,6 @@ Encoding trade-offs: RLE is fast to decode with moderate size; RLE+Huffman is sm
 Convert WAV to Ogg Opus (`.ogg`) commonly used on embedded devices. Layout matches Image Tools: pick a converter on the left, manage a batch in the center, set output options on the right, preview results at the bottom. Conversion runs in the frontend (`libopus-wasm`) — no local ffmpeg install required.
 
 ### WAV to OGG
-
-<!-- screenshot placeholder: WAV to OGG -->
 ![WAV to OGG](images/en-wav-to-ogg.png)
 
 Convert PCM / IEEE Float WAV (including WAVE_FORMAT_EXTENSIBLE) to Ogg Opus.
