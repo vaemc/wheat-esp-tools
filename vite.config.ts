@@ -92,9 +92,8 @@ export default defineConfig(async () => ({
         },
       },
     },
-    // Tauri supports es2021
-    target:
-      process.env.TAURI_ENV_PLATFORM == "windows" ? "chrome105" : "safari13",
+    // Tauri webviews support es2021 (BigInt, etc.); avoid safari13 which rejects 0n
+    target: "es2021",
     // don't minify for debug builds
     minify: !process.env.TAURI_ENV_DEBUG ? "esbuild" : false,
     // produce sourcemaps for debug builds
