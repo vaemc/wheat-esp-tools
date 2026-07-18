@@ -60,6 +60,10 @@ export default defineConfig(async () => ({
     },
     rollupOptions: {
       output: {
+        // 只拆相对独立的大库。不要把 vue 生态和剩余 node_modules
+        // 硬拆成 vendor-vue / vendor，否则会出现循环 chunk：
+        // vendor-vue -> vendor -> vendor-vue，运行时报
+        // "Cannot access 'q' before initialization"。
         manualChunks(id) {
           if (!id.includes("node_modules")) {
             return;
@@ -80,15 +84,6 @@ export default defineConfig(async () => ({
           if (id.includes("xterm")) {
             return "vendor-xterm";
           }
-          if (
-            id.includes("/vue/") ||
-            id.includes("vue-router") ||
-            id.includes("pinia") ||
-            id.includes("@vue/")
-          ) {
-            return "vendor-vue";
-          }
-          return "vendor";
         },
       },
     },
