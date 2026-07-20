@@ -28,6 +28,7 @@ impl Drop for BleScanFlagGuard {
 mod classic_bluetooth;
 mod image;
 mod serial;
+mod window_state;
 
 // Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
 
@@ -654,8 +655,17 @@ fn main() {
             start_ble_advertisement_scan,
             start_classic_bluetooth_scan,
             probe_gif,
-            convert_gif_to_eaf
+            convert_gif_to_eaf,
+            window_state::get_remember_window_state,
+            window_state::set_remember_window_state
         ])
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .setup(|app| {
+            window_state::attach(&app.handle());
+            Ok(())
+        })
+        .build(tauri::generate_context!())
+        .expect("error while building tauri application")
+        .run(|app_handle, event| {
+            window_state::on_run_event(app_handle, &event);
+        });
 }
