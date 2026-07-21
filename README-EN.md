@@ -60,7 +60,7 @@ UI language supports Simplified Chinese and English; switch inside the app.
 | NVS Partition | Read from device or file, edit key-values, write back, generate image from CSV |
 | Bluetooth | BLE advertisement scan and filters; classic Bluetooth (BR/EDR) discovery on Windows |
 | Chip Pinout | Interactive ESP32-family pinout with category filter and datasheet links |
-| Image Tools | JPG→SJPG, GIF→EAF for LVGL / embedded displays |
+| Image Tools | JPG→SJPG, GIF→EAF, GIF compress for LVGL / embedded displays |
 | Audio Tools | WAV→OGG (Opus); can detect Opus / Vorbis / FLAC |
 | File Tools | Pack an assets folder into an mmap `.bin`; preview the map table and `index.json` |
 
@@ -472,6 +472,27 @@ Convert GIF to `.eaf` animation binaries with playback preview.
 
 Encoding trade-offs: RLE is fast to decode with moderate size; RLE+Huffman is smaller but slightly slower; JPEG tunes quality vs size. Conversion runs natively; preview supports play/pause/loop; you can also open an existing `.eaf` for preview.
 
+### GIF Compress
+![GIF Compress](images/en-gif-compress.png)
+
+Batch-compress GIFs. Pipeline: **frame skip → resize → shared palette → frame differencing (dirty rect / merge identical delays)**; preview in the bottom panel, then save `.gif`.
+
+| Item | Description |
+|------|-------------|
+| Input | `.gif`, batch supported |
+| Output | Compressed `.gif` |
+| Frame step N | Skip 1 frame every N frames; N=0 means no skipping |
+| Output size | Original by default; optional width/height with aspect lock |
+| Palette | 256 / 128 / 64 / 32 / 16 / 8 (default **64**) |
+| Dither | Off by default (smoother but may grow size) |
+| Frame diff | On by default; encode only changes vs previous frame |
+| Lossy | 0–200 (default **40**, gifsicle `--lossy` style): posterize + treat near-matching pixels as unchanged |
+| Delay | Keep per-frame delays, or use a fixed delay in ms |
+
+For smaller files: raise lossy (80–150), colors 32/16, shrink size, skip more frames.
+
+Flow: add GIFs → tune parameters → batch compress → preview and save selected or all.
+
 ---
 
 ## Audio Tools
@@ -571,7 +592,7 @@ Do not close the app while flashing. On failure, check port occupancy, drivers, 
 | BLE advertisement scan and multi-filter | Done |
 | Classic Bluetooth scan (Windows) | Done |
 | ESP32-family interactive pinout | Done |
-| JPG→SJPG / GIF→EAF | Done |
+| JPG→SJPG / GIF→EAF / GIF compress | Done |
 | WAV→OGG (Opus) | Done |
 | mmap assets pack | Done |
 | Bluetooth connect and GATT | Not implemented |

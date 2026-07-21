@@ -2,3 +2,4 @@
 //! 结构：`image::{tool}`，每个转换工具独立子模块，同级扩展。
 
 pub mod eaf;
+pub mod gifcompress;

@@ -608,6 +608,35 @@ async fn probe_gif(path: String) -> Result<image::eaf::GifProbeResult, String> {
 }
 
 #[tauri::command]
+async fn probe_gif_rich(path: String) -> Result<image::gifcompress::GifRichProbeResult, String> {
+    tokio::task::spawn_blocking(move || image::gifcompress::probe_gif_rich(&path))
+        .await
+        .map_err(|e| format!("探测 GIF 失败: {e}"))?
+}
+
+#[tauri::command]
+async fn compress_gif(
+    window: WebviewWindow,
+    path: String,
+    options: image::gifcompress::GifCompressOptions,
+    job_id: String,
+) -> Result<image::gifcompress::GifCompressResult, String> {
+    let win = window.clone();
+    let jid = job_id.clone();
+    let path_for_job = path.clone();
+
+    tokio::task::spawn_blocking(move || {
+        let progress_cb: image::gifcompress::ProgressCallback =
+            std::sync::Arc::new(move |event| {
+                let _ = win.emit("gif_compress_progress", &event);
+            });
+        image::gifcompress::compress_gif(&path_for_job, options, &jid, Some(progress_cb))
+    })
+    .await
+    .map_err(|e| format!("压缩 GIF 失败: {e}"))?
+}
+
+#[tauri::command]
 async fn probe_mmap_assets_dir(dir: String) -> Result<mmap::MmapProbeResult, String> {
     tokio::task::spawn_blocking(move || mmap::probe_mmap_assets_dir(&dir))
         .await
@@ -707,6 +736,8 @@ fn main() {
             start_ble_advertisement_scan,
             start_classic_bluetooth_scan,
             probe_gif,
+            probe_gif_rich,
+            compress_gif,
             convert_gif_to_eaf,
             probe_mmap_assets_dir,
             pack_mmap_assets,

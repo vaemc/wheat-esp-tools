@@ -129,6 +129,13 @@
       <path d="m6 21 5-5" />
       <circle cx="9" cy="9" r="2" />
     </template>
+    <!-- Lucide: minimize-2 — GIF 压缩 -->
+    <template v-else-if="name === 'gifcompress'">
+      <polyline points="4 14 10 14 10 20" />
+      <polyline points="20 10 14 10 14 4" />
+      <line x1="14" x2="21" y1="10" y2="3" />
+      <line x1="3" x2="10" y1="21" y2="14" />
+    </template>
     <!-- Lucide: settings -->
     <template v-else-if="name === 'settings'">
       <path
@@ -164,6 +171,7 @@ const ICON_COLORS: Record<string, string> = {
   lvglfont: "#faad14",
   sjpg: "#ff85c0",
   eaf: "#b37feb",
+  gifcompress: "#9254de",
   settings: "#8c8c8c",
 };
 
