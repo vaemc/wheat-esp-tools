@@ -52,6 +52,7 @@ const messages = {
       image: "图片处理",
       audio: "音频处理",
       font: "字体处理",
+      file: "文件处理",
       settings: "设置",
       group: {
         flash: "Flash 与分区",
@@ -380,6 +381,62 @@ const messages = {
         cjkBasic: "基本汉字 (0x4E00-0x9FA5)",
         fontAwesome: "FontAwesome 内置符号",
       },
+    },
+    file: {
+      toolbox: "转换工具",
+      toolMmapSpiffs: "mmap 资源打包",
+      batchSummary: "当前目录",
+      batchCount: "共 {n} 个文件",
+      packDone: "已打包",
+      dropTitle: "拖入或点击选择资源文件夹",
+      dropHint:
+        "把图片、音频、文本等资源整理到一个文件夹中，本工具会递归扫描并打包成 mmap 格式的 .bin。",
+      dropDiffTip:
+        "与乐鑫官方的 SPIFFS / mkspiffs 生成的文件系统镜像不同：这里是「索引表 + 文件内容」结构，固件按相对路径直接映射读取，不必再挂载 SPIFFS 再打开文件。",
+      dropFilesTip:
+        "常见文件例如：png / jpeg / gif / ogg / eaf / txt 等，子目录会保留为相对路径（如 img/logo.png）；相对路径总长度请不超过 31 个字符；自动生成的 index.json 旨在对齐小智风格（version / srmodels / text_font / emoji_collection 等字段）",
+      dropSteps:
+        "使用步骤：① 选择或拖入资源根目录 → ② 核对下方文件列表与清单选项 → ③ 点击「打包为 .bin」保存。",
+      pickDir: "选择文件夹",
+      pickDirTitle: "选择资源根目录",
+      repickDir: "更换目录",
+      clearDir: "清除",
+      needDirectory: "请选择文件夹（不是单个文件）",
+      emptyDir: "目录下没有可打包文件",
+      emptyBin: "该 .bin 内没有文件条目",
+      needDirectoryOrBin: "请先选择资源目录或打开 .bin",
+      probing: "正在扫描文件…",
+      fileList: "文件列表",
+      listEmpty: "选择目录后在此预览将打包的相对路径；也可点「打开 .bin 预览」查看包内文件",
+      pack: "打包为 .bin",
+      saveBinTitle: "保存 mmap 镜像",
+      packSuccess: "打包成功：{n} 个文件，{size}",
+      lastOutput: "最近输出",
+      packMeta: "{n} 个文件 · {size} · checksum 0x{checksum}",
+      revealOutput: "在资源管理器中显示",
+      previewIndex: "预览映射表",
+      previewManifest: "预览 index.json",
+      openBinPreview: "打开 .bin 预览",
+      previewPackedIndex: "在列表中打开此 .bin",
+      openBinTitle: "选择 mmap .bin",
+      binListBanner: "当前预览 .bin 内容",
+      indexModalTitle: "mmap 映射表预览",
+      indexModalHint:
+        "文件位置映射写在 .bin 头部二进制表中。下面是解析后的映射表（name / size / offset），便于查看偏移与大小等参数。",
+      autoGenerateIndex: "自动生成 index.json",
+      indexExistingBadge: "将使用目录中的 index.json",
+      indexUseExistingHint:
+        "根目录已有 index.json，将原样打进包，不会改写。",
+      indexAutoHint:
+        "目录中没有 index.json 时，按文件扫描生成清单（version / srmodels / text_font / emoji_collection）并打进包。",
+      indexSourceExisting: "清单来源：目录中的 index.json（原样）",
+      indexSourceGenerated: "清单来源：自动生成的 index.json",
+      indexSourceNone: "包内未包含 index.json",
+      manifestModalTitle: "index.json 预览",
+      manifestModalHintExisting: "将使用目录中的 index.json（原样，不改写）。",
+      manifestModalHintGenerated:
+        "目录中没有 index.json，以下为扫描生成、将打入包的清单内容。",
+      manifestModalHintFromBin: "以下为从所选 .bin 载荷中提取的 index.json（业务清单，不是头部映射表）。",
     },
     flash: {
       eraseAllFlash: "整片擦除",
@@ -712,6 +769,7 @@ const messages = {
       image: "Image Tools",
       audio: "Audio Tools",
       font: "Font Tools",
+      file: "File Tools",
       settings: "Settings",
       group: {
         flash: "Flash & Partitions",
@@ -1053,6 +1111,64 @@ const messages = {
         cjkBasic: "CJK Unified Ideographs",
         fontAwesome: "Built-in FontAwesome symbols",
       },
+    },
+    file: {
+      toolbox: "Pack tools",
+      toolMmapSpiffs: "mmap assets pack",
+      batchSummary: "Current folder",
+      batchCount: "{n} files",
+      packDone: "Packed",
+      dropTitle: "Drop or click to select an assets folder",
+      dropHint:
+        "Put images, audio, text, and other assets in one folder. This tool scans recursively and packs an mmap-format .bin.",
+      dropDiffTip:
+        "Unlike Espressif SPIFFS / mkspiffs filesystem images, this uses an index table plus raw payloads: firmware memory-maps files by relative path without mounting SPIFFS.",
+      dropFilesTip:
+        "Common files include png / jpeg / gif / ogg / eaf / txt, and more; subfolders become relative paths (e.g. img/logo.png); keep each relative path under 31 characters; auto-generated index.json aims to align with the Xiaozhi-style schema (version / srmodels / text_font / emoji_collection)",
+      dropSteps:
+        "Steps: ① Choose or drop the assets root folder → ② Review the file list and manifest options → ③ Click “Pack to .bin” and save.",
+      pickDir: "Choose folder",
+      pickDirTitle: "Select assets root folder",
+      repickDir: "Change folder",
+      clearDir: "Clear",
+      needDirectory: "Please select a folder (not a file)",
+      emptyDir: "No packable files under this folder",
+      emptyBin: "No file entries in this .bin",
+      needDirectoryOrBin: "Select an assets folder or open a .bin first",
+      probing: "Scanning files…",
+      fileList: "File list",
+      listEmpty:
+        "After choosing a folder, relative paths appear here. You can also open a .bin to preview its contents.",
+      pack: "Pack to .bin",
+      saveBinTitle: "Save mmap image",
+      packSuccess: "Packed: {n} files, {size}",
+      lastOutput: "Last output",
+      packMeta: "{n} files · {size} · checksum 0x{checksum}",
+      revealOutput: "Show in Explorer",
+      previewIndex: "Preview map table",
+      previewManifest: "Preview index.json",
+      openBinPreview: "Open .bin preview",
+      previewPackedIndex: "Open this .bin in the list",
+      openBinTitle: "Select mmap .bin",
+      binListBanner: "Previewing .bin contents",
+      indexModalTitle: "mmap map table preview",
+      indexModalHint:
+        "File locations come from the binary table in the .bin header. Below is the parsed table (name / size / offset).",
+      autoGenerateIndex: "Auto-generate index.json",
+      indexExistingBadge: "Will use folder index.json",
+      indexUseExistingHint:
+        "An index.json already exists in the root; it will be packed as-is without modification.",
+      indexAutoHint:
+        "If the folder has no index.json, a scanned manifest (version / srmodels / text_font / emoji_collection) is packed.",
+      indexSourceExisting: "Manifest source: folder index.json (as-is)",
+      indexSourceGenerated: "Manifest source: auto-generated index.json",
+      indexSourceNone: "No index.json in the pack",
+      manifestModalTitle: "index.json preview",
+      manifestModalHintExisting: "Will use the folder index.json as-is (no rewrite).",
+      manifestModalHintGenerated:
+        "No index.json in the folder; below is the scanned manifest that will be packed.",
+      manifestModalHintFromBin:
+        "Extracted index.json from the selected .bin payload (business manifest, not the header map table).",
     },
     flash: {
       eraseAllFlash: "Erase entire flash",
