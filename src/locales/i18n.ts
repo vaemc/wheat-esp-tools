@@ -195,22 +195,31 @@ const messages = {
       saveAllSuccess: "已保存 {n} 个文件到：{path}",
       saveFailed: "保存失败",
       eafOptions: "EAF 编码参数",
+      eafCompatHint:
+        "输出兼容 esp_lv_eaf_player。JPEG 适合真彩动画；RLE/Huffman 适合色块简单的表情。",
       encodingMode: "编码方式",
       encodingModeHint:
-        "RLE：运行长度编码，解码快、体积适中；RLE+Huffman：在 RLE 后再 Huffman，体积更小但解码略慢；JPEG：按分片 JPEG 压缩，画质/体积可调，色深固定 24bit",
+        "JPEG：真彩压缩，画质/体积可调；RLE / RLE+Huffman：索引色，色块多时往往更小。分片高度、抽帧、近似合并对三种编码均生效；JPEG 质量仅 JPEG 有效",
       encodingRle: "RLE",
       encodingRleHuffman: "RLE + Huffman",
       encodingJpeg: "JPEG",
       colorDepth: "色深",
       colorDepthHint:
-        "4bit：16 级灰度，体积最小，适合单色表情；8bit：256 色调色板，适合彩色动画；JPEG 模式固定 24bit 真彩",
+        "4bit：16 级灰度，体积最小；8bit：256 色调色板；JPEG 模式固定 24bit",
       colorDepth4: "4 bit（灰度）",
       colorDepth8: "8 bit（调色板）",
       colorDepth24: "24 bit（JPEG）",
-      jpegQualityHint: "仅 JPEG 编码有效，范围 11–100，数值越高画质越好、文件更大",
+      jpegQualityHint:
+        "仅 JPEG 编码有效，范围 11–100。数值越高画质越好、文件更大",
       splitHeightHint:
-        "每帧按此高度切成多个条带分别压缩。越小越省峰值内存，但块数更多；常见 16–32",
-      resizeEafHint: "输出宽高，至少大于 10；留空则使用 GIF 原始尺寸",
+        "三种编码均生效。每帧按此高度切条分别压缩；0 = 整帧一条带（JPEG 头开销更少）。默认 32",
+      eafFrameStep: "抽帧间隔",
+      eafFrameStepHint:
+        "三种编码均生效。保留 N 帧后丢弃 1 帧；0 = 不抽。直接减少帧数，对多帧动画体积影响最大",
+      eafSimilarThreshold: "近似帧合并",
+      eafSimilarThresholdHint:
+        "三种编码均生效。相邻近似帧共用同一压缩数据。0 = 仅精确相同；数值越大体积越小、画面可能轻微跳变",
+      resizeEafHint: "输出宽高，建议按目标屏幕尺寸缩放。留空则用 GIF 原始尺寸",
       resizeGifHint: "输出宽高 1–4096；留空则使用 GIF 原始尺寸",
       preview: "EAF 预览",
       gifPreview: "GIF 预览",
@@ -962,24 +971,32 @@ const messages = {
       saveAllSuccess: "Saved {n} files to: {path}",
       saveFailed: "Failed to save",
       eafOptions: "EAF encoding",
+      eafCompatHint:
+        "Output is compatible with esp_lv_eaf_player. JPEG suits full-color animation; RLE/Huffman often suits flat cartoon art.",
       encodingMode: "Encoding",
       encodingModeHint:
-        "RLE: fast decode, moderate size; RLE+Huffman: smaller files, slightly slower decode; JPEG: quality/size tunable, color depth fixed at 24-bit",
+        "JPEG: true-color, tunable quality/size; RLE / RLE+Huffman: indexed, often smaller for flat art. Split height, frame step, and similar-frame merge apply to all modes; JPEG quality is JPEG-only",
       encodingRle: "RLE",
       encodingRleHuffman: "RLE + Huffman",
       encodingJpeg: "JPEG",
       colorDepth: "Color depth",
       colorDepthHint:
-        "4-bit: 16-level grayscale, smallest size; 8-bit: 256-color palette for color animation; JPEG mode is fixed 24-bit",
+        "4-bit: 16-level grayscale, smallest; 8-bit: 256-color palette; JPEG mode is fixed 24-bit",
       colorDepth4: "4-bit (grayscale)",
       colorDepth8: "8-bit (palette)",
       colorDepth24: "24-bit (JPEG)",
       jpegQualityHint:
         "JPEG mode only; range 11–100. Higher quality means larger files",
       splitHeightHint:
-        "Each frame is split into strips of this height. Smaller strips use less peak RAM but create more blocks; typical 16–32",
+        "Applies to all encodings. Split each frame into strips of this height; 0 = one full-frame strip (less JPEG header overhead). Default 32",
+      eafFrameStep: "Frame step",
+      eafFrameStepHint:
+        "Applies to all encodings. Keep N frames then drop 1; 0 = no skipping. Cuts frame count — often the biggest size win",
+      eafSimilarThreshold: "Similar-frame merge",
+      eafSimilarThresholdHint:
+        "Applies to all encodings. Reuse compressed payload for near-identical adjacent frames. 0 = exact match only; higher = smaller files, possible mild jumps",
       resizeEafHint:
-        "Output size; leave empty to keep the GIF's original size",
+        "Output size; scale to your target panel. Leave empty to keep the GIF size",
       resizeGifHint:
         "Output width/height 1–4096; leave empty to use the GIF size",
       preview: "EAF preview",

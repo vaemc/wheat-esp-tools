@@ -699,7 +699,7 @@ async fn convert_gif_to_eaf(
     let path_for_job = path.clone();
 
     tokio::task::spawn_blocking(move || {
-        let progress_cb: image::eaf::ProgressCallback = Box::new(move |event| {
+        let progress_cb: image::eaf::ProgressCallback = std::sync::Arc::new(move |event| {
             let _ = win.emit("eaf_convert_progress", &event);
         });
         image::eaf::convert_gif_to_eaf(&path_for_job, options, &jid, Some(progress_cb))

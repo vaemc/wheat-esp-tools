@@ -27,6 +27,8 @@
           :width="previewMeta.width"
           :height="previewMeta.height"
           :bit-depth="previewMeta.bitDepth"
+          :duration-sec="previewMeta.durationSec"
+          :default-fps="25"
           :empty-text="$t('image.previewEmpty')"
           :play-label="$t('image.previewPlay')"
           :pause-label="$t('image.previewPause')"
@@ -53,6 +55,18 @@
           </div>
           <div class="selected-size">
             {{ selectedPreview.width }} × {{ selectedPreview.height }}
+            <template v-if="selectedPreview.frameCount">
+              · {{ selectedPreview.frameCount }}f
+            </template>
+            <template v-if="selectedPreview.durationSec > 0">
+              · {{ formatDurationSec(selectedPreview.durationSec) }}
+            </template>
+          </div>
+          <div
+            v-if="selectedPreview.fpsEstimate > 0"
+            class="selected-size"
+          >
+            {{ selectedPreview.fpsEstimate.toFixed(1) }}fps
           </div>
         </div>
       </div>
@@ -104,6 +118,7 @@
 
       <div class="settings-block">
         <div class="block-title">{{ $t("image.eafOptions") }}</div>
+        <p class="block-hint">{{ $t("image.eafCompatHint") }}</p>
 
         <label class="field field--full">
           <span class="field-label-with-tip">
@@ -162,11 +177,43 @@
           </span>
           <a-input-number
             v-model:value="eaf.splitHeight.value"
-            :min="1"
+            :min="0"
             :max="1000"
             :disabled="!eaf.hasItems.value"
             style="width: 100%"
           />
+        </label>
+
+        <label class="field field--full">
+          <span class="field-label-with-tip">
+            {{ $t("image.eafFrameStep") }}
+            <a-tooltip :title="$t('image.eafFrameStepHint')">
+              <span class="tip-icon">?</span>
+            </a-tooltip>
+          </span>
+          <a-input-number
+            v-model:value="eaf.frameStep.value"
+            :min="0"
+            :max="60"
+            :disabled="!eaf.hasItems.value"
+            style="width: 100%"
+          />
+        </label>
+
+        <label class="field field--full">
+          <span class="field-label-with-tip">
+            {{ $t("image.eafSimilarThreshold") }}
+            <a-tooltip :title="$t('image.eafSimilarThresholdHint')">
+              <span class="tip-icon">?</span>
+            </a-tooltip>
+          </span>
+          <a-slider
+            v-model:value="eaf.similarThreshold.value"
+            :min="0"
+            :max="48"
+            :disabled="!eaf.hasItems.value"
+          />
+          <span class="slider-value">{{ eaf.similarThreshold.value }}</span>
         </label>
       </div>
 
@@ -191,6 +238,14 @@
           @click="onConvert"
         >
           {{ $t("image.convertAll") }}
+        </a-button>
+        <a-button
+          block
+          danger
+          :disabled="!eaf.converting.value"
+          @click="onStopConvert"
+        >
+          {{ $t("image.stopConvert") }}
         </a-button>
         <a-button
           block
@@ -224,7 +279,8 @@ import ImageBatchGrid from "../../shared/components/ImageBatchGrid.vue";
 import EafPreview from "./components/EafPreview.vue";
 import { useEafBatch } from "./composables/useEafBatch";
 import { useTauriDragDrop } from "@/composables/useTauriDragDrop";
-import { decodeEaf } from "@/utils/image/eaf";
+import { decodeEaf, isEafBytes } from "@/utils/image/eaf";
+import { formatDurationSec } from "@/utils/image/shared/formatDuration";
 import {
   saveBytesWithDialog,
   saveFilesToPickedDir,
@@ -275,6 +331,9 @@ const selectedPreview = computed(() => {
     name: item.fileName,
     width: item.naturalWidth,
     height: item.naturalHeight,
+    frameCount: item.frameCount,
+    durationSec: item.durationSec,
+    fpsEstimate: item.fpsEstimate,
   };
 });
 
@@ -282,22 +341,44 @@ const previewFrames = computed(() => {
   if (externalPreview.value) {
     return externalPreview.value.frames;
   }
-  return eaf.selectedItem.value?.preview?.frames ?? [];
+  return eaf.livePreview.value?.frames ?? [];
 });
+
+function estimateDurationSec(
+  frameCount: number,
+  delayAvgMs: number,
+  fallbackDurationSec: number
+) {
+  if (delayAvgMs > 0 && frameCount > 0) {
+    return (frameCount * delayAvgMs) / 1000;
+  }
+  return fallbackDurationSec > 0 ? fallbackDurationSec : 0;
+}
 
 const previewMeta = computed(() => {
   if (externalPreview.value) {
+    // EAF 文件本身无帧率/延时，不展示时长与帧率
     return {
       width: externalPreview.value.width,
       height: externalPreview.value.height,
       bitDepth: externalPreview.value.bitDepth,
+      durationSec: 0,
     };
   }
-  const preview = eaf.selectedItem.value?.preview;
+  const item = eaf.selectedItem.value;
+  const preview = eaf.livePreview.value;
+  const resultFrames = item?.result?.frameCount ?? preview?.frameCount ?? 0;
+  // 仅当源 GIF 有可靠 delay 时展示时长；EAF 无原生帧率，不展示
+  const durationSec = estimateDurationSec(
+    resultFrames,
+    item?.delayAvgMs ?? 0,
+    item?.durationSec ?? 0
+  );
   return {
     width: preview?.width ?? 0,
     height: preview?.height ?? 0,
     bitDepth: preview?.bitDepth ?? 8,
+    durationSec,
   };
 });
 
@@ -313,8 +394,11 @@ const previewLoading = computed(() => {
   if (item.status === "converting") {
     return true;
   }
+  if (eaf.previewDecoding.value) {
+    return true;
+  }
   const expected = item.result?.frameCount ?? 0;
-  const got = item.preview?.frames.length ?? 0;
+  const got = eaf.livePreview.value?.frames.length ?? 0;
   return expected > 0 && got < expected;
 });
 
@@ -323,7 +407,7 @@ const previewExpectedFrames = computed(() => {
     return externalPreview.value.expectedFrames;
   }
   const item = eaf.selectedItem.value;
-  return item?.result?.frameCount ?? item?.preview?.frameCount ?? 0;
+  return item?.result?.frameCount ?? eaf.livePreview.value?.frameCount ?? 0;
 });
 
 const previewProgressText = computed(() => {
@@ -336,9 +420,16 @@ const previewProgressText = computed(() => {
       total: previewProgress.value.total,
     });
   }
+  const prog = eaf.previewDecodeProgress.value;
+  if (prog.total > 0) {
+    return t("image.previewDecodeProgress", {
+      current: prog.current,
+      total: prog.total,
+    });
+  }
   const item = eaf.selectedItem.value;
   const expected = item?.result?.frameCount ?? 0;
-  const got = item?.preview?.frames.length ?? 0;
+  const got = eaf.livePreview.value?.frames.length ?? 0;
   if (expected > 0) {
     return t("image.previewDecodeProgress", {
       current: got,
@@ -353,6 +444,7 @@ function abortPreviewDecode() {
   previewAbort = null;
   externalDecoding.value = false;
   previewProgress.value = { current: 0, total: 0 };
+  eaf.clearLivePreview();
 }
 
 watch(
@@ -409,7 +501,13 @@ async function pickExternalEaf() {
     };
 
     const bytes = await readFile(selected);
-    await decodeEaf(new Uint8Array(bytes), {
+    const eafBytes = new Uint8Array(bytes);
+    if (!isEafBytes(eafBytes)) {
+      message.warning(t("image.onlyEafSupported"));
+      externalPreview.value = null;
+      return;
+    }
+    await decodeEaf(eafBytes, {
       signal: controller.signal,
       onProgress(current, total) {
         previewProgress.value = { current, total };
@@ -475,8 +573,12 @@ function onSelectItem(id: string) {
 
 function onClearAll() {
   abortPreviewDecode();
-  eaf.clearAll();
   externalPreview.value = null;
+  eaf.clearAll();
+}
+
+function onStopConvert() {
+  eaf.stopConvert();
 }
 
 function onWidthChange(value: number | string | null) {
@@ -506,7 +608,11 @@ async function onConvert() {
   abortPreviewDecode();
   externalPreview.value = null;
   try {
-    const { success, failed } = await eaf.convertAll();
+    const { success, failed, aborted } = await eaf.convertAll();
+    if (aborted) {
+      message.info(t("image.convertStopped"));
+      return;
+    }
     if (failed === 0) {
       message.success(t("image.convertAllSuccess", { n: success }));
     } else {

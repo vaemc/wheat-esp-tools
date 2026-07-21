@@ -1,7 +1,8 @@
-import { computed, onBeforeUnmount, ref } from "vue";
+import { computed, onBeforeUnmount, ref, shallowRef } from "vue";
 import { convertFileSrc, invoke } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import { open } from "@tauri-apps/plugin-dialog";
+import { readFile, remove } from "@tauri-apps/plugin-fs";
 import type {
   EafDecodeResult,
   EafEncodingMode,
@@ -10,10 +11,13 @@ import type {
 import {
   EAF_DEFAULT_COLOR_DEPTH,
   EAF_DEFAULT_ENCODING,
+  EAF_DEFAULT_FRAME_STEP,
   EAF_DEFAULT_JPEG_QUALITY,
+  EAF_DEFAULT_SIMILAR_THRESHOLD,
   EAF_DEFAULT_SPLIT_HEIGHT,
   decodeEaf,
 } from "@/utils/image/eaf";
+import { durationSecFromDelays } from "@/utils/image/shared/formatDuration";
 
 export type EafItemStatus =
   | "loading"
@@ -41,12 +45,13 @@ export interface EafBatchItem {
   naturalWidth: number;
   naturalHeight: number;
   frameCount: number;
+  durationSec: number;
+  fpsEstimate: number;
+  delayAvgMs: number;
   status: EafItemStatus;
-  /** 单文件 0–100 */
   progress: number;
   progressMessage: string;
   result?: EafEncodeResultLocal;
-  preview?: EafDecodeResult;
   errorMessage?: string;
 }
 
@@ -56,6 +61,9 @@ interface GifProbeResult {
   width: number;
   height: number;
   frameCount: number;
+  delayAvgMs?: number;
+  fpsEstimate?: number;
+  delaysMs?: number[];
 }
 
 interface RustEafConvertResult {
@@ -66,7 +74,7 @@ interface RustEafConvertResult {
   colorDepth: number;
   encodingMode: string;
   sizeBytes: number;
-  eafBase64: string;
+  eafPath: string;
 }
 
 interface EafProgressEvent {
@@ -82,7 +90,6 @@ interface EafProgressEvent {
 let nextId = 1;
 let jobSeq = 1;
 
-/** 并行探测上限，避免一次性打爆磁盘/UI */
 const PROBE_CONCURRENCY = 3;
 
 function clamp(value: number, min: number, max: number) {
@@ -96,48 +103,6 @@ function baseNameFrom(fileName: string) {
 
 function fileNameFromPath(path: string) {
   return path.split(/[/\\]/).pop() || path;
-}
-
-async function base64ToBytesAsync(base64: string): Promise<Uint8Array> {
-  const chunkChars = 256 * 1024;
-  if (base64.length <= chunkChars) {
-    const bin = atob(base64);
-    const out = new Uint8Array(bin.length);
-    for (let i = 0; i < bin.length; i++) {
-      out[i] = bin.charCodeAt(i);
-    }
-    return out;
-  }
-
-  const parts: Uint8Array[] = [];
-  let total = 0;
-  let offset = 0;
-  while (offset < base64.length) {
-    let end = Math.min(offset + chunkChars, base64.length);
-    if (end < base64.length) {
-      end -= end % 4;
-      if (end <= offset) {
-        end = Math.min(offset + 4, base64.length);
-      }
-    }
-    const bin = atob(base64.slice(offset, end));
-    const chunk = new Uint8Array(bin.length);
-    for (let i = 0; i < bin.length; i++) {
-      chunk[i] = bin.charCodeAt(i);
-    }
-    parts.push(chunk);
-    total += chunk.length;
-    offset = end;
-    await yieldToUi();
-  }
-
-  const out = new Uint8Array(total);
-  let cursor = 0;
-  for (const part of parts) {
-    out.set(part, cursor);
-    cursor += part.length;
-  }
-  return out;
 }
 
 function yieldToUi() {
@@ -175,9 +140,15 @@ export function useEafBatch() {
   const loading = ref(false);
   const selectedId = ref<string | null>(null);
   const converting = ref(false);
-  /** 批量总进度 0–100 */
   const overallProgress = ref(0);
   const overallMessage = ref("");
+  let convertToken = 0;
+  const previewDecoding = ref(false);
+  const previewDecodeProgress = ref({ current: 0, total: 0 });
+  let previewDecodeAbort: AbortController | null = null;
+  const livePreview = shallowRef<EafDecodeResult | null>(null);
+  let livePreviewItemId: string | null = null;
+  const previewCache = new Map<string, EafDecodeResult>();
 
   const outputWidth = ref<number | null>(null);
   const outputHeight = ref<number | null>(null);
@@ -186,6 +157,8 @@ export function useEafBatch() {
   const colorDepth = ref<EafColorDepth>(EAF_DEFAULT_COLOR_DEPTH);
   const encodingMode = ref<EafEncodingMode>(EAF_DEFAULT_ENCODING);
   const jpegQuality = ref(EAF_DEFAULT_JPEG_QUALITY);
+  const frameStep = ref(EAF_DEFAULT_FRAME_STEP);
+  const similarThreshold = ref(EAF_DEFAULT_SIMILAR_THRESHOLD);
 
   const hasItems = computed(() => items.value.length > 0);
   const selectedItem = computed(
@@ -259,6 +232,9 @@ export function useEafBatch() {
       naturalWidth: 0,
       naturalHeight: 0,
       frameCount: 0,
+      durationSec: 0,
+      fpsEstimate: 0,
+      delayAvgMs: 0,
       status: "loading",
       progress: 0,
       progressMessage: "读取中…",
@@ -267,15 +243,25 @@ export function useEafBatch() {
 
   async function probeIntoItem(item: EafBatchItem) {
     try {
-      const info = await invoke<GifProbeResult>("probe_gif", {
+      const info = await invoke<GifProbeResult>("probe_gif_rich", {
         path: item.path,
       });
+      const delayAvgMs = Number(info.delayAvgMs) || 0;
+      const fpsEstimate = Number(info.fpsEstimate) || 0;
+      const durationSec = durationSecFromDelays(
+        info.delaysMs,
+        info.frameCount,
+        delayAvgMs
+      );
       patchItem(item.id, {
         fileName: info.fileName || item.fileName,
         path: info.path || item.path,
         naturalWidth: info.width,
         naturalHeight: info.height,
         frameCount: info.frameCount,
+        durationSec,
+        fpsEstimate,
+        delayAvgMs,
         status: "idle",
         progressMessage: "",
       });
@@ -297,7 +283,6 @@ export function useEafBatch() {
         throw new Error("NOT_GIF");
       }
 
-      // 先立刻挂卡片：缩略图用资源协议，不等探测完成
       const placeholders = gifPaths.map(createPlaceholder);
       items.value = [...items.value, ...placeholders];
       if (!selectedId.value && placeholders.length) {
@@ -342,19 +327,55 @@ export function useEafBatch() {
   }
 
   function removeItem(id: string) {
+    previewCache.delete(id);
+    if (selectedId.value === id) {
+      clearLivePreview();
+    }
     items.value = items.value.filter((entry) => entry.id !== id);
     if (selectedId.value === id) {
       selectedId.value = items.value[0]?.id ?? null;
+      if (selectedId.value) {
+        void ensurePreview(selectedId.value);
+      }
+    }
+  }
+
+  function stopConvert() {
+    convertToken += 1;
+    converting.value = false;
+    overallMessage.value = "";
+    activeJobId.value = null;
+    activeJobPath.value = null;
+    for (const item of items.value) {
+      if (item.status === "converting") {
+        patchItem(item.id, {
+          status: "idle",
+          progress: 0,
+          progressMessage: "",
+          errorMessage: undefined,
+        });
+      }
     }
   }
 
   function clearAll() {
+    stopConvert();
+    clearLivePreview();
+    previewCache.clear();
     items.value = [];
     selectedId.value = null;
+    overallProgress.value = 0;
+    overallMessage.value = "";
   }
 
   function selectItem(id: string) {
+    if (selectedId.value !== id) {
+      abortItemPreviewDecode();
+      livePreview.value = null;
+      livePreviewItemId = null;
+    }
     selectedId.value = id;
+    void ensurePreview(id);
   }
 
   function setOutputWidth(width: number | null) {
@@ -417,10 +438,145 @@ export function useEafBatch() {
     }
   }
 
-  async function convertItem(item: EafBatchItem): Promise<{
-    result: EafEncodeResultLocal;
-    preview: EafDecodeResult;
-  }> {
+  function abortItemPreviewDecode() {
+    previewDecodeAbort?.abort();
+    previewDecodeAbort = null;
+    previewDecoding.value = false;
+    previewDecodeProgress.value = { current: 0, total: 0 };
+  }
+
+  function clearLivePreview() {
+    abortItemPreviewDecode();
+    livePreview.value = null;
+    livePreviewItemId = null;
+  }
+
+  function hasCompletePreview(id: string, frameCount: number) {
+    const cached = previewCache.get(id);
+    return !!cached && frameCount > 0 && cached.frames.length >= frameCount;
+  }
+
+  function publishLivePreview(
+    id: string,
+    frames: HTMLCanvasElement[],
+    meta: {
+      width: number;
+      height: number;
+      bitDepth: number;
+      splitHeight: number;
+    }
+  ) {
+    livePreviewItemId = id;
+    livePreview.value = {
+      frames,
+      width: meta.width,
+      height: meta.height,
+      frameCount: frames.length,
+      bitDepth: meta.bitDepth,
+      splitHeight: meta.splitHeight,
+    };
+  }
+
+  async function ensurePreview(id: string) {
+    const item = items.value.find((entry) => entry.id === id);
+    if (!item?.result) {
+      livePreview.value = null;
+      livePreviewItemId = null;
+      return;
+    }
+    if (item.status === "converting" || item.status === "loading") {
+      return;
+    }
+
+    const expected = item.result.frameCount;
+    const cached = previewCache.get(id);
+    if (cached && hasCompletePreview(id, expected)) {
+      abortItemPreviewDecode();
+      livePreviewItemId = id;
+      livePreview.value = cached;
+      return;
+    }
+
+    if (
+      previewDecoding.value &&
+      livePreviewItemId === id &&
+      previewDecodeAbort
+    ) {
+      return;
+    }
+
+    abortItemPreviewDecode();
+    const controller = new AbortController();
+    previewDecodeAbort = controller;
+    previewDecoding.value = true;
+    previewDecodeProgress.value = {
+      current: 0,
+      total: expected,
+    };
+
+    const previewFrames: HTMLCanvasElement[] = [];
+    const previewMeta = {
+      width: item.result.width,
+      height: item.result.height,
+      bitDepth: item.result.colorDepth,
+      splitHeight: item.result.splitHeight,
+    };
+    publishLivePreview(id, previewFrames, previewMeta);
+
+    try {
+      const preview = await decodeEaf(item.result.bytes, {
+        signal: controller.signal,
+        onProgress(current, total) {
+          if (controller.signal.aborted) {
+            return;
+          }
+          previewDecodeProgress.value = { current, total };
+        },
+        onFrame(canvas, _index, meta) {
+          if (controller.signal.aborted || selectedId.value !== id) {
+            return;
+          }
+          previewFrames.push(canvas);
+          previewMeta.width = meta.width;
+          previewMeta.height = meta.height;
+          previewMeta.bitDepth = meta.bitDepth;
+          previewMeta.splitHeight = meta.splitHeight;
+          if (
+            previewFrames.length === 1 ||
+            previewFrames.length % 4 === 0 ||
+            previewFrames.length === expected
+          ) {
+            publishLivePreview(id, previewFrames, previewMeta);
+          }
+        },
+      });
+
+      if (controller.signal.aborted || selectedId.value !== id) {
+        return;
+      }
+
+      previewCache.set(id, preview);
+      livePreviewItemId = id;
+      livePreview.value = preview;
+    } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError") {
+        return;
+      }
+      if (selectedId.value === id) {
+        console.error("[image/eaf] preview decode failed:", error);
+        livePreview.value = null;
+        livePreviewItemId = null;
+      }
+    } finally {
+      if (previewDecodeAbort === controller) {
+        previewDecodeAbort = null;
+        previewDecoding.value = false;
+        previewDecodeProgress.value = { current: 0, total: 0 };
+      }
+    }
+  }
+
+  async function convertItem(item: EafBatchItem): Promise<EafEncodeResultLocal> {
     const jobId = `job-${jobSeq++}`;
     activeJobId.value = jobId;
     activeJobPath.value = item.path;
@@ -440,111 +596,64 @@ export function useEafBatch() {
         colorDepth: colorDepth.value,
         encodingMode: encodingMode.value,
         jpegQuality: jpegQuality.value,
+        frameStep: frameStep.value,
+        similarThreshold: similarThreshold.value,
       },
     });
 
-    patchItem(item.id, {
-      progress: 98,
-      progressMessage: "生成预览…",
-    });
-    overallMessage.value = "生成预览…";
-    await yieldToUi();
-
-    const bytes = await base64ToBytesAsync(rust.eafBase64);
-    const previewFrames: HTMLCanvasElement[] = [];
-    let previewMeta = {
-      width: rust.width,
-      height: rust.height,
-      bitDepth: rust.colorDepth,
-      splitHeight: rust.splitHeight,
-    };
-
-    // 先落盘结果，再协作式解码预览，避免大 EAF 卡死 UI
     patchItem(item.id, {
       progress: 99,
-      progressMessage: "解码预览…",
-      result: {
-        bytes,
-        width: rust.width,
-        height: rust.height,
-        frameCount: rust.frameCount,
-        splitHeight: rust.splitHeight,
-        colorDepth: rust.colorDepth,
-        encodingMode: rust.encodingMode,
-        sizeBytes: rust.sizeBytes,
-      },
-      preview: {
-        frames: previewFrames,
-        width: rust.width,
-        height: rust.height,
-        frameCount: 0,
-        bitDepth: rust.colorDepth,
-        splitHeight: rust.splitHeight,
-      },
+      progressMessage: "读取结果…",
     });
-
-    const preview = await decodeEaf(bytes, {
-      onProgress(current, total) {
-        const percent = 98 + Math.round((current / Math.max(1, total)) * 2);
-        patchItem(item.id, {
-          progress: Math.min(99, percent),
-          progressMessage: `解码预览 ${current}/${total}…`,
-        });
-        overallMessage.value = `解码预览 ${current}/${total}…`;
-      },
-      onFrame(canvas, _index, meta) {
-        previewFrames.push(canvas);
-        previewMeta = {
-          width: meta.width,
-          height: meta.height,
-          bitDepth: meta.bitDepth,
-          splitHeight: meta.splitHeight,
-        };
-        patchItem(item.id, {
-          preview: {
-            frames: [...previewFrames],
-            width: previewMeta.width,
-            height: previewMeta.height,
-            frameCount: previewFrames.length,
-            bitDepth: previewMeta.bitDepth,
-            splitHeight: previewMeta.splitHeight,
-          },
-        });
-      },
-    });
+    overallMessage.value = "读取结果…";
     await yieldToUi();
 
+    const bytes = await readFile(rust.eafPath);
+    try {
+      await remove(rust.eafPath);
+    } catch {
+      // temp cleanup best-effort
+    }
     return {
-      result: {
-        bytes,
-        width: rust.width,
-        height: rust.height,
-        frameCount: rust.frameCount,
-        splitHeight: rust.splitHeight,
-        colorDepth: rust.colorDepth,
-        encodingMode: rust.encodingMode,
-        sizeBytes: rust.sizeBytes,
-      },
-      preview,
+      bytes,
+      width: rust.width,
+      height: rust.height,
+      frameCount: rust.frameCount,
+      splitHeight: rust.splitHeight,
+      colorDepth: rust.colorDepth,
+      encodingMode: rust.encodingMode,
+      sizeBytes: rust.sizeBytes,
     };
   }
 
   async function convertAll() {
+    if (!items.value.length || converting.value) {
+      return { success: 0, failed: 0, aborted: false };
+    }
     await ensureProgressListener();
+    const token = ++convertToken;
     converting.value = true;
     overallProgress.value = 0;
     overallMessage.value = "准备转换…";
 
-    // 跳过仍在 loading 的条目
     const ready = items.value.filter((item) => item.status !== "loading");
     batchFileCount = Math.max(1, ready.length);
     batchFileIndex = 0;
 
     let success = 0;
     let failed = 0;
+    let aborted = false;
 
     try {
       for (const item of [...ready]) {
+        if (token !== convertToken) {
+          aborted = true;
+          break;
+        }
+        if (!items.value.some((entry) => entry.id === item.id)) {
+          aborted = true;
+          break;
+        }
         const index = items.value.findIndex((entry) => entry.id === item.id);
         if (index < 0) {
           continue;
@@ -555,33 +664,57 @@ export function useEafBatch() {
           progress: 0,
           progressMessage: "开始…",
           result: undefined,
-          preview: undefined,
           errorMessage: undefined,
         };
+        previewCache.delete(item.id);
+        if (selectedId.value === item.id) {
+          clearLivePreview();
+        }
         overallMessage.value = `转换 ${item.fileName}…`;
 
         try {
-          const { result, preview } = await convertItem(item);
-          items.value[index] = {
-            ...items.value[index],
+          const result = await convertItem(item);
+          if (token !== convertToken) {
+            aborted = true;
+            break;
+          }
+          if (!items.value.some((entry) => entry.id === item.id)) {
+            aborted = true;
+            break;
+          }
+          const liveIndex = items.value.findIndex((entry) => entry.id === item.id);
+          if (liveIndex < 0) {
+            aborted = true;
+            break;
+          }
+          items.value[liveIndex] = {
+            ...items.value[liveIndex],
             status: "done",
             progress: 100,
             progressMessage: "完成",
             result,
-            preview,
           };
           success += 1;
+          if (selectedId.value === item.id) {
+            void ensurePreview(item.id);
+          }
         } catch (error) {
-          items.value[index] = {
-            ...items.value[index],
-            status: "error",
-            progress: 0,
-            progressMessage: "",
-            result: undefined,
-            preview: undefined,
-            errorMessage:
-              error instanceof Error ? error.message : String(error),
-          };
+          if (token !== convertToken) {
+            aborted = true;
+            break;
+          }
+          const liveIndex = items.value.findIndex((entry) => entry.id === item.id);
+          if (liveIndex >= 0) {
+            items.value[liveIndex] = {
+              ...items.value[liveIndex],
+              status: "error",
+              progress: 0,
+              progressMessage: "",
+              result: undefined,
+              errorMessage:
+                error instanceof Error ? error.message : String(error),
+            };
+          }
           failed += 1;
         }
 
@@ -589,19 +722,24 @@ export function useEafBatch() {
         updateOverallFromFile(0);
         await yieldToUi();
       }
-      overallProgress.value = 100;
-      overallMessage.value =
-        failed === 0 ? "全部完成" : `完成（失败 ${failed}）`;
+      if (!aborted) {
+        overallProgress.value = 100;
+        overallMessage.value =
+          failed === 0 ? "全部完成" : `完成（失败 ${failed}）`;
+      }
     } finally {
-      converting.value = false;
-      activeJobId.value = null;
-      activeJobPath.value = null;
+      if (token === convertToken) {
+        converting.value = false;
+        activeJobId.value = null;
+        activeJobPath.value = null;
+      }
     }
 
-    return { success, failed };
+    return { success, failed, aborted };
   }
 
   onBeforeUnmount(() => {
+    abortItemPreviewDecode();
     unlistenProgress?.();
     unlistenProgress = null;
   });
@@ -612,6 +750,9 @@ export function useEafBatch() {
     converting,
     overallProgress,
     overallMessage,
+    previewDecoding,
+    previewDecodeProgress,
+    livePreview,
     selectedId,
     selectedItem,
     outputWidth,
@@ -621,6 +762,8 @@ export function useEafBatch() {
     colorDepth,
     encodingMode,
     jpegQuality,
+    frameStep,
+    similarThreshold,
     hasItems,
     doneCount,
     pickGifs,
@@ -628,12 +771,14 @@ export function useEafBatch() {
     removeItem,
     clearAll,
     selectItem,
+    clearLivePreview,
     setOutputWidth,
     setOutputHeight,
     resetOutputSize,
     setEncodingMode,
     setColorDepth,
     convertAll,
+    stopConvert,
     baseNameFrom,
   };
 }

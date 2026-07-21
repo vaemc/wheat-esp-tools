@@ -9,7 +9,9 @@ export type {
 export {
   EAF_DEFAULT_COLOR_DEPTH,
   EAF_DEFAULT_ENCODING,
+  EAF_DEFAULT_FRAME_STEP,
   EAF_DEFAULT_JPEG_QUALITY,
+  EAF_DEFAULT_SIMILAR_THRESHOLD,
   EAF_DEFAULT_SPLIT_HEIGHT,
 } from "./types";
 export { encodeGifToEaf } from "./encode";
