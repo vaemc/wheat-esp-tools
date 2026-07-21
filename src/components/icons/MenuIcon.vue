@@ -75,6 +75,24 @@
       <line x1="9" x2="15" y1="20" y2="20" />
       <line x1="12" x2="12" y1="4" y2="20" />
     </template>
+    <!-- Lucide: folder-archive — 文件处理 -->
+    <template v-else-if="name === 'file'">
+      <path
+        d="M2 7a2 2 0 0 1 2-2h8.5L16 8.5V19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2Z"
+      />
+      <path d="M14 2v6h6" />
+      <path d="M22 13v6a2 2 0 0 1-2 2h-4" />
+      <path d="M20 13V7l-4-4" />
+    </template>
+    <!-- Lucide: package — mmap 资源打包 -->
+    <template v-else-if="name === 'mmap_spiffs'">
+      <path
+        d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z"
+      />
+      <path d="M12 22V12" />
+      <path d="m3.3 7 7.703 4.734a2 2 0 0 0 1.994 0L20.7 7" />
+      <path d="m7.5 4.27 9 5.15" />
+    </template>
     <!-- Lucide: whole-word — LVGL 字体转换 -->
     <template v-else-if="name === 'lvglfont'">
       <circle cx="7" cy="12" r="3" />
@@ -140,6 +158,8 @@ const ICON_COLORS: Record<string, string> = {
   image: "#ff85c0",
   audio: "#36cfc9",
   font: "#faad14",
+  file: "#95de64",
+  mmap_spiffs: "#95de64",
   wav2ogg: "#36cfc9",
   lvglfont: "#faad14",
   sjpg: "#ff85c0",

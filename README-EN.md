@@ -2,7 +2,7 @@
 
 <img src="images/banner.jpg" alt="Wheat ESP Tools" width="800">
 
-A desktop toolkit for ESP series chips. Covers firmware flash and merge, partition tables, OTA, NVS, Bluetooth scanning, chip pinout diagrams, and embedded image and audio format conversion. Built with [Tauri](https://tauri.app/) and [Vue 3](https://vuejs.org/), with [esptool](https://github.com/espressif/esptool) built in — no separate CLI install required.
+A desktop toolkit for ESP series chips. Covers firmware flash and merge, partition tables, OTA, NVS, Bluetooth scanning, chip pinout diagrams, embedded image and audio format conversion, and mmap asset packing. Built with [Tauri](https://tauri.app/) and [Vue 3](https://vuejs.org/), with [esptool](https://github.com/espressif/esptool) built in — no separate CLI install required.
 
 [简体中文](./README.md) | English
 
@@ -25,6 +25,7 @@ A desktop toolkit for ESP series chips. Covers firmware flash and merge, partiti
 - [Chip Pinout](#chip-pinout)
 - [Image Tools](#image-tools)
 - [Audio Tools](#audio-tools)
+- [File Tools](#file-tools)
 - [Terminal Output](#terminal-output)
 - [Data Directories](#data-directories)
 - [Feature Status](#feature-status)
@@ -42,7 +43,7 @@ The sidebar is grouped by purpose:
 |-------|---------|
 | Flash & partitions | Firmware Flash, Firmware Management, Partition Table, OTA Partitions, NVS Partition |
 | Bluetooth & pinout | Bluetooth, Chip Pinout |
-| Utilities | Image Tools, Audio Tools |
+| Utilities | Image Tools, Audio Tools, File Tools |
 
 UI language supports Simplified Chinese and English; switch inside the app.
 
@@ -61,6 +62,7 @@ UI language supports Simplified Chinese and English; switch inside the app.
 | Chip Pinout | Interactive ESP32-family pinout with category filter and datasheet links |
 | Image Tools | JPG→SJPG, GIF→EAF for LVGL / embedded displays |
 | Audio Tools | WAV→OGG (Opus); can detect Opus / Vorbis / FLAC |
+| File Tools | Pack an assets folder into an mmap `.bin`; preview the map table and `index.json` |
 
 ---
 
@@ -500,6 +502,27 @@ Flow: add WAV → tune parameters → batch convert → save one or all `.ogg` f
 
 ---
 
+## File Tools
+
+Pack a resource folder into an mmap-readable `.bin` (header + path table + payloads). This is not an Espressif SPIFFS / mkspiffs filesystem image. Pick a tool on the left, choose a folder in the main area, review the file list, then pack.
+
+### mmap assets pack
+![mmap assets pack](images/en-mmap-assets.png)
+
+Recursively scan an assets root and build an mmap image suitable for partitions such as `assets`.
+
+| Item | Description |
+|------|-------------|
+| Input | Assets folder (png / jpeg / gif / ogg / eaf / txt, etc.; subfolders become relative paths) |
+| Output | mmap-format `.bin` |
+| Path limit | Each relative path must be at most 31 characters |
+| index.json | Packed as-is if present; otherwise optionally auto-generated (`version` / `srmodels` / `text_font` / `emoji_collection`, …) |
+| Skipped | `config.json` |
+
+Flow: choose or drop the assets root → review the file list and manifest options → pack to `.bin`. You can preview the map table (`name` / `size` / `offset`), preview or extract `index.json` from a `.bin`, or open a `.bin` to list packed files.
+
+---
+
 ## Terminal Output
 
 The bottom xterm is used for:
@@ -550,6 +573,7 @@ Do not close the app while flashing. On failure, check port occupancy, drivers, 
 | ESP32-family interactive pinout | Done |
 | JPG→SJPG / GIF→EAF | Done |
 | WAV→OGG (Opus) | Done |
+| mmap assets pack | Done |
 | Bluetooth connect and GATT | Not implemented |
 
 ---

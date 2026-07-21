@@ -27,6 +27,7 @@ impl Drop for BleScanFlagGuard {
 
 mod classic_bluetooth;
 mod image;
+mod mmap;
 mod serial;
 mod window_state;
 
@@ -607,6 +608,57 @@ async fn probe_gif(path: String) -> Result<image::eaf::GifProbeResult, String> {
 }
 
 #[tauri::command]
+async fn probe_mmap_assets_dir(dir: String) -> Result<mmap::MmapProbeResult, String> {
+    tokio::task::spawn_blocking(move || mmap::probe_mmap_assets_dir(&dir))
+        .await
+        .map_err(|e| format!("探测资源目录失败: {e}"))?
+}
+
+#[tauri::command]
+async fn pack_mmap_assets(
+    dir: String,
+    output_path: String,
+    auto_generate_index: bool,
+) -> Result<mmap::MmapPackResult, String> {
+    tokio::task::spawn_blocking(move || {
+        mmap::pack_mmap_assets(&dir, &output_path, auto_generate_index)
+    })
+    .await
+    .map_err(|e| format!("打包任务失败: {e}"))?
+}
+
+#[tauri::command]
+async fn preview_mmap_index_from_dir(dir: String) -> Result<mmap::MmapIndexPreview, String> {
+    tokio::task::spawn_blocking(move || mmap::preview_mmap_index_from_dir(&dir))
+        .await
+        .map_err(|e| format!("预览映射表失败: {e}"))?
+}
+
+#[tauri::command]
+async fn preview_mmap_index_from_bin(bin_path: String) -> Result<mmap::MmapIndexPreview, String> {
+    tokio::task::spawn_blocking(move || mmap::preview_mmap_index_from_bin(&bin_path))
+        .await
+        .map_err(|e| format!("解析映射表失败: {e}"))?
+}
+
+#[tauri::command]
+async fn preview_or_build_index_json(
+    dir: String,
+    auto_generate: bool,
+) -> Result<mmap::IndexJsonPreview, String> {
+    tokio::task::spawn_blocking(move || mmap::resolve_index_json(&dir, auto_generate))
+        .await
+        .map_err(|e| format!("预览 index.json 失败: {e}"))?
+}
+
+#[tauri::command]
+async fn preview_index_json_from_bin(bin_path: String) -> Result<mmap::IndexJsonPreview, String> {
+    tokio::task::spawn_blocking(move || mmap::preview_index_json_from_bin(&bin_path))
+        .await
+        .map_err(|e| format!("从 .bin 提取 index.json 失败: {e}"))?
+}
+
+#[tauri::command]
 async fn convert_gif_to_eaf(
     window: WebviewWindow,
     path: String,
@@ -656,6 +708,12 @@ fn main() {
             start_classic_bluetooth_scan,
             probe_gif,
             convert_gif_to_eaf,
+            probe_mmap_assets_dir,
+            pack_mmap_assets,
+            preview_mmap_index_from_dir,
+            preview_mmap_index_from_bin,
+            preview_or_build_index_json,
+            preview_index_json_from_bin,
             window_state::get_remember_window_state,
             window_state::set_remember_window_state
         ])
