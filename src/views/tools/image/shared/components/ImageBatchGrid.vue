@@ -79,6 +79,12 @@
                 <template v-if="item.frameCount">
                   · {{ item.frameCount }}f
                 </template>
+                <template v-if="item.durationSec && item.durationSec > 0">
+                  · {{ formatDurationSec(item.durationSec) }}
+                </template>
+                <template v-if="item.fpsEstimate && item.fpsEstimate > 0">
+                  · {{ item.fpsEstimate.toFixed(1) }}fps
+                </template>
                 <template v-if="item.result">
                   · {{ formatBytes(item.result.bytes.length) }}
                 </template>
@@ -123,6 +129,7 @@ import {
   PlusOutlined,
 } from "@ant-design/icons-vue";
 import prettyBytes from "pretty-bytes";
+import { formatDurationSec } from "@/utils/image/shared/formatDuration";
 
 export interface ImageGridItem {
   id: string;
@@ -131,6 +138,10 @@ export interface ImageGridItem {
   naturalWidth: number;
   naturalHeight: number;
   frameCount?: number;
+  /** 时长（秒），可选 */
+  durationSec?: number;
+  /** 估算帧率，可选 */
+  fpsEstimate?: number;
   progress?: number;
   progressMessage?: string;
   status: "loading" | "idle" | "converting" | "done" | "error";

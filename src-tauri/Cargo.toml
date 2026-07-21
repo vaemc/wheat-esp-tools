@@ -28,6 +28,8 @@ tauri-plugin-updater = "2"
 tauri-plugin-process = "2"
 image = { version = "0.25.10", default-features = false, features = ["gif", "jpeg", "png"] }
 color_quant = "2.0.0"
+gif = "0.13"
+rayon = "1.10"
 base64 = "0.22.1"
 
 [target.'cfg(windows)'.dependencies]
