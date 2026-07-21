@@ -263,7 +263,6 @@ export async function encodeGifToEaf(
   gifBytes: Uint8Array,
   options: EafEncodeOptions = {}
 ): Promise<EafEncodeResult> {
-  const splitHeight = Math.max(1, options.splitHeight ?? EAF_DEFAULT_SPLIT_HEIGHT);
   let encodingMode: EafEncodingMode = options.encodingMode ?? EAF_DEFAULT_ENCODING;
   let colorDepth: EafColorDepth = options.colorDepth ?? EAF_DEFAULT_COLOR_DEPTH;
   const jpegQuality = Math.max(
@@ -286,6 +285,14 @@ export async function encodeGifToEaf(
 
   const targetW = Math.max(1, options.width ?? rawFrames[0].imageData.width);
   const targetH = Math.max(1, options.height ?? rawFrames[0].imageData.height);
+  const isJpeg = encodingMode === "jpeg" || colorDepth === 24;
+  const requestedSplit = options.splitHeight ?? EAF_DEFAULT_SPLIT_HEIGHT;
+  const splitHeight =
+    requestedSplit <= 0
+      ? isJpeg
+        ? Math.max(targetH, 512)
+        : targetH
+      : Math.max(1, requestedSplit);
 
   const frames: GifFrame[] = rawFrames.map((f) => ({
     imageData: resizeImageData(f.imageData, targetW, targetH),

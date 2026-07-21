@@ -1,7 +1,11 @@
 <template>
   <div class="eaf-preview">
     <div class="preview-stage">
-      <canvas ref="canvasRef" class="preview-canvas" />
+      <canvas
+        v-show="hasFrames"
+        ref="canvasRef"
+        class="preview-canvas"
+      />
       <div v-if="!hasFrames" class="preview-empty">
         <template v-if="loading">
           <LoadingOutlined spin class="preview-loading-icon" />
@@ -29,6 +33,7 @@
         }}
         {{ framesLabel }}
       </span>
+      <span v-if="durationSec > 0">{{ formatDurationSec(durationSec) }}</span>
       <span>{{ bitDepth }}bit</span>
     </div>
 
@@ -64,6 +69,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref, watch } from "vue";
 import { LoadingOutlined } from "@ant-design/icons-vue";
+import { formatDurationSec } from "@/utils/image/shared/formatDuration";
 
 const props = withDefaults(
   defineProps<{
@@ -78,6 +84,8 @@ const props = withDefaults(
     framesLabel?: string;
     autoPlay?: boolean;
     defaultFps?: number;
+    /** 时长（秒），有可靠来源时展示 */
+    durationSec?: number;
     loading?: boolean;
     loadingText?: string;
     progressText?: string;
@@ -94,7 +102,8 @@ const props = withDefaults(
     loopLabel: "Loop",
     framesLabel: "frames",
     autoPlay: true,
-    defaultFps: 12,
+    defaultFps: 25,
+    durationSec: 0,
     loading: false,
     loadingText: "",
     progressText: "",
@@ -112,6 +121,15 @@ let lastFirstFrame: HTMLCanvasElement | null = null;
 
 const hasFrames = computed(() => props.frames.length > 0);
 const frameCount = computed(() => props.frames.length);
+
+watch(
+  () => props.defaultFps,
+  (value) => {
+    if (value > 0) {
+      fps.value = value;
+    }
+  }
+);
 
 function drawFrame(index: number) {
   const canvas = canvasRef.value;
@@ -179,6 +197,13 @@ watch(
       frameIndex.value = 0;
       playing.value = false;
       stopTimer();
+      const canvas = canvasRef.value;
+      if (canvas) {
+        const ctx = canvas.getContext("2d");
+        ctx?.clearRect(0, 0, canvas.width, canvas.height);
+        canvas.width = 0;
+        canvas.height = 0;
+      }
       return;
     }
 
@@ -217,9 +242,8 @@ watch(
       return;
     }
 
-    // 加载完成 → 从首帧开始自动播放
+    // 加载完成：已在加载中展示首帧，直接续播即可，勿强制跳回第 0 帧（避免闪一下）
     if (wasLoading && props.frames.length && props.autoPlay) {
-      showFirstFrame();
       playing.value = true;
     }
   }
@@ -282,6 +306,7 @@ onBeforeUnmount(() => {
 .preview-empty {
   position: absolute;
   inset: 0;
+  z-index: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -289,6 +314,7 @@ onBeforeUnmount(() => {
   gap: 6px;
   font-size: 12px;
   color: rgba(255, 255, 255, 0.38);
+  background: rgba(0, 0, 0, 0.28);
 }
 
 .preview-loading-icon {

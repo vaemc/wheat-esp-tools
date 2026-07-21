@@ -1,22 +1,22 @@
-/** EAF 编码模式，对应乐鑫在线转换器 */
 export type EafEncodingMode = "rle" | "rle_huffman" | "jpeg";
 
-/** 色深：RLE 系用 4/8，JPEG 固定 24 */
 export type EafColorDepth = 4 | 8 | 24;
 
+/** Options for the TS encoder mirror; batch convert uses Rust with the same fields. */
 export interface EafEncodeOptions {
   width?: number;
   height?: number;
+  /** 0 = full-frame strip */
   splitHeight?: number;
   colorDepth?: EafColorDepth;
   encodingMode?: EafEncodingMode;
-  /** JPEG 质量 11–100（与官方工具一致） */
   jpegQuality?: number;
+  frameStep?: number;
+  similarThreshold?: number;
 }
 
 export interface GifFrame {
   imageData: ImageData;
-  /** 帧延时，毫秒 */
   delayMs: number;
 }
 
@@ -50,5 +50,7 @@ export interface EafDecodeResult {
 
 export const EAF_DEFAULT_SPLIT_HEIGHT = 32;
 export const EAF_DEFAULT_JPEG_QUALITY = 85;
-export const EAF_DEFAULT_COLOR_DEPTH: EafColorDepth = 8;
-export const EAF_DEFAULT_ENCODING: EafEncodingMode = "rle";
+export const EAF_DEFAULT_COLOR_DEPTH: EafColorDepth = 24;
+export const EAF_DEFAULT_ENCODING: EafEncodingMode = "jpeg";
+export const EAF_DEFAULT_FRAME_STEP = 0;
+export const EAF_DEFAULT_SIMILAR_THRESHOLD = 1;

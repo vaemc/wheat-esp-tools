@@ -69,7 +69,7 @@ function onSummary(payload: { count: number; done: number }) {
 <style scoped>
 .image-page {
   display: grid;
-  grid-template-columns: 220px minmax(0, 1fr) 300px;
+  grid-template-columns: 220px minmax(0, 1fr) 380px;
   grid-template-rows: minmax(0, 1fr);
   gap: 12px;
   height: 100%;
