@@ -713,7 +713,7 @@ fn main() {
             preview_mmap_index_from_dir,
             preview_mmap_index_from_bin,
             preview_or_build_index_json,
-            preview_index_json_from_bin
+            preview_index_json_from_bin,
             window_state::get_remember_window_state,
             window_state::set_remember_window_state
         ])
