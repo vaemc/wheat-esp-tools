@@ -20,7 +20,14 @@ withDefaults(
   defineProps<{
     title: string;
     description?: string;
-    tone?: "default" | "cache" | "esptool" | "update" | "opensource" | "version";
+    tone?:
+      | "default"
+      | "cache"
+      | "esptool"
+      | "update"
+      | "opensource"
+      | "version"
+      | "window";
   }>(),
   {
     description: "",
@@ -85,6 +92,11 @@ withDefaults(
 .item-icon[data-tone="opensource"] {
   --tone: rgba(255, 255, 255, 0.1);
   color: rgba(255, 255, 255, 0.82);
+}
+
+.item-icon[data-tone="window"] {
+  --tone: rgba(114, 190, 255, 0.14);
+  color: #72beff;
 }
 
 .item-text {

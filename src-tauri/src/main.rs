@@ -29,6 +29,7 @@ mod classic_bluetooth;
 mod image;
 mod mmap;
 mod serial;
+mod window_state;
 
 // Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
 
@@ -713,7 +714,16 @@ fn main() {
             preview_mmap_index_from_bin,
             preview_or_build_index_json,
             preview_index_json_from_bin
+            window_state::get_remember_window_state,
+            window_state::set_remember_window_state
         ])
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .setup(|app| {
+            window_state::attach(&app.handle());
+            Ok(())
+        })
+        .build(tauri::generate_context!())
+        .expect("error while building tauri application")
+        .run(|app_handle, event| {
+            window_state::on_run_event(app_handle, &event);
+        });
 }
