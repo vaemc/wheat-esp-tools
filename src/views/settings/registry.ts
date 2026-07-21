@@ -5,7 +5,12 @@
 import type { Component } from "vue";
 import { defineAsyncComponent } from "vue";
 
-export type SettingsItemId = "cache" | "esptool" | "update" | "opensource";
+export type SettingsItemId =
+  | "cache"
+  | "esptool"
+  | "update"
+  | "opensource"
+  | "window";
 
 export interface SettingsItemDef {
   id: SettingsItemId;
@@ -13,6 +18,12 @@ export interface SettingsItemDef {
 }
 
 export const SETTINGS_ITEMS: SettingsItemDef[] = [
+  {
+    id: "window",
+    component: defineAsyncComponent(
+      () => import("./items/window/RememberWindowItem.vue")
+    ),
+  },
   {
     id: "update",
     component: defineAsyncComponent(
