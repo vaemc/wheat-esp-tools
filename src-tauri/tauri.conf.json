@@ -35,7 +35,7 @@
   },
   "productName": "Wheat ESP Tools",
   "mainBinaryName": "Wheat ESP Tools",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "identifier": "com.vaemc.wheat.esp.tools",
   "plugins": {
     "updater": {
