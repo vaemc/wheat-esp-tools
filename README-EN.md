@@ -456,21 +456,22 @@ Flow: add images → tune parameters → batch convert → save one or all outpu
 
 ### GIF to EAF
 
-![GIF to EAF](images/en-gif-to-eaf.jpg)
+![GIF to EAF](images/en-gif-to-eaf.png)
 
-Convert GIF to `.eaf` animation binaries with playback preview.
+Convert GIF to `.eaf` (compatible with `esp_lv_eaf_player`). Conversion runs natively in batch; preview decodes when you select an item.
 
 | Item | Description |
 |------|-------------|
-| Input | GIF (multiple files OK) |
-| Output | `.eaf` |
-| Encoding | **RLE** (default), RLE+Huffman, JPEG |
-| Color depth | RLE: 4 / 8 bit (default 8); JPEG fixed 24 bit |
-| JPEG quality | Default 85 (about 11–100, JPEG mode only) |
-| Split height | Default 32 px (commonly 16–32) |
-| Output size | Follows GIF by default; editable (1–4096, must be > 10) |
+| Input / output | GIF (batch) → `.eaf` |
+| Encoding | **JPEG** (default), RLE, RLE+Huffman |
+| Color depth | JPEG fixed 24-bit; RLE modes: 4 / 8 bit |
+| JPEG quality | Default 85 (11–100, JPEG only) |
+| Split height | Default 32; **0 = one full-frame strip** (often smaller for JPEG) |
+| Frame step | Keep N frames then drop 1; 0 = no skipping |
+| Similar-frame merge | Reuse payload for near-identical neighbors (default 1; 0 = exact only) |
+| Output size | GIF size by default; editable (scale to your panel) |
 
-Encoding trade-offs: RLE is fast to decode with moderate size; RLE+Huffman is smaller but slightly slower; JPEG tunes quality vs size. Conversion runs natively; preview supports play/pause/loop; you can also open an existing `.eaf` for preview.
+Split height, frame step, and similar-frame merge apply to all encodings; JPEG quality is JPEG-only. Encoding trade-offs: RLE is fast to decode with moderate size; RLE+Huffman is smaller but slightly slower; JPEG tunes quality vs size. Preview supports play/pause/loop and duration; open an existing `.eaf` anytime. Stop conversion and clear-all are supported.
 
 ### GIF Compress
 ![GIF Compress](images/en-gif-compress.png)
