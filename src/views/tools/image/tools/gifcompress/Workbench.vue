@@ -52,43 +52,42 @@
             {{ selectedInfo.width }} × {{ selectedInfo.height }}
             · {{ selectedInfo.frameCount }}f
           </div>
-        </div>
-      </div>
-
-      <div v-if="selectedInfo" class="settings-block">
-        <div class="block-title">{{ $t("image.gifSourceInfo") }}</div>
-        <div class="info-list">
-          <div>{{ $t("image.gifFrames") }}: {{ selectedInfo.frameCount }}</div>
-          <div>
-            {{ $t("image.gifDuration") }}:
-            {{ formatDurationSec(selectedInfo.durationSec, "—") }}
-          </div>
-          <div>
-            {{ $t("image.gifFps") }}:
-            {{ selectedInfo.fpsEstimate.toFixed(1) }}
-          </div>
-          <div>
-            {{ $t("image.gifDelayRange") }}:
-            {{ selectedInfo.delayMinMs }}–{{ selectedInfo.delayMaxMs }} ms
-            ({{ $t("image.gifDelayAvg", { n: selectedInfo.delayAvgMs.toFixed(0) }) }})
-          </div>
-          <div>
-            {{ $t("image.gifFileSize") }}:
-            {{ formatBytes(selectedInfo.byteLength) }}
-          </div>
-          <div v-if="selectedInfo.loopCount != null">
-            {{ $t("image.gifLoop") }}:
-            {{
-              selectedInfo.loopCount === 0
-                ? $t("image.gifLoopInfinite")
-                : selectedInfo.loopCount
-            }}
-          </div>
-          <div v-if="selectedInfo.hasGlobalPalette">
-            {{ $t("image.gifGlobalPalette") }}
-          </div>
-          <div v-if="selectedInfo.hasTransparency">
-            {{ $t("image.gifTransparency") }}
+          <div class="selected-info">
+            <span
+              >{{ $t("image.gifDuration") }}:
+              {{ formatDurationSec(selectedInfo.durationSec, "—") }}</span
+            >
+            <span
+              >{{ $t("image.gifFps") }}:
+              {{ selectedInfo.fpsEstimate.toFixed(1) }}</span
+            >
+            <span
+              >{{ $t("image.gifDelayRange") }}:
+              {{ selectedInfo.delayMinMs }}–{{ selectedInfo.delayMaxMs }} ms
+              ({{
+                $t("image.gifDelayAvg", {
+                  n: selectedInfo.delayAvgMs.toFixed(0),
+                })
+              }})</span
+            >
+            <span
+              >{{ $t("image.gifFileSize") }}:
+              {{ formatBytes(selectedInfo.byteLength) }}</span
+            >
+            <span v-if="selectedInfo.loopCount != null">
+              {{ $t("image.gifLoop") }}:
+              {{
+                selectedInfo.loopCount === 0
+                  ? $t("image.gifLoopInfinite")
+                  : selectedInfo.loopCount
+              }}
+            </span>
+            <span v-if="selectedInfo.hasGlobalPalette">{{
+              $t("image.gifGlobalPalette")
+            }}</span>
+            <span v-if="selectedInfo.hasTransparency">{{
+              $t("image.gifTransparency")
+            }}</span>
           </div>
         </div>
       </div>
@@ -103,7 +102,6 @@
               :value="batch.outputWidth.value"
               :min="1"
               :max="4096"
-              :disabled="!batch.hasItems.value"
               :placeholder="$t('image.original')"
               @update:value="onWidthChange"
             />
@@ -114,25 +112,16 @@
               :value="batch.outputHeight.value"
               :min="1"
               :max="4096"
-              :disabled="!batch.hasItems.value"
               :placeholder="$t('image.original')"
               @update:value="onHeightChange"
             />
           </label>
         </div>
         <div class="field-inline">
-          <a-checkbox
-            v-model:checked="batch.lockAspect.value"
-            :disabled="!batch.hasItems.value"
-          >
+          <a-checkbox v-model:checked="batch.lockAspect.value">
             {{ $t("image.lockAspect") }}
           </a-checkbox>
-          <a-button
-            size="small"
-            type="link"
-            :disabled="!batch.hasItems.value"
-            @click="batch.resetOutputSize"
-          >
+          <a-button size="small" type="link" @click="batch.resetOutputSize">
             {{ $t("image.useOriginal") }}
           </a-button>
         </div>
@@ -153,7 +142,6 @@
             v-model:value="batch.frameStep.value"
             :min="0"
             :max="60"
-            :disabled="!batch.hasItems.value"
             style="width: 100%"
           />
         </label>
@@ -167,17 +155,13 @@
           </span>
           <a-select
             v-model:value="batch.colors.value"
-            :disabled="!batch.hasItems.value"
             style="width: 100%"
             :options="colorOptions"
           />
         </label>
 
         <label class="field field--full">
-          <a-checkbox
-            v-model:checked="batch.dither.value"
-            :disabled="!batch.hasItems.value"
-          >
+          <a-checkbox v-model:checked="batch.dither.value">
             <span class="field-label-with-tip">
               {{ $t("image.gifDither") }}
               <a-tooltip :title="$t('image.gifDitherHint')">
@@ -188,10 +172,7 @@
         </label>
 
         <label class="field field--full">
-          <a-checkbox
-            v-model:checked="batch.frameDiff.value"
-            :disabled="!batch.hasItems.value"
-          >
+          <a-checkbox v-model:checked="batch.frameDiff.value">
             <span class="field-label-with-tip">
               {{ $t("image.gifFrameDiff") }}
               <a-tooltip :title="$t('image.gifFrameDiffHint')">
@@ -214,7 +195,7 @@
               :min="0"
               :max="200"
               :step="5"
-              :disabled="!batch.hasItems.value || !batch.frameDiff.value"
+              :disabled="!batch.frameDiff.value"
               style="flex: 1"
             />
             <span class="slider-value">{{ batch.lossy.value }}</span>
@@ -225,23 +206,19 @@
           <span>{{ $t("image.gifDelayMode") }}</span>
           <a-select
             v-model:value="batch.delayMode.value"
-            :disabled="!batch.hasItems.value"
             style="width: 100%"
             :options="delayModeOptions"
           />
         </label>
 
-        <label
-          v-if="batch.delayMode.value === 'fixed'"
-          class="field field--full"
-        >
+        <label class="field field--full">
           <span>{{ $t("image.gifFixedDelay") }} (ms)</span>
           <a-input-number
             v-model:value="batch.fixedDelayMs.value"
             :min="10"
             :max="5000"
             :step="10"
-            :disabled="!batch.hasItems.value"
+            :disabled="batch.delayMode.value !== 'fixed'"
             style="width: 100%"
           />
         </label>
@@ -714,16 +691,17 @@ onBeforeUnmount(() => {
 
 .selected-preview {
   display: flex;
-  gap: 10px;
+  gap: 12px;
   padding: 10px;
   border-radius: 8px;
   background: rgba(0, 0, 0, 0.22);
   border: 1px solid rgba(255, 255, 255, 0.06);
+  flex-shrink: 0;
 }
 
 .selected-preview img {
-  width: 72px;
-  height: 72px;
+  width: 88px;
+  height: 88px;
   object-fit: contain;
   border-radius: 6px;
   flex-shrink: 0;
@@ -735,6 +713,7 @@ onBeforeUnmount(() => {
   flex-direction: column;
   gap: 4px;
   min-width: 0;
+  flex: 1;
 }
 
 .selected-name {
@@ -748,6 +727,16 @@ onBeforeUnmount(() => {
 .selected-size {
   font-size: 12px;
   color: rgba(255, 255, 255, 0.45);
+}
+
+.selected-info {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 10px;
+  margin-top: 2px;
+  font-size: 11px;
+  line-height: 1.45;
+  color: rgba(255, 255, 255, 0.55);
 }
 
 .settings-block {

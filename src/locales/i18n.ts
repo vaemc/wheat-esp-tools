@@ -241,9 +241,7 @@ const messages = {
       gifCompressOptions: "GIF 压缩参数",
       gifCompressStrategy:
         "压缩策略：抽帧 → 缩放 → 色阶预量化/减色 → 有损帧间合并 → 帧差分脏矩形。体积仍大时：提高有损、降低颜色、缩小尺寸、加大抽帧；抖动会增体积，默认关闭。",
-      gifSourceInfo: "源 GIF 信息",
       gifResultInfo: "压缩结果",
-      gifFrames: "总帧数",
       gifFps: "估算帧率",
       gifDuration: "时长",
       gifDelayRange: "帧间隔",
@@ -1019,9 +1017,7 @@ const messages = {
       gifCompressOptions: "GIF compress options",
       gifCompressStrategy:
         "Strategy: skip frames → resize → posterize/quantize → lossy frame coalesce → dirty-rect diff. Still large? Raise lossy, fewer colors, smaller size, more skipping; dither grows size (off by default).",
-      gifSourceInfo: "Source GIF info",
       gifResultInfo: "Result",
-      gifFrames: "Frames",
       gifFps: "Est. FPS",
       gifDuration: "Duration",
       gifDelayRange: "Frame delay",
