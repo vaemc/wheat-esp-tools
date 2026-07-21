@@ -1,11 +1,16 @@
-# 发版 + 应用内静默更新：
+# 发版 + 应用内静默更新（双通道）：
 # 1. 改 src-tauri/tauri.conf.json 的 version（如 1.0.1）并推送到仓库
 # 2. Actions → Build Release → Run workflow（无需手动建 Release）
-# 3. 工作流自动创建 tag=v{version}、title=v{version} 的 Release，签名构建并上传，生成 latest.json
-# 4. 客户端 check() → 确认 → downloadAndInstall() → relaunch()
+# 3. 工作流自动创建 tag=v{version} 的 GitHub Release，签名构建并上传，生成 latest.json
+# 4. 若配置了更新平台 Secret，同步把 updater 产物推送到 Wheat Update Platform 并 publish
+# 5. 客户端可走 GitHub latest.json，或平台 /v1/{slug}/latest.json
 #
 # 必需 Secret：
 #   TAURI_SIGNING_PRIVATE_KEY = .tauri-keys/wheat-esp-tools.key 文件全文
+#
+# 可选 Secret（不配则仍只发 GitHub Release）：
+#   UPDATE_PLATFORM_BASE_URL   = https://update.example.com   （不要末尾斜杠）
+#   UPDATE_PLATFORM_DEPLOY_TOKEN = 面板里产品 wheat-esp-tools 的 Deploy Token
 #
 # 不会在 push main 时自动发版。
 
@@ -196,6 +201,14 @@ jobs:
           gh release upload "${TAG}" "${UPLOAD[@]}" --clobber
           echo "Uploaded ${#UPLOAD[@]} file(s) to ${TAG}"
 
+      - name: Upload updater asset to Wheat Update Platform
+        shell: bash
+        env:
+          APP_SLUG: ${{ env.APP_SLUG }}
+          UPDATE_PLATFORM_BASE_URL: ${{ secrets.UPDATE_PLATFORM_BASE_URL }}
+          UPDATE_PLATFORM_DEPLOY_TOKEN: ${{ secrets.UPDATE_PLATFORM_DEPLOY_TOKEN }}
+        run: node .github/scripts/upload-to-update-platform.mjs "${{ needs.prepare.outputs.version }}"
+
       - name: Prepare updater meta artifact
         shell: bash
         run: |
@@ -266,3 +279,12 @@ jobs:
           gh release upload "${TAG}" latest.json --clobber
           echo "Uploaded latest.json to ${TAG}"
           cat latest.json
+
+      - name: Publish release on Wheat Update Platform
+        shell: bash
+        env:
+          APP_SLUG: ${{ env.APP_SLUG }}
+          APP_TITLE: ${{ env.APP_TITLE }}
+          UPDATE_PLATFORM_BASE_URL: ${{ secrets.UPDATE_PLATFORM_BASE_URL }}
+          UPDATE_PLATFORM_DEPLOY_TOKEN: ${{ secrets.UPDATE_PLATFORM_DEPLOY_TOKEN }}
+        run: node .github/scripts/publish-to-update-platform.mjs "${{ needs.prepare.outputs.version }}"

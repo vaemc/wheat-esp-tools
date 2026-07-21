@@ -35,12 +35,13 @@
   },
   "productName": "Wheat ESP Tools",
   "mainBinaryName": "Wheat ESP Tools",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "identifier": "com.vaemc.wheat.esp.tools",
   "plugins": {
     "updater": {
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDk2MTAwQTg3NTRGNjJBNDYKUldSR0t2WlVod29RbHBZeE5TS0laTkU5TlV1TjVTSm4rQkt5WFUza1lQQkZZK3hGYlNTV085UkIK",
       "endpoints": [
+        "https://update.wheathub.cn/v1/wheat-esp-tools/latest.json",
         "https://github.com/vaemc/wheat-esp-tools/releases/latest/download/latest.json"
       ],
       "windows": {
