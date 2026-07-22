@@ -117,7 +117,7 @@ function onUseHistory(path: string) {
 <style scoped>
 .font-page {
   display: grid;
-  grid-template-columns: 200px minmax(0, 1fr);
+  grid-template-columns: 220px minmax(0, 1fr);
   grid-template-rows: minmax(0, 1fr);
   gap: 12px;
   height: 100%;
