@@ -1,7 +1,12 @@
 import "vue-router";
 
-/** 侧栏菜单分组：烧录固件 / 硬件连接 / 实用工具 / 系统 */
-export type MenuGroupId = "flash" | "hardware" | "utils" | "system";
+/** 侧栏菜单分组：烧录固件 / 硬件连接 / 实用工具 / 桌面伙伴 / 系统 */
+export type MenuGroupId =
+  | "flash"
+  | "hardware"
+  | "utils"
+  | "companion"
+  | "system";
 
 export interface AppRouteMeta {
   /** 侧栏菜单图标名（见 MenuIcon） */

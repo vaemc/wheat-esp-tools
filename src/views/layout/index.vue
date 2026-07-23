@@ -27,9 +27,26 @@
   </div>
 </template>
 <script setup lang="ts">
+import { onMounted, onUnmounted } from "vue";
+import { useRouter } from "vue-router";
 import Terminal from "@/components/Terminal.vue";
 import DeviceTopBar from "@/components/DeviceTopBar.vue";
 import AppSider from "./AppSider.vue";
+import { initPetHostBridge } from "@/pet/hostBridge";
+
+const router = useRouter();
+let disposePetHost: (() => void) | null = null;
+
+onMounted(() => {
+  disposePetHost = initPetHostBridge(() => {
+    void router.push({ name: "pet" });
+  });
+});
+
+onUnmounted(() => {
+  disposePetHost?.();
+  disposePetHost = null;
+});
 </script>
 <style scoped>
 .app-root {
@@ -68,8 +85,14 @@ import AppSider from "./AppSider.vue";
 
 .app-main-scroll {
   height: 100%;
+  min-height: 0;
   overflow-x: hidden;
   overflow-y: auto;
+}
+
+.app-main-scroll :deep(.pet-page) {
+  min-height: 100%;
+  box-sizing: border-box;
 }
 
 .app-terminal {

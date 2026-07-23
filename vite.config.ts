@@ -2,6 +2,7 @@ import { defineConfig } from "vite";
 import vue from "@vitejs/plugin-vue";
 import { nodePolyfills } from "vite-plugin-node-polyfills";
 import { fileURLToPath, URL } from "node:url";
+import { resolve } from "node:path";
 
 // https://vitejs.dev/config/
 export default defineConfig(async () => ({
@@ -53,12 +54,18 @@ export default defineConfig(async () => ({
   },
   // to make use of `TAURI_ENV_*` and other env variables
   envPrefix: ["VITE_", "TAURI_"],
+  assetsInclude: ["**/*.vrm"],
   build: {
     commonjsOptions: {
       include: [/lv_font_conv/, /node_modules/],
       transformMixedEsModules: true,
     },
     rollupOptions: {
+      input: {
+        main: resolve(__dirname, "index.html"),
+        pet: resolve(__dirname, "src/pet/pet.html"),
+        "pet-bubble": resolve(__dirname, "src/pet/pet-bubble.html"),
+      },
       output: {
         // 只拆相对独立的大库。不要把 vue 生态和剩余 node_modules
         // 硬拆成 vendor-vue / vendor，否则会出现循环 chunk：
