@@ -2,7 +2,7 @@
 
 <img src="images/banner.jpg" alt="Wheat ESP Tools" width="800">
 
-A desktop toolkit for ESP series chips. Covers firmware flash and merge, partition tables, OTA, NVS, Bluetooth scanning, chip pinout diagrams, embedded image and audio format conversion, and mmap asset packing. Built with [Tauri](https://tauri.app/) and [Vue 3](https://vuejs.org/). Serial flash/read/erase runs in-process via [espflash](https://github.com/esp-rs/espflash) — no separate CLI install required.
+A desktop toolkit for ESP series chips. Covers firmware flash and merge, partition tables, OTA, NVS, Bluetooth scanning, chip pinout diagrams, embedded image and audio format conversion, and mmap asset packing. Built with [Tauri](https://tauri.app/) and [Vue 3](https://vuejs.org/) — no separate CLI install required.
 
 [简体中文](./README.md) | English
 
@@ -35,7 +35,7 @@ A desktop toolkit for ESP series chips. Covers firmware flash and merge, partiti
 
 ## Overview
 
-Wheat ESP Tools gathers common ESP development tasks into one desktop app — from serial flashing and partition maintenance to Bluetooth discovery and asset conversion. Serial operations (flash, read, erase, device info, etc.) run through the in-process [espflash](https://github.com/esp-rs/espflash) library; Bluetooth scanning and capabilities such as NVS parsing and GIF→EAF conversion are implemented in the Tauri native layer.
+Wheat ESP Tools gathers common ESP development tasks into one desktop app — from serial flashing and partition maintenance to Bluetooth discovery and asset conversion. Serial operations (flash, read, erase, device info, etc.) are handled natively in the app; Bluetooth scanning and capabilities such as NVS parsing and GIF→EAF conversion are implemented in the Tauri native layer.
 
 The sidebar is grouped by purpose:
 
@@ -101,7 +101,7 @@ Artifacts are under `src-tauri/target/release/bundle/`.
 | Top bar | Serial port selector, device info, **Get device info** |
 | Left sidebar | Feature menu (grouped) |
 | Main area | Active tool page; recent pages kept alive (up to 6) |
-| Bottom bar | Global progress bar + xterm terminal for espflash logs and progress |
+| Bottom bar | Global progress bar + xterm terminal for operation logs and progress |
 
 Default page: **Firmware Flash**.
 
@@ -115,7 +115,7 @@ Device-facing features (flash, partition table, OTA, NVS, etc.) require a serial
 
 1. Connect the board to the PC over USB.
 2. Open **Serial port** in the top bar (the COM list refreshes when opened) and pick the target port.
-3. Click **Get device info** to read chip and Flash details via espflash.
+3. Click **Get device info** to read chip and Flash details.
 4. Changing the port clears cached device info; fetch again as needed.
 
 ### Information shown
@@ -178,7 +178,7 @@ Same idea as ESP-IDF; also saved to recent projects.
 |-----------|-------------|
 | SPI mode | `keep` / `qio` / `qout` / `dio` / `dout`, default `keep` |
 | Flash baud rate | Default `1152000`, roughly `115200`–`1500000` |
-| Chip type | Detected by espflash; **required for merge** |
+| Chip type | Auto-detected; **required for merge** |
 
 ### List actions
 
@@ -545,7 +545,7 @@ Flow: choose or drop the assets root → review the file list and manifest optio
 
 The bottom area includes a global progress bar and xterm, used for:
 
-- espflash operation logs (flash / read / erase / merge / device info, etc.)
+- Operation logs (flash / read / erase / merge / device info, etc.)
 - Live percent and phase text
 - Timestamped, color-leveled logs (`[YYYY-MM-DD HH:mm:ss]`)
 
