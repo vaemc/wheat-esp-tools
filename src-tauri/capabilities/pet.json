@@ -1,8 +1,8 @@
 {
-  "identifier": "migrated",
-  "description": "permissions that were migrated from v1",
+  "identifier": "pet",
+  "description": "Desktop pet + bubble: window/event + read user VRM from AppData",
   "local": true,
-  "windows": ["main"],
+  "windows": ["pet", "pet-bubble"],
   "permissions": [
     "core:default",
     "core:event:default",
@@ -12,7 +12,6 @@
     "core:window:allow-show",
     "core:window:allow-hide",
     "core:window:allow-set-always-on-top",
-    "core:window:allow-start-dragging",
     "core:window:allow-set-ignore-cursor-events",
     "core:window:allow-set-size",
     "core:window:allow-set-position",
@@ -21,40 +20,19 @@
     "core:window:allow-scale-factor",
     "core:window:allow-current-monitor",
     "core:window:allow-cursor-position",
+    "fs:allow-exists",
     "fs:allow-read-file",
-    "fs:allow-read-text-file",
-    "fs:allow-write-file",
-    "fs:allow-read-dir",
     "fs:allow-mkdir",
+    "fs:allow-write-file",
     "fs:allow-remove",
+    "fs:allow-size",
     {
       "identifier": "fs:scope",
-      "allow": ["**"]
-    },
-    {
-      "identifier": "shell:allow-execute",
       "allow": [
-        {
-          "args": true,
-          "name": "bin/esptool",
-          "sidecar": true
-        }
+        { "path": "$APPDATA/**" },
+        { "path": "$APPDATA/pet-vrm/**" },
+        { "path": "$RESOURCE/**" }
       ]
-    },
-    {
-      "identifier": "shell:allow-spawn",
-      "allow": [
-        {
-          "args": true,
-          "name": "bin/esptool",
-          "sidecar": true
-        }
-      ]
-    },
-    "shell:allow-open",
-    "dialog:allow-open",
-    "dialog:allow-save",
-    "updater:default",
-    "process:default"
+    }
   ]
 }

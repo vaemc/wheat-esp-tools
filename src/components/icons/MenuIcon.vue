@@ -136,6 +136,15 @@
       <line x1="14" x2="21" y1="10" y2="3" />
       <line x1="3" x2="10" y1="21" y2="14" />
     </template>
+    <!-- Lucide: bot — 芯宠 -->
+    <template v-else-if="name === 'pet'">
+      <path d="M12 8V4H8" />
+      <rect width="16" height="12" x="4" y="8" rx="2" />
+      <path d="M2 14h2" />
+      <path d="M20 14h2" />
+      <path d="M15 13v2" />
+      <path d="M9 13v2" />
+    </template>
     <!-- Lucide: settings -->
     <template v-else-if="name === 'settings'">
       <path
@@ -172,6 +181,7 @@ const ICON_COLORS: Record<string, string> = {
   sjpg: "#ff85c0",
   eaf: "#b37feb",
   gifcompress: "#9254de",
+  pet: "#ffb74d",
   settings: "#8c8c8c",
 };
 

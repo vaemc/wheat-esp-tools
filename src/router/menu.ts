@@ -1,12 +1,19 @@
 import type { Router } from "vue-router";
 import type { MenuGroup, MenuGroupId, MenuItem } from "./types";
 
-const GROUP_ORDER: MenuGroupId[] = ["flash", "hardware", "utils", "system"];
+const GROUP_ORDER: MenuGroupId[] = [
+  "flash",
+  "hardware",
+  "utils",
+  "companion",
+  "system",
+];
 
 const GROUP_TITLE_KEYS: Record<MenuGroupId, string> = {
   flash: "menu.group.flash",
   hardware: "menu.group.hardware",
   utils: "menu.group.utils",
+  companion: "menu.group.companion",
   system: "menu.group.system",
 };
 

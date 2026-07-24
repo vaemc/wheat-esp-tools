@@ -27,7 +27,8 @@ withDefaults(
       | "update"
       | "opensource"
       | "version"
-      | "window";
+      | "window"
+      | "pet";
   }>(),
   {
     description: "",
@@ -97,6 +98,11 @@ withDefaults(
 .item-icon[data-tone="window"] {
   --tone: rgba(114, 190, 255, 0.14);
   color: #72beff;
+}
+
+.item-icon[data-tone="pet"] {
+  --tone: rgba(64, 196, 255, 0.16);
+  color: #40c4ff;
 }
 
 .item-text {

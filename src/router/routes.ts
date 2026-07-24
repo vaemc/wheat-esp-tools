@@ -140,6 +140,18 @@ export const layoutChildren: RouteRecordRaw[] = [
     },
   },
   {
+    path: "pet",
+    name: "pet",
+    component: () => import("@/views/pet/index.vue"),
+    meta: {
+      icon: "pet",
+      titleKey: "menu.pet",
+      menu: true,
+      menuGroup: "companion",
+      menuOrder: 50,
+    },
+  },
+  {
     path: "settings",
     name: "settings",
     component: () => import("@/views/settings/index.vue"),

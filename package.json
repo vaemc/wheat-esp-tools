@@ -11,6 +11,7 @@
     "tauri": "tauri"
   },
   "dependencies": {
+    "@pixiv/three-vrm": "^3.5.5",
     "@tauri-apps/api": "^2",
     "@tauri-apps/plugin-dialog": "~2",
     "@tauri-apps/plugin-fs": "~2",
@@ -29,6 +30,7 @@
     "pinia": "^2.1.7",
     "pinia-plugin-persistedstate": "^3.2.1",
     "pretty-bytes": "^6.1.1",
+    "three": "^0.185.1",
     "vue": "^3.4.29",
     "vue-clipboard3": "^2.0.0",
     "vue-echarts": "^7.0.3",
@@ -40,6 +42,7 @@
   "devDependencies": {
     "@tauri-apps/cli": "^2.11.4",
     "@types/node": "^18.7.10",
+    "@types/three": "^0.185.1",
     "@vitejs/plugin-vue": "^5.0.5",
     "typescript": "^5.9.3",
     "vite": "^5.2.13",

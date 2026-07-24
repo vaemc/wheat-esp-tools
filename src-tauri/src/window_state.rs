@@ -1,4 +1,3 @@
-//! 记住主窗口位置与大小（可选，由设置开关控制）。
 
 use serde::{Deserialize, Serialize};
 use std::fs;
@@ -95,7 +94,6 @@ fn save_geometry(window: &WebviewWindow) -> Result<(), String> {
     let maximized = window.is_maximized().unwrap_or(false);
     let minimized = window.is_minimized().unwrap_or(false);
 
-    // 最小化时几何不可靠，跳过本次保存
     if minimized {
         return Ok(());
     }
@@ -174,10 +172,6 @@ fn restore_geometry(window: &WebviewWindow, geometry: &WindowGeometry) {
     }
 }
 
-/// 启动时加载偏好、按需恢复几何，并在关闭时保存。
-///
-/// 主窗口在 `tauri.conf.json` 中以 `visible: false` 创建，先恢复几何再 `show`，
-/// 避免先闪默认位置再跳到上次位置。
 pub fn attach(app: &AppHandle) {
     let prefs = load_prefs(app);
     REMEMBER.store(prefs.remember_window_state, Ordering::SeqCst);
@@ -207,6 +201,17 @@ pub fn attach(app: &AppHandle) {
 
 /// 退出时再保存一次（部分平台可能不经过 CloseRequested）。
 pub fn on_run_event(app: &AppHandle, event: &RunEvent) {
+    if matches!(
+        event,
+        RunEvent::Exit | RunEvent::ExitRequested { .. }
+    ) {
+        for label in ["pet", "pet-bubble"] {
+            if let Some(win) = app.get_webview_window(label) {
+                let _ = win.destroy();
+            }
+        }
+    }
+
     if !matches!(event, RunEvent::Exit) {
         return;
     }
@@ -237,7 +242,6 @@ pub fn set_remember_window_state(app: AppHandle, enabled: bool) -> Result<(), St
     if !enabled {
         clear_geometry(&app);
     } else if let Some(window) = app.get_webview_window("main") {
-        // 开启时立刻记下当前几何，避免未正常关窗时丢失
         let _ = save_geometry(&window);
     }
     Ok(())
