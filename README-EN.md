@@ -2,7 +2,7 @@
 
 <img src="images/banner.jpg" alt="Wheat ESP Tools" width="800">
 
-A desktop toolkit for ESP series chips. Covers firmware flash and merge, partition tables, OTA, NVS, Bluetooth scanning, chip pinout diagrams, embedded image and audio format conversion, and mmap asset packing. Built with [Tauri](https://tauri.app/) and [Vue 3](https://vuejs.org/), with [esptool](https://github.com/espressif/esptool) built in — no separate CLI install required.
+A desktop toolkit for ESP series chips. Covers firmware flash and merge, partition tables, OTA, NVS, Bluetooth scanning, chip pinout diagrams, embedded image and audio format conversion, and mmap asset packing. Built with [Tauri](https://tauri.app/) and [Vue 3](https://vuejs.org/). Serial flash/read/erase runs in-process via [espflash](https://github.com/esp-rs/espflash) — no separate CLI install required.
 
 [简体中文](./README.md) | English
 
@@ -35,7 +35,7 @@ A desktop toolkit for ESP series chips. Covers firmware flash and merge, partiti
 
 ## Overview
 
-Wheat ESP Tools gathers common ESP development tasks into one desktop app — from serial flashing and partition maintenance to Bluetooth discovery and asset conversion. Serial operations run through the built-in esptool; Bluetooth scanning and capabilities such as NVS parsing and GIF→EAF conversion are implemented in the Tauri native layer.
+Wheat ESP Tools gathers common ESP development tasks into one desktop app — from serial flashing and partition maintenance to Bluetooth discovery and asset conversion. Serial operations (flash, read, erase, device info, etc.) run through the in-process [espflash](https://github.com/esp-rs/espflash) library; Bluetooth scanning and capabilities such as NVS parsing and GIF→EAF conversion are implemented in the Tauri native layer.
 
 The sidebar is grouped by purpose:
 
@@ -101,7 +101,7 @@ Artifacts are under `src-tauri/target/release/bundle/`.
 | Top bar | Serial port selector, device info, **Get device info** |
 | Left sidebar | Feature menu (grouped) |
 | Main area | Active tool page; recent pages kept alive (up to 6) |
-| Bottom bar | xterm terminal for esptool logs and progress |
+| Bottom bar | Global progress bar + xterm terminal for espflash logs and progress |
 
 Default page: **Firmware Flash**.
 
@@ -115,14 +115,14 @@ Device-facing features (flash, partition table, OTA, NVS, etc.) require a serial
 
 1. Connect the board to the PC over USB.
 2. Open **Serial port** in the top bar (the COM list refreshes when opened) and pick the target port.
-3. Click **Get device info** to read chip and Flash details via esptool.
+3. Click **Get device info** to read chip and Flash details via espflash.
 4. Changing the port clears cached device info; fetch again as needed.
 
 ### Information shown
 
 - Chip model and revision
 - MAC address (click to copy)
-- Flash size, type, Flash ID
+- Flash size
 - PSRAM, crystal frequency, feature summary
 - Security and other details (**More** panel)
 
@@ -178,7 +178,7 @@ Same idea as ESP-IDF; also saved to recent projects.
 |-----------|-------------|
 | SPI mode | `keep` / `qio` / `qout` / `dio` / `dout`, default `keep` |
 | Flash baud rate | Default `1152000`, roughly `115200`–`1500000` |
-| Chip type | Detected by esptool; **required for merge** |
+| Chip type | Detected by espflash; **required for merge** |
 
 ### List actions
 
@@ -190,14 +190,10 @@ Same idea as ESP-IDF; also saved to recent projects.
 ### Flash
 
 1. Check target firmware and confirm addresses.
-2. Optionally check **Erase flash before flashing** (`--erase-all`).
-3. Click **Flash**; progress and logs appear in the bottom terminal.
+2. Optionally check **Erase flash before flashing**.
+3. Click **Flash**; the progress bar and bottom terminal show live write progress and logs.
 
-Equivalent command example:
-
-```bash
-esptool.py -p COMx -b 1152000 write-flash --flash-mode keep 0x10000 firmware.bin ...
-```
+Serial flash/read/erase jobs are globally mutually exclusive — only one Flash operation runs at a time.
 
 ### Merge firmware
 
@@ -217,8 +213,8 @@ Copy checked firmware to a user-chosen folder, named like `{stem}_{address}.bin`
 
 | Action | Description |
 |--------|-------------|
-| Erase flash | `erase-flash` (baud fixed at 115200) |
-| Read Flash | `read-flash 0 ALL`, saved as `firmware/read-{timestamp}.bin` (baud 460800) |
+| Erase flash | Erase entire Flash (uses the page baud rate) |
+| Read Flash | Read full chip from `0x0` (`ALL`), saved as `firmware/read-{timestamp}.bin`; read baud capped at `460800`, with automatic lower-baud retries on unstable links |
 
 ---
 
@@ -547,13 +543,13 @@ Flow: choose or drop the assets root → review the file list and manifest optio
 
 ## Terminal Output
 
-The bottom xterm is used for:
+The bottom area includes a global progress bar and xterm, used for:
 
-- esptool stdout
-- Progress for flash/read and similar operations
-- Timestamped command logs (`[YYYY-MM-DD HH:mm:ss]`)
+- espflash operation logs (flash / read / erase / merge / device info, etc.)
+- Live percent and phase text
+- Timestamped, color-leveled logs (`[YYYY-MM-DD HH:mm:ss]`)
 
-Do not close the app while flashing. On failure, check port occupancy, drivers, wiring, and baud rate first. Ctrl+C copies selected text in the terminal.
+Do not close the app while flashing or reading. On failure, check port occupancy, drivers, wiring, and baud rate first; if full-chip reads drop packets, lower the baud rate and retry. Ctrl+C copies selected text in the terminal.
 
 ---
 

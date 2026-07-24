@@ -2,7 +2,7 @@
 
 <img src="images/banner.jpg" alt="Wheat ESP Tools" width="800">
 
-面向 ESP 系列芯片的桌面工具。集成固件烧录与合并、分区表、OTA、NVS、蓝牙扫描、芯片引脚图、嵌入式图片与音频格式转换、mmap 资源打包等功能。基于 [Tauri](https://tauri.app/) 与 [Vue 3](https://vuejs.org/) 构建，内置 [esptool](https://github.com/espressif/esptool)，无需另行安装命令行工具。
+面向 ESP 系列芯片的桌面工具。集成固件烧录与合并、分区表、OTA、NVS、蓝牙扫描、芯片引脚图、嵌入式图片与音频格式转换、mmap 资源打包等功能。基于 [Tauri](https://tauri.app/) 与 [Vue 3](https://vuejs.org/) 构建，串口烧录/读擦通过进程内 [espflash](https://github.com/esp-rs/espflash) 完成，无需另行安装命令行工具。
 
 简体中文 | [English](./README-EN.md)
 
@@ -35,7 +35,7 @@
 
 ## 概述
 
-Wheat ESP Tools 将常见的 ESP 开发操作集中到同一桌面应用中，覆盖从串口烧录到分区维护、蓝牙侦测与资源转换的完整链路。串口相关操作通过内置 esptool 完成；蓝牙扫描与 NVS / GIF→EAF 等能力由 Tauri 原生端实现。
+Wheat ESP Tools 将常见的 ESP 开发操作集中到同一桌面应用中，覆盖从串口烧录到分区维护、蓝牙侦测与资源转换的完整链路。串口相关操作（烧录、读取、擦除、设备信息等）通过进程内 [espflash](https://github.com/esp-rs/espflash) 库完成；蓝牙扫描与 NVS / GIF→EAF 等能力由 Tauri 原生端实现。
 
 侧栏按用途分为三组：
 
@@ -101,7 +101,7 @@ yarn tauri build    # 生产安装包
 | 顶部栏 | 串口选择、设备信息、「获取设备信息」 |
 | 左侧栏 | 功能菜单（按分组排列） |
 | 主区域 | 当前工具页；页面切换时保留近期状态（最多 6 页） |
-| 底部栏 | xterm 终端，输出 esptool 日志与进度 |
+| 底部栏 | 全局进度条 + xterm 终端，输出 espflash 操作日志与进度 |
 
 默认打开 **固件烧录** 页。
 
@@ -115,14 +115,14 @@ yarn tauri build    # 生产安装包
 
 1. 用 USB 连接开发板与电脑。
 2. 打开顶部 **选择串口** 下拉框（展开时自动刷新 COM 列表），选定目标端口。
-3. 点击 **获取设备信息**，通过 esptool 读取芯片与 Flash 信息。
+3. 点击 **获取设备信息**，通过 espflash 读取芯片与 Flash 信息。
 4. 切换串口后，已缓存的设备信息会清空，需重新获取。
 
 ### 可显示信息
 
 - 芯片型号、修订版本
 - MAC 地址（可复制）
-- Flash 容量、类型、Flash ID
+- Flash 容量
 - PSRAM、晶振频率、特性摘要
 - 安全信息等详情（「更多」面板）
 
@@ -179,7 +179,7 @@ your_project/.pio/build/your_board/idedata.json
 |------|------|
 | SPI 模式 | `keep` / `qio` / `qout` / `dio` / `dout`，默认 `keep` |
 | 烧录波特率 | 默认 `1152000`，可选约 `115200`–`1500000` |
-| 芯片类型 | 由 esptool 探测；**合并固件时必选** |
+| 芯片类型 | 由 espflash 探测；**合并固件时必选** |
 
 ### 列表操作
 
@@ -191,14 +191,10 @@ your_project/.pio/build/your_board/idedata.json
 ### 烧录
 
 1. 勾选目标固件并确认地址。
-2. 可选勾选 **烧录前整片擦除**（`--erase-all`）。
-3. 点击 **烧录**，进度与日志见底部终端。
+2. 可选勾选 **烧录前整片擦除**。
+3. 点击 **烧录**；进度条与底部终端会实时显示写入进度与日志。
 
-等价命令示例：
-
-```bash
-esptool.py -p COMx -b 1152000 write-flash --flash-mode keep 0x10000 firmware.bin ...
-```
+烧录、读取、擦除等串口任务全局互斥，同一时刻仅允许一个 Flash 操作。
 
 ### 合并固件
 
@@ -218,8 +214,8 @@ esptool.py -p COMx -b 1152000 write-flash --flash-mode keep 0x10000 firmware.bin
 
 | 操作 | 说明 |
 |------|------|
-| 整片擦除 | `erase-flash`（波特率固定 115200） |
-| 读取 Flash | `read-flash 0 ALL`，保存为 `firmware/read-{时间戳}.bin`（波特率 460800） |
+| 整片擦除 | 擦除整片 Flash（使用页面所选波特率） |
+| 读取 Flash | 从 `0x0` 读取整片（`ALL`），保存为 `firmware/read-{时间戳}.bin`；读取波特率上限 `460800`，不稳定时自动降速重试 |
 
 ---
 
@@ -554,13 +550,13 @@ ESP32 系列交互式引脚功能图。数据来自 Espressif 官方数据手册
 
 ## 终端输出
 
-应用底部集成 xterm，用于：
+应用底部集成全局进度条与 xterm，用于：
 
-- 显示 esptool 标准输出
-- 烧录、读取等操作的进度
-- 带时间戳的命令日志（`[YYYY-MM-DD HH:mm:ss]`）
+- 显示 espflash 操作日志（烧录 / 读取 / 擦除 / 合并 / 设备信息等）
+- 实时进度百分比与阶段文案
+- 带时间戳与级别配色的日志（`[YYYY-MM-DD HH:mm:ss]`）
 
-烧录过程中请勿关闭应用。失败时优先检查串口占用、驱动、接线与波特率。终端内可用 Ctrl+C 复制选中文本。
+烧录或读取过程中请勿关闭应用。失败时优先检查串口占用、驱动、接线与波特率；读取整片 Flash 若出现丢包，可降低波特率后重试。终端内可用 Ctrl+C 复制选中文本。
 
 ---
 
