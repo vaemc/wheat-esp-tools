@@ -26,6 +26,7 @@ impl Drop for BleScanFlagGuard {
 }
 
 mod classic_bluetooth;
+mod espflash_ops;
 mod image;
 mod mmap;
 mod serial;
@@ -746,7 +747,14 @@ fn main() {
             preview_or_build_index_json,
             preview_index_json_from_bin,
             window_state::get_remember_window_state,
-            window_state::set_remember_window_state
+            window_state::set_remember_window_state,
+            espflash_ops::espflash_list_chips,
+            espflash_ops::espflash_write_flash,
+            espflash_ops::espflash_read_flash,
+            espflash_ops::espflash_erase_flash,
+            espflash_ops::espflash_erase_region,
+            espflash_ops::espflash_device_info,
+            espflash_ops::espflash_merge_bin,
         ])
         .setup(|app| {
             window_state::attach(&app.handle());

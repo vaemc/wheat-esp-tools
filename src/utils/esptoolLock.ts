@@ -1,18 +1,14 @@
-/** 全应用 esptool 互斥：keep-alive 多页也不能并行抢串口 */
-let busy = false;
+import { useEspflashStore } from "@/stores/espflash";
 
+/** 全应用 Flash 互斥状态（与 Rust 侧锁配合） */
 export function isEsptoolBusy(): boolean {
-  return busy;
+  return useEspflashStore().busy;
 }
 
 export async function withEsptoolLock<T>(fn: () => Promise<T>): Promise<T> {
-  if (busy) {
-    throw new Error("ESPTOOL_BUSY");
+  const store = useEspflashStore();
+  if (store.busy) {
+    throw new Error("ESPFLASH_BUSY");
   }
-  busy = true;
-  try {
-    return await fn();
-  } finally {
-    busy = false;
-  }
+  return fn();
 }

@@ -5,12 +5,7 @@
 import type { Component } from "vue";
 import { defineAsyncComponent } from "vue";
 
-export type SettingsItemId =
-  | "cache"
-  | "esptool"
-  | "update"
-  | "opensource"
-  | "window";
+export type SettingsItemId = "cache" | "update" | "opensource" | "window";
 
 export interface SettingsItemDef {
   id: SettingsItemId;
@@ -34,12 +29,6 @@ export const SETTINGS_ITEMS: SettingsItemDef[] = [
     id: "cache",
     component: defineAsyncComponent(
       () => import("./items/cache/CacheItem.vue")
-    ),
-  },
-  {
-    id: "esptool",
-    component: defineAsyncComponent(
-      () => import("./items/esptool/EsptoolVersionItem.vue")
     ),
   },
   {

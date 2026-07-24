@@ -23,7 +23,6 @@ withDefaults(
     tone?:
       | "default"
       | "cache"
-      | "esptool"
       | "update"
       | "opensource"
       | "version"
@@ -72,11 +71,6 @@ withDefaults(
 .item-icon[data-tone="cache"] {
   --tone: rgba(250, 173, 20, 0.14);
   color: #faad14;
-}
-
-.item-icon[data-tone="esptool"] {
-  --tone: rgba(64, 169, 255, 0.14);
-  color: #40a9ff;
 }
 
 .item-icon[data-tone="update"] {

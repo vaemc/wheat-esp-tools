@@ -1,6 +1,6 @@
 <template>
-  <div style="width: 100%">
-    <div id="terminal" style="height: 160px" class="xterm"></div>
+  <div class="terminal-wrap">
+    <div id="terminal" class="xterm terminal-host" />
   </div>
 </template>
 <script setup lang="ts">
@@ -10,18 +10,43 @@ import { Terminal } from "xterm";
 import { FitAddon } from "xterm-addon-fit";
 import { onMounted, onUnmounted } from "vue";
 import bus from "@/bus/terminal";
-import kleur from "kleur";
-import { formatDateTime } from "@/utils/datetime";
+import {
+  formatTerminalLine,
+  type TerminalLine,
+} from "@/utils/terminalLog";
 
 const fitAddon = new FitAddon();
 
 const terminal = new Terminal({
-  fontSize: 14,
+  fontSize: 13,
+  fontFamily:
+    'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+  lineHeight: 1.35,
   allowProposedApi: true,
   cursorStyle: "bar",
+  cursorBlink: false,
+  scrollback: 4000,
   theme: {
-    background: "#181818",
-    magenta: "#e39ef7",
+    background: "#141414",
+    foreground: "#e5e7eb",
+    cursor: "#93c5fd",
+    selectionBackground: "rgba(59, 130, 246, 0.35)",
+    black: "#1f2937",
+    red: "#f87171",
+    green: "#4ade80",
+    yellow: "#fbbf24",
+    blue: "#60a5fa",
+    magenta: "#e879f9",
+    cyan: "#22d3ee",
+    white: "#f3f4f6",
+    brightBlack: "#6b7280",
+    brightRed: "#fca5a5",
+    brightGreen: "#86efac",
+    brightYellow: "#fde68a",
+    brightBlue: "#93c5fd",
+    brightMagenta: "#f0abfc",
+    brightCyan: "#67e8f9",
+    brightWhite: "#ffffff",
   },
 });
 
@@ -29,7 +54,7 @@ terminal.attachCustomKeyEventHandler((arg) => {
   if (arg.ctrlKey && arg.code === "KeyC" && arg.type === "keydown") {
     const selection = terminal.getSelection();
     if (selection) {
-      navigator.clipboard.writeText(selection);
+      void navigator.clipboard.writeText(selection);
       return false;
     }
   }
@@ -40,10 +65,8 @@ function fit() {
   fitAddon.fit();
 }
 
-function onWriteLn(data: string) {
-  terminal.writeln(
-    `${kleur.bold().blue(`[${formatDateTime()}] `)}${data}`
-  );
+function onWriteLn(data: string | TerminalLine) {
+  terminal.writeln(formatTerminalLine(data));
 }
 
 onMounted(() => {
@@ -67,3 +90,14 @@ onUnmounted(() => {
   terminal.dispose();
 });
 </script>
+<style scoped>
+.terminal-wrap {
+  width: 100%;
+}
+
+.terminal-host {
+  height: 160px;
+  padding: 4px 8px 6px;
+  box-sizing: border-box;
+}
+</style>

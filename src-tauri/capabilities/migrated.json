@@ -16,26 +16,6 @@
       "identifier": "fs:scope",
       "allow": ["**"]
     },
-    {
-      "identifier": "shell:allow-execute",
-      "allow": [
-        {
-          "args": true,
-          "name": "bin/esptool",
-          "sidecar": true
-        }
-      ]
-    },
-    {
-      "identifier": "shell:allow-spawn",
-      "allow": [
-        {
-          "args": true,
-          "name": "bin/esptool",
-          "sidecar": true
-        }
-      ]
-    },
     "shell:allow-open",
     "dialog:allow-open",
     "dialog:allow-save",

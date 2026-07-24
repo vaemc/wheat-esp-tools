@@ -155,7 +155,7 @@ import {
   openDirectoryInExplorer,
   openFileInExplorer,
 } from "@/utils/common";
-import { runEsptoolWithStdout } from "@/utils/esptoolCli";
+import { mergeBin } from "@/utils/espflash";
 import { runEsptoolWriteFlash } from "@/utils/esptoolWrite";
 import {
   toBaudSelectOptions,
@@ -168,6 +168,7 @@ import { storeToRefs } from "pinia";
 import { useToolsStore } from "@/stores/Tool";
 import { useHistoryStore } from "@/stores/history";
 import { usePortStore } from "@/stores/port";
+import { useEspflashStore } from "@/stores/espflash";
 import { useImportToFlash } from "@/views/tools/firmware/composables/useImportToFlash";
 import { useFlashQuickActions } from "./composables/useFlashQuickActions";
 import { exportFirmwareFilesToDir } from "./composables/useExportFirmware";
@@ -175,13 +176,14 @@ import { CONFIG_FILENAMES } from "@/utils/path";
 
 const store = useToolsStore();
 const historyStore = useHistoryStore();
-const { eraseFlash, readFlash } = useFlashQuickActions();
-const { applyFlashConfig } = useImportToFlash();
+const espflashStore = useEspflashStore();
 const {
   baudRate: selectedBaud,
   spiMode: selectedMode,
   eraseBeforeFlash: eraseChecked,
 } = useFlashOptions();
+const { eraseFlash, readFlash } = useFlashQuickActions(selectedBaud);
+const { applyFlashConfig } = useImportToFlash();
 
 const baudOptions = toBaudSelectOptions();
 const { firmwareList, selectedChipType } = storeToRefs(store);
@@ -194,7 +196,11 @@ const mergeFileName = ref("");
 const merging = ref(false);
 const highlightedAddressPaths = ref(new Set<string>());
 const busy = computed(
-  () => flashing.value || exporting.value || merging.value
+  () =>
+    flashing.value ||
+    exporting.value ||
+    merging.value ||
+    espflashStore.busy
 );
 
 function highlightEmptyAddresses(items: Firmware[]) {
@@ -310,8 +316,12 @@ const flash = async () => {
       flashMode: selectedMode.value,
       eraseAll: eraseChecked.value,
     });
-  } catch {
-    message.error(i18n.global.t("flash.flashFailed"));
+  } catch (e) {
+    if (e instanceof Error && e.message === "ESPFLASH_BUSY") {
+      message.warning(i18n.global.t("espflash.busy"));
+    } else {
+      message.error(i18n.global.t("flash.flashFailed"));
+    }
   } finally {
     flashing.value = false;
   }
@@ -383,23 +393,14 @@ const confirmMerge = async () => {
     const { join } = await import("@tauri-apps/api/path");
     const filename = await join(dir, "firmware", name);
 
-    await runEsptoolWithStdout(
-      [
-        "--chip",
-        selectedChipType.value,
-        "merge-bin",
-        "-o",
-        filename,
-        ...firmwareList.value
-          .filter((x) => x.check)
-          .flatMap((x) => [x.address, x.path]),
-      ],
-      (line) => {
-        if (line.includes("ready to flash to offset 0x0")) {
-          void openFileInExplorer(filename);
-        }
-      }
+    await mergeBin(
+      filename,
+      firmwareList.value
+        .filter((x) => x.check)
+        .map((x) => ({ offset: x.address, path: x.path })),
+      selectedChipType.value
     );
+    await openFileInExplorer(filename);
     mergeModalOpen.value = false;
   } catch {
     message.error(i18n.global.t("flash.mergeFailed"));
@@ -511,8 +512,12 @@ const flashFirmwareBtn = async (item: Firmware) => {
       [{ offset: item.address, path: item.path }],
       { flashMode: selectedMode.value }
     );
-  } catch {
-    message.error(i18n.global.t("flash.flashFailed"));
+  } catch (e) {
+    if (e instanceof Error && e.message === "ESPFLASH_BUSY") {
+      message.warning(i18n.global.t("espflash.busy"));
+    } else {
+      message.error(i18n.global.t("flash.flashFailed"));
+    }
   } finally {
     flashing.value = false;
   }

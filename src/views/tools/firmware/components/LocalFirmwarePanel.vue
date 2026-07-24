@@ -139,8 +139,10 @@ async function onQuickFlash(path: string) {
   } catch (e) {
     if (e instanceof Error && e.message === "NO_PORT") {
       message.warning(t("firmware.noPort"));
+    } else if (e instanceof Error && e.message === "ESPFLASH_BUSY") {
+      message.warning(t("espflash.busy"));
     } else if (e instanceof Error && e.message === "ESPTOOL_BUSY") {
-      message.warning(t("firmware.flashFailed"));
+      message.warning(t("espflash.busy"));
     } else {
       message.error(t("firmware.flashFailed"));
     }

@@ -1,13 +1,14 @@
 import { join } from "@tauri-apps/api/path";
+import type { Ref } from "vue";
 import { getCurrentDir, openFileInExplorer } from "@/utils/common";
-import { runEsptool, runEsptoolWithStdout } from "@/utils/esptoolCli";
+import { eraseFlash as eraseFlashOp, readFlash } from "@/utils/espflash";
 import { usePortStore } from "@/stores/port";
 import { nowMs } from "@/utils/datetime";
 import { message } from "ant-design-vue";
 import { useI18n } from "vue-i18n";
 
 /** 擦除整片 Flash、读取整片 Flash */
-export function useFlashQuickActions() {
+export function useFlashQuickActions(baudRate: Ref<string>) {
   const { t } = useI18n();
 
   function ensurePort(): string | null {
@@ -19,19 +20,27 @@ export function useFlashQuickActions() {
     return port;
   }
 
+  function reportError(e: unknown) {
+    if (e instanceof Error && e.message === "ESPFLASH_BUSY") {
+      message.warning(t("espflash.busy"));
+      return;
+    }
+    message.error(t("flash.flashFailed"));
+  }
+
   async function eraseFlash() {
     const port = ensurePort();
     if (!port) {
       return;
     }
     try {
-      await runEsptool(["-p", port, "-b", "115200", "erase-flash"]);
-    } catch {
-      message.error(t("flash.flashFailed"));
+      await eraseFlashOp(port, baudRate.value);
+    } catch (e) {
+      reportError(e);
     }
   }
 
-  async function readFlash() {
+  async function readFlashAll() {
     const port = ensurePort();
     if (!port) {
       return;
@@ -45,21 +54,15 @@ export function useFlashQuickActions() {
     );
 
     try {
-      await runEsptoolWithStdout(
-        ["-p", port, "-b", "460800", "read-flash", "0", "ALL", savePath],
-        (line) => {
-          if (line.includes("Hard resetting via RTS pin...")) {
-            void openFileInExplorer(savePath);
-          }
-        }
-      );
-    } catch {
-      message.error(t("flash.flashFailed"));
+      await readFlash(port, baudRate.value, "0", "ALL", savePath);
+      await openFileInExplorer(savePath);
+    } catch (e) {
+      reportError(e);
     }
   }
 
   return {
     eraseFlash,
-    readFlash,
+    readFlash: readFlashAll,
   };
 }

@@ -168,7 +168,7 @@ function handleOpsError(e: unknown, fallbackKey: string) {
       message.warning(t("partition.noPort"));
       return;
     }
-    if (e.message === "BUSY") {
+    if (e.message === "BUSY" || e.message === "ESPFLASH_BUSY") {
       message.warning(t("partition.opBusy"));
       return;
     }
@@ -191,6 +191,11 @@ async function onReadFromDevice() {
       message.warning(t("partition.badTableOffset"));
     } else if (e instanceof Error && e.message === "EMPTY_PARTITION") {
       message.warning(t("partition.emptyPartition"));
+    } else if (
+      e instanceof Error &&
+      (e.message === "BUSY" || e.message === "ESPFLASH_BUSY")
+    ) {
+      message.warning(t("partition.opBusy"));
     } else {
       message.error(t("partition.readDeviceFailed"));
     }

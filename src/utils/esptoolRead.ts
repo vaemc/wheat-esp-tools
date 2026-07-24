@@ -1,6 +1,6 @@
-import { runEsptoolCollect } from "@/utils/esptoolCli";
+import { readFlash } from "@/utils/espflash";
 
-/** 执行 esptool read-flash 并等待结束 */
+/** 兼容旧调用名：read-flash */
 export async function runEsptoolReadFlash(
   port: string,
   baud: string,
@@ -8,5 +8,5 @@ export async function runEsptoolReadFlash(
   size: string,
   savePath: string
 ): Promise<void> {
-  await runEsptoolCollect(port, baud, "read-flash", [offset, size, savePath]);
+  await readFlash(port, baud, offset, size, savePath);
 }

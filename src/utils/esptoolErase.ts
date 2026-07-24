@@ -1,11 +1,11 @@
-import { runEsptoolCollect } from "@/utils/esptoolCli";
+import { eraseRegion } from "@/utils/espflash";
 
-/** 执行 esptool erase-region 并等待结束 */
+/** 兼容旧调用名：erase-region */
 export async function runEsptoolEraseRegion(
   port: string,
   baud: string,
   offset: string,
   size: string
 ): Promise<void> {
-  await runEsptoolCollect(port, baud, "erase-region", [offset, size]);
+  await eraseRegion(port, baud, offset, size);
 }

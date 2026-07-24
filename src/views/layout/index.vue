@@ -20,6 +20,7 @@
           </router-view>
         </div>
       </a-layout-content>
+      <EspflashProgressBar />
       <footer class="app-terminal">
         <Terminal />
       </footer>
@@ -29,6 +30,7 @@
 <script setup lang="ts">
 import Terminal from "@/components/Terminal.vue";
 import DeviceTopBar from "@/components/DeviceTopBar.vue";
+import EspflashProgressBar from "@/components/EspflashProgressBar.vue";
 import AppSider from "./AppSider.vue";
 </script>
 <style scoped>

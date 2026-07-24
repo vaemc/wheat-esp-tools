@@ -5,7 +5,6 @@ import { FileInfo, Firmware } from "@/model/model";
 import type { SerialPortDetail } from "@/types/serial";
 import {
   isPlausibleChipList,
-  parseChipTypesFromEsptoolOutput,
   runEsptoolChipListProbe,
 } from "@/utils/esptoolChip";
 import { CONFIG_FILENAMES } from "@/utils/path";
@@ -37,19 +36,18 @@ export async function getCurrentDir() {
 
 let cachedChipTypes: string[] | null = null;
 
-/** 通过 esptool --chip q 报错信息解析当前版本支持的芯片（大写，如 ESP32S3） */
+/** 从内置 espflash 获取支持的芯片列表（大写，如 ESP32S3） */
 export async function getChipTypeList(): Promise<string[]> {
   if (cachedChipTypes && isPlausibleChipList(cachedChipTypes)) {
     return cachedChipTypes;
   }
 
-  const output = await runEsptoolChipListProbe();
-  const chips = parseChipTypesFromEsptoolOutput(output);
+  const chips = await runEsptoolChipListProbe();
 
   if (!isPlausibleChipList(chips)) {
     cachedChipTypes = null;
     throw new Error(
-      `Failed to parse chip list from esptool (${chips.length} chips)`
+      `Failed to load chip list from espflash (${chips.length} chips)`
     );
   }
 

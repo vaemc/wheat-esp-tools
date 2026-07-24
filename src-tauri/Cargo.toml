@@ -16,11 +16,13 @@ tauri-build = { version = "2", features = [] }
 tauri = { version = "2", features = [ "protocol-asset"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = { version = "1.0", features = ["preserve_order"] }
-serialport = "4.2.0"
+serialport = "4.7"
 btleplug = "0.12.0"
 tokio = { version = "1.32.0", features = ["rt", "sync", "time", "macros"] }
 futures = "0.3.28"
 esp-nvs-partition-tool = "0.1"
+espflash = { version = "4.5", default-features = false, features = ["serialport"] }
+strum = { version = "0.28", features = ["derive"] }
 tauri-plugin-shell = "2"
 tauri-plugin-dialog = "2"
 tauri-plugin-fs = "2"
