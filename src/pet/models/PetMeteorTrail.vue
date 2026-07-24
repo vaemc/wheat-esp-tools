@@ -80,7 +80,7 @@ function emitBurst(cx: number, cy: number, dt: number) {
   const spd = Math.max(0, Math.min(1, props.speed));
   if (spd < 0.04) return;
 
-  const rate = (16 + spd * 40) * st.density * dt * 60;
+  const rate = (9 + spd * 22) * st.density * dt * 60;
   emitCarry += rate;
   const n = Math.floor(emitCarry);
   emitCarry -= n;
@@ -94,35 +94,35 @@ function emitBurst(cx: number, cy: number, dt: number) {
     const fan = (Math.random() - 0.5) * st.fan * (0.55 + spd);
     const c = Math.cos(rad + fan);
     const s = Math.sin(rad + fan);
-    const push = (120 + spd * 380) * (0.5 + Math.random() * 0.7);
+    const push = (90 + spd * 260) * (0.45 + Math.random() * 0.7);
     const life = rand(st.lifeMs[0], st.lifeMs[1]) / 1000;
     particles.push({
       x: cx + cos * rand(-3, 8) + (Math.random() - 0.5) * 6,
       y: cy + sin * rand(-3, 8) + (Math.random() - 0.5) * 6,
-      vx: c * push,
-      vy: s * push,
+      vx: c * push + (Math.random() - 0.5) * 18,
+      vy: s * push + (Math.random() - 0.5) * 18,
       life,
       maxLife: life,
-      size: rand(1.4, 3.4 + spd * 1.8),
+      size: rand(1.1, 2.6 + spd * 1.2),
       shape: pickShape(st.shapes),
       hueShift: Math.random(),
     });
   }
 
-  // Dense core near the head (comet nucleus)
-  if (spd > 0.2) {
-    const coreN = Math.floor(3 + spd * 7 * st.density);
+  // Sparse core near the head
+  if (spd > 0.28) {
+    const coreN = Math.floor(1 + spd * 3.5 * st.density);
     for (let i = 0; i < coreN; i++) {
-      const t = Math.random() * 0.4;
-      const life = rand(0.28, 0.55);
+      const t = Math.random() * 0.35;
+      const life = rand(0.18, 0.38);
       particles.push({
-        x: cx + cos * t * 28 + (Math.random() - 0.5) * 4,
-        y: cy + sin * t * 28 + (Math.random() - 0.5) * 4,
-        vx: cos * rand(55, 150) + (Math.random() - 0.5) * 32,
-        vy: sin * rand(55, 150) + (Math.random() - 0.5) * 32,
+        x: cx + cos * t * 22 + (Math.random() - 0.5) * 4,
+        y: cy + sin * t * 22 + (Math.random() - 0.5) * 4,
+        vx: cos * rand(40, 110) + (Math.random() - 0.5) * 40,
+        vy: sin * rand(40, 110) + (Math.random() - 0.5) * 40,
         life,
         maxLife: life,
-        size: rand(1.8, 4.0),
+        size: rand(1.2, 2.8),
         shape: Math.random() > 0.55 ? "dot" : pickShape(st.shapes),
         hueShift: Math.random(),
       });
@@ -136,13 +136,13 @@ function emitWormholeBurst(kind: "out" | "in") {
   const cx = cssW * 0.5;
   const cy = cssH * 0.5;
   const st = props.palette;
-  const count = kind === "out" ? 56 : 48;
+  const count = kind === "out" ? 36 : 30;
   fading.value = true;
   for (let i = 0; i < count; i++) {
     const ang = (Math.PI * 2 * i) / count + rand(-0.12, 0.12);
     const speed =
-      kind === "out" ? rand(90, 240) : rand(40, 140);
-    const life = kind === "out" ? rand(0.45, 0.95) : rand(0.55, 1.1);
+      kind === "out" ? rand(70, 180) : rand(30, 110);
+    const life = kind === "out" ? rand(0.32, 0.7) : rand(0.4, 0.85);
     particles.push({
       x: cx + rand(-6, 6),
       y: cy + (kind === "in" ? rand(-40, -10) : rand(-6, 6)),
@@ -153,7 +153,7 @@ function emitWormholeBurst(kind: "out" | "in") {
           : Math.abs(Math.sin(ang)) * speed + rand(30, 90),
       life,
       maxLife: life,
-      size: rand(1.6, 3.8),
+      size: rand(1.2, 2.8),
       shape: pickShape(st.shapes),
       hueShift: Math.random(),
     });
@@ -243,8 +243,8 @@ function drawCometHead(
   if (spd < 0.05) return;
   const st = props.palette;
   const rad = (props.angle * Math.PI) / 180;
-  const len = (28 + spd * 50) * st.headScale;
-  const thick = 5 + spd * 9;
+  const len = (22 + spd * 36) * st.headScale;
+  const thick = 3.5 + spd * 6;
 
   ctx.save();
   ctx.translate(cx, cy);
@@ -252,8 +252,8 @@ function drawCometHead(
 
   // Wide outer bloom (very soft)
   const bloom = ctx.createRadialGradient(0, 0, 0, 0, 0, thick * 3.2);
-  bloom.addColorStop(0, hexAlpha(st.head, 0.18 + spd * 0.12));
-  bloom.addColorStop(0.35, hexAlpha(st.core, 0.12));
+  bloom.addColorStop(0, hexAlpha(st.head, 0.1 + spd * 0.08));
+  bloom.addColorStop(0.35, hexAlpha(st.core, 0.07));
   bloom.addColorStop(1, hexAlpha(st.soft, 0));
   ctx.globalAlpha = 1;
   ctx.fillStyle = bloom;
@@ -263,10 +263,10 @@ function drawCometHead(
 
   // Soft tapered ribbon along trail axis
   const ribbon = ctx.createLinearGradient(0, 0, len, 0);
-  ribbon.addColorStop(0, hexAlpha(st.head, 0.28 + spd * 0.15));
-  ribbon.addColorStop(0.15, hexAlpha(st.core, 0.28));
-  ribbon.addColorStop(0.45, hexAlpha(st.mid, 0.14));
-  ribbon.addColorStop(0.75, hexAlpha(st.soft, 0.05));
+  ribbon.addColorStop(0, hexAlpha(st.head, 0.16 + spd * 0.1));
+  ribbon.addColorStop(0.15, hexAlpha(st.core, 0.16));
+  ribbon.addColorStop(0.45, hexAlpha(st.mid, 0.08));
+  ribbon.addColorStop(0.75, hexAlpha(st.soft, 0.03));
   ribbon.addColorStop(1, hexAlpha(st.soft, 0));
   ctx.fillStyle = ribbon;
   ctx.beginPath();
@@ -278,9 +278,9 @@ function drawCometHead(
 
   // Feathered edge blur pass
   ctx.shadowColor = st.glow;
-  ctx.shadowBlur = 14 + spd * 10;
-  ctx.globalAlpha = 0.22 + spd * 0.12;
-  ctx.fillStyle = hexAlpha(st.core, 0.32);
+  ctx.shadowBlur = 10 + spd * 6;
+  ctx.globalAlpha = 0.12 + spd * 0.08;
+  ctx.fillStyle = hexAlpha(st.core, 0.22);
   ctx.beginPath();
   ctx.ellipse(len * 0.18, 0, len * 0.28, thick * 0.75, 0, 0, Math.PI * 2);
   ctx.fill();
@@ -288,8 +288,8 @@ function drawCometHead(
 
   // Soft core glow (dimmer ? avoid blinding white center)
   const core = ctx.createRadialGradient(2, 0, 0, 2, 0, 6 + spd * 5);
-  core.addColorStop(0, hexAlpha(st.head, 0.35 + spd * 0.15));
-  core.addColorStop(0.35, hexAlpha(st.core, 0.22));
+  core.addColorStop(0, hexAlpha(st.head, 0.22 + spd * 0.1));
+  core.addColorStop(0.35, hexAlpha(st.core, 0.14));
   core.addColorStop(1, hexAlpha(st.core, 0));
   ctx.globalAlpha = 1;
   ctx.fillStyle = core;
@@ -314,7 +314,7 @@ function drawGroundGlow(
   const g = ctx.createRadialGradient(cx, gy, 0, cx, gy, rx);
   g.addColorStop(0, st.ground);
   g.addColorStop(1, "rgba(0,0,0,0)");
-  ctx.globalAlpha = 0.35 + spd * 0.35;
+  ctx.globalAlpha = 0.2 + spd * 0.22;
   ctx.fillStyle = g;
   ctx.beginPath();
   ctx.ellipse(cx, gy, rx, ry, 0, 0, Math.PI * 2);
@@ -348,21 +348,23 @@ function tick(now: number) {
     // Soft release: brief sparkle fade, not a hard cut
     if (!fading.value) {
       fading.value = true;
-      if (particles.length > 72) {
-        particles.splice(0, particles.length - 72);
+      if (particles.length > 48) {
+        particles.splice(0, particles.length - 48);
       }
       for (const p of particles) {
-        p.life = Math.min(p.life, rand(0.22, 0.42));
-        p.maxLife = Math.max(p.maxLife * 0.55, p.life);
-        p.vx *= 0.55;
-        p.vy *= 0.55;
+        p.life = Math.min(p.life, rand(0.12, 0.28));
+        p.maxLife = Math.max(p.maxLife * 0.4, p.life);
+        p.vx *= 0.42;
+        p.vy *= 0.42;
+        p.vx += (Math.random() - 0.5) * 70;
+        p.vy += (Math.random() - 0.5) * 70;
       }
     }
   } else {
     fading.value = false;
   }
 
-  const lifeMul = props.active ? 1 : 1.65;
+  const lifeMul = props.active ? 1.15 : 2.2;
   for (let i = particles.length - 1; i >= 0; i--) {
     const p = particles[i]!;
     p.life -= dt * lifeMul;
@@ -370,14 +372,18 @@ function tick(now: number) {
       particles.splice(i, 1);
       continue;
     }
+    const age = 1 - p.life / p.maxLife;
+    const scatter = age * age;
+    p.vx += (Math.random() - 0.5) * 55 * scatter * dt;
+    p.vy += ((Math.random() - 0.5) * 55 - 28) * scatter * dt;
     p.x += p.vx * dt;
     p.y += p.vy * dt;
-    p.vx *= props.active ? 0.968 : 0.92;
-    p.vy *= props.active ? 0.968 : 0.92;
+    p.vx *= props.active ? 0.955 : 0.88;
+    p.vy *= props.active ? 0.955 : 0.88;
   }
 
-  if (particles.length > 320) {
-    particles.splice(0, particles.length - 320);
+  if (particles.length > 180) {
+    particles.splice(0, particles.length - 180);
   }
 
   ctx.clearRect(0, 0, cssW, cssH);
@@ -390,20 +396,20 @@ function tick(now: number) {
   ctx.save();
   ctx.globalCompositeOperation = "lighter";
   drawGroundGlow(ctx, cx, cy, spd);
-  drawCometHead(ctx, cx, cy, props.active ? spd : spd * 0.35);
+  drawCometHead(ctx, cx, cy, props.active ? spd : spd * 0.28);
 
   for (const p of particles) {
     const age = 1 - p.life / p.maxLife;
-    // Softer fade curve ? linger mid-life, ease out
-    const alpha = Math.pow(1 - age, 1.35) * (0.45 + (1 - age) * 0.4);
-    const size = p.size * (1 - age * 0.4);
+    const dissolve = age < 0.55 ? 1 - age * 0.55 : Math.pow(1 - age, 2.4);
+    const alpha = dissolve * (0.38 + (1 - age) * 0.32);
+    const size = p.size * (1 - age * 0.72) * (0.85 + dissolve * 0.15);
     const col = colorAt(p, age);
-    ctx.globalAlpha = alpha * 0.2;
+    ctx.globalAlpha = alpha * 0.12;
     ctx.fillStyle = props.palette.glow;
     ctx.beginPath();
-    ctx.arc(p.x, p.y, size * 3.4, 0, Math.PI * 2);
+    ctx.arc(p.x, p.y, size * 2.6, 0, Math.PI * 2);
     ctx.fill();
-    drawShape(ctx, p.shape, p.x, p.y, size, col, alpha * 0.9);
+    drawShape(ctx, p.shape, p.x, p.y, size, col, alpha * 0.78);
   }
   ctx.restore();
 

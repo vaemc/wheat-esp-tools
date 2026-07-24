@@ -2,10 +2,11 @@
   <div
     class="orbit-stage"
     :data-model="model"
+    :data-bg="showBg ? '1' : '0'"
     :style="stageStyle"
     @wheel.prevent="onWheel"
   >
-    <div class="stage-lights" aria-hidden="true">
+    <div class="stage-lights" v-if="showBg" aria-hidden="true">
       <i class="light-spot light-spot--key" />
       <i class="light-spot light-spot--rim" />
       <i class="light-spot light-spot--fill" />
@@ -16,6 +17,7 @@
     <template v-if="model === 'chip'">
       <div
         class="orbit-pad"
+        :data-bg="showBg ? '1' : '0'"
         @pointerdown="onDown"
         @pointermove="onMove"
         @pointerup="onUp"
@@ -38,7 +40,11 @@
       </div>
     </template>
 
-    <div v-else-if="model === 'toon'" class="fig-pad toon-pad">
+    <div
+      v-else-if="model === 'toon'"
+      class="fig-pad toon-pad"
+      :data-bg="showBg ? '1' : '0'"
+    >
       <div class="fig-floor" />
       <div class="fig-stage">
         <div class="fig-zoom" :style="figZoomStyle">
@@ -56,8 +62,9 @@
     </div>
 
     <div
-      v-else-if="model === 'vrm'"
+      v-else-if="model === 'vrm' && vrmSrc"
       class="orbit-pad vrm-orbit"
+      :data-bg="showBg ? '1' : '0'"
       @pointerdown="onDown"
       @pointermove="onMove"
       @pointerup="onUp"
@@ -68,18 +75,24 @@
       <div class="vrm-orbit-stage">
         <div class="vrm-orbit-zoom" :style="figZoomStyle">
           <PetVrmModel
+            :src="vrmSrc"
             :mood="mood"
             :gaze="previewGaze"
             :motion="previewMotion"
             :orbit-yaw="yaw"
             :orbit-pitch="pitch"
+            :error-text="vrmErrorText"
           />
         </div>
       </div>
       <p v-if="hint" class="orbit-hint">{{ hint }}</p>
     </div>
 
-    <div v-else class="fig-pad">
+    <div v-else-if="model === 'vrm'" class="vrm-empty">
+      <p v-if="hint" class="orbit-hint">{{ hint }}</p>
+    </div>
+
+    <div v-else class="fig-pad" :data-bg="showBg ? '1' : '0'">
       <div class="fig-floor" />
       <div class="fig-stage">
         <div class="fig-zoom" :style="figZoomStyle">
@@ -89,6 +102,7 @@
             :gaze="{ x: 0, y: 0 }"
             :motion="previewMotion"
             :fig-art-id="figArtId"
+            :show-shadow="false"
           />
         </div>
       </div>
@@ -99,6 +113,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, watch } from "vue";
+import { useI18n } from "vue-i18n";
 import { PetChipModel, PetFigSciModel, PetToonModel, PetVrmModel } from "@/pet/models";
 import type { PetIdleMotion } from "@/pet/motions";
 import type { PetFigArtId, PetModelKind, PetSkinVisual } from "@/pet/skins";
@@ -109,6 +124,9 @@ import {
 import type { PetMood } from "@/pet/types";
 import type { PetToonDecorId } from "@/pet/skins/themes";
 
+const { t } = useI18n();
+const vrmErrorText = computed(() => t("pet.vrmLoadFail"));
+
 const props = withDefaults(
   defineProps<{
     model: PetModelKind;
@@ -117,12 +135,16 @@ const props = withDefaults(
     hint?: string;
     figArtId?: PetFigArtId | null;
     toonDecor?: PetToonDecorId | null;
+    vrmSrc?: string | null;
+    showBg?: boolean;
   }>(),
   {
     mood: "idle",
     hint: "",
     figArtId: null,
     toonDecor: null,
+    vrmSrc: null,
+    showBg: true,
   }
 );
 
@@ -433,7 +455,6 @@ onUnmounted(() => {
   }
 }
 
-.orbit-pad,
 .fig-pad {
   position: absolute;
   inset: 0;
@@ -454,21 +475,50 @@ onUnmounted(() => {
     linear-gradient(180deg, rgba(18, 24, 36, 0.55), rgba(4, 6, 12, 0.82));
   border: 1px solid rgba(255, 255, 255, 0.07);
   z-index: 1;
+  container-type: size;
+}
+
+.fig-pad[data-bg="0"] {
+  background: transparent;
+  border-color: transparent;
 }
 
 .orbit-pad {
+  position: absolute;
+  inset: 0;
+  user-select: none;
+  overflow: hidden;
+  border-radius: 12px;
+  background:
+    radial-gradient(
+      ellipse at 50% 28%,
+      color-mix(in srgb, var(--orbit-accent, #00e5ff) 14%, transparent),
+      transparent 46%
+    ),
+    radial-gradient(
+      ellipse at 50% 78%,
+      color-mix(in srgb, var(--orbit-accent, #00e5ff) 18%, transparent),
+      transparent 55%
+    ),
+    linear-gradient(180deg, rgba(18, 24, 36, 0.55), rgba(4, 6, 12, 0.82));
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  z-index: 1;
   cursor: grab;
   touch-action: none;
   perspective: 920px;
   perspective-origin: 50% 42%;
-  overflow: hidden;
   transform-style: preserve-3d;
   container-type: size;
-  border-radius: 12px;
 }
 
-.orbit-pad:active {
-  cursor: grabbing;
+.orbit-pad[data-bg="0"] {
+  background: transparent;
+  border-color: transparent;
+}
+
+.orbit-pad[data-bg="0"] .orbit-floor,
+.fig-pad[data-bg="0"] .fig-floor {
+  opacity: 0;
 }
 
 .orbit-floor,
@@ -491,10 +541,10 @@ onUnmounted(() => {
 }
 
 .fig-floor {
-  bottom: 12%;
-  left: 28%;
-  right: 28%;
-  height: 22px;
+  bottom: 8%;
+  left: 26%;
+  right: 26%;
+  height: 18px;
 }
 
 .orbit-scene {
@@ -535,12 +585,20 @@ onUnmounted(() => {
   position: absolute;
   inset: 0;
   display: grid;
-  place-items: center;
+  place-items: end center;
+  padding: 6px 10px 34px;
+  box-sizing: border-box;
   z-index: 1;
 }
 
 .fig-zoom {
-  transform-origin: 50% 85%;
+  --fig-fit-h: min(450px, calc(100cqh - 42px));
+  --fig-fit-w: calc(var(--fig-fit-h) * 288 / 473);
+  width: min(270px, 92cqw, var(--fig-fit-w));
+  height: calc(min(270px, 92cqw, var(--fig-fit-w)) * 473 / 288);
+  max-height: var(--fig-fit-h);
+  transform-origin: 50% 100%;
+  display: grid;
 }
 
 .fig-stage :deep(.fig-root) {
@@ -548,8 +606,8 @@ onUnmounted(() => {
   left: auto;
   top: auto;
   margin: 0;
-  width: 270px;
-  height: 450px;
+  width: 100%;
+  height: 100%;
   transform: none;
 }
 
@@ -558,13 +616,33 @@ onUnmounted(() => {
   left: auto;
   top: auto;
   margin: 0;
-  width: 168px;
-  height: 168px;
+  width: min(168px, 70cqmin);
+  height: min(168px, 70cqmin);
+}
+
+.toon-pad .fig-stage {
+  place-items: center;
+  padding: 8px 10px 32px;
+}
+
+.toon-pad .fig-zoom {
+  width: auto;
+  height: auto;
+  max-height: none;
 }
 
 .orbit-pad.vrm-orbit {
   perspective: none;
   transform-style: flat;
+}
+
+.vrm-empty {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+  z-index: 1;
 }
 
 .vrm-orbit-stage {

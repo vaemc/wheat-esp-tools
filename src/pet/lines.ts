@@ -1,6 +1,10 @@
 import type { PetModelKind } from "./skins/types";
 import type { PetTone } from "./types";
-import { flavorPetLine, type PetPersonality } from "./personality";
+import {
+  flavorPetLine,
+  pickPersonalityLine,
+  type PetPersonality,
+} from "./personality";
 
 /** 芯宠：机械 / 科技感 */
 const CHIP_CUTE_ZH = [
@@ -363,20 +367,25 @@ function carePool(): string[] {
   return pickLocale() === "zh" ? CARE_ZH : CARE_EN;
 }
 
-/** 随机吐槽；按角色气质分流；偶尔插入关心提醒 */
 export function pickPetLine(
   tone: PetTone,
   avoid: string | null = null,
   personality: PetPersonality = "sunny",
   model: PetModelKind = "chip"
 ): string {
-  const useCare = Math.random() < 0.22;
+  const lang = pickLocale();
+  if (Math.random() < 0.4) {
+    const special = pickPersonalityLine(personality, lang);
+    if (!avoid || special !== avoid) return special;
+  }
+
+  const useCare = Math.random() < 0.18;
   const pool = useCare
     ? [...carePool(), ...poolFor(tone, model)]
     : poolFor(tone, model);
   if (pool.length === 0) return "...";
   if (pool.length === 1) {
-    return flavorPetLine(pool[0]!, personality, pickLocale());
+    return flavorPetLine(pool[0]!, personality, lang);
   }
 
   let next = pool[Math.floor(Math.random() * pool.length)]!;
@@ -385,10 +394,9 @@ export function pickPetLine(
     next = pool[Math.floor(Math.random() * pool.length)]!;
     guard += 1;
   }
-  return flavorPetLine(next, personality, pickLocale());
+  return flavorPetLine(next, personality, lang);
 }
 
-/** 连点彩蛋台词 */
 export function pickTapEggLine(
   model: PetModelKind,
   personality: PetPersonality = "sunny"
@@ -398,49 +406,57 @@ export function pickTapEggLine(
     model === "chip"
       ? zh
         ? [
-            "连点检测：过载！散热风扇想象中已转起来。",
-            "输入中断风暴！缓冲队列：欢乐溢出。",
-            "哇——别戳啦，寄存器都要抖出火花了！",
+            "喂喂，戳太快了！我差点儿原地冒烟～",
+            "好啦好啦，收到你的热情了，让我蹦一下！",
+            "再点我就真的要抖出火花了啊！",
+            "哎——被你连戳得开心起来了，跟你疯一会儿！",
           ]
         : [
-            "Multi-tap overload! Imaginary fan spun up.",
-            "IRQ storm! Joy buffer overflow.",
-            "Stop poking — registers are sparkling!",
+            "Hey—too fast! I almost sparked~",
+            "Alright, message received. Let me bounce!",
+            "Keep poking and I'll really throw sparks!",
+            "Okay okay—you got me hyped. One wild spin!",
           ]
       : model === "toon"
         ? zh
           ? [
-              "点这么快是想看我摔倒吗？！看招——",
-              "连点彩蛋触发！今天的我格外能蹦～",
-              "好啦好啦，表演加强版来了！",
+              "点这么急？是想看我原地翻滚吗？那来吧！",
+              "哈哈，抓到你手痒了——看我狐火加速！",
+              "好啦好啦，被你戳醒了，加强版表演上桌！",
+              "轻点轻点……算了，陪你闹一场！",
             ]
           : [
-              "Tapping that fast? Trying to trip me?!",
-              "Tap egg unlocked! Extra bounce mode~",
-              "Fine — enhanced performance incoming!",
+              "That impatient? Want a tumble? Fine—watch!",
+              "Heh, itchy fingers—foxfire turbo on!",
+              "Okay, you woke me up. Enhanced show time!",
+              "Easy… nah, let's goof off together!",
             ]
         : model === "vrm"
           ? zh
             ? [
-                "哎呀……点得这么急，是想让我多陪你一会儿吗？",
-                "轻轻的就好……我听见了，在呢。",
+                "嗯……点得这么急，是想让我多陪你一会儿吗？",
+                "轻轻的就好……我听见了，一直在呢。",
                 "好啦，被你戳醒了。要不要先喝口水再继续？",
+                "别急嘛，我跟你一起慢一点，好不好？",
               ]
             : [
-                "So many taps… want me closer for a bit?",
-                "Gently… I hear you. I'm here.",
+                "Tapping so fast… want me closer for a bit?",
+                "Gently… I hear you. I've been here.",
                 "Alright, I'm awake. Water first, then code?",
+                "No rush—shall we slow down together?",
               ]
           : zh
             ? [
                 "哎呀连续点我……是想被我盯着喝水吗？",
-                "连点彩蛋！那我就认真提醒你：眨眨眼～",
+                "戳这么多次，那我就认真提醒你：眨眨眼～",
                 "好啦，被你戳醒了。起来活动一下吧。",
+                "手别这么忙啦，先跟我歇三秒，嗯？",
               ]
             : [
-                "So many taps… want a water reminder?",
-                "Tap egg! Blink for me, seriously.",
+                "Keep tapping… want a water stare-down?",
+                "That many pokes? Fine—blink for me, seriously.",
                 "Alright, I'm awake. Stretch a little.",
+                "Hands off the frenzy—three-second break with me?",
               ];
   const line = lines[Math.floor(Math.random() * lines.length)]!;
   return flavorPetLine(line, personality, pickLocale());

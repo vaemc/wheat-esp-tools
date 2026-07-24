@@ -54,7 +54,6 @@ export default defineConfig(async () => ({
   },
   // to make use of `TAURI_ENV_*` and other env variables
   envPrefix: ["VITE_", "TAURI_"],
-  assetsInclude: ["**/*.vrm"],
   build: {
     commonjsOptions: {
       include: [/lv_font_conv/, /node_modules/],

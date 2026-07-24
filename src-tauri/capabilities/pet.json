@@ -1,6 +1,6 @@
 {
   "identifier": "pet",
-  "description": "Desktop pet + bubble: window/event only (no fs/shell/dialog)",
+  "description": "Desktop pet + bubble: window/event + read user VRM from AppData",
   "local": true,
   "windows": ["pet", "pet-bubble"],
   "permissions": [
@@ -19,6 +19,20 @@
     "core:window:allow-outer-size",
     "core:window:allow-scale-factor",
     "core:window:allow-current-monitor",
-    "core:window:allow-cursor-position"
+    "core:window:allow-cursor-position",
+    "fs:allow-exists",
+    "fs:allow-read-file",
+    "fs:allow-mkdir",
+    "fs:allow-write-file",
+    "fs:allow-remove",
+    "fs:allow-size",
+    {
+      "identifier": "fs:scope",
+      "allow": [
+        { "path": "$APPDATA/**" },
+        { "path": "$APPDATA/pet-vrm/**" },
+        { "path": "$RESOURCE/**" }
+      ]
+    }
   ]
 }

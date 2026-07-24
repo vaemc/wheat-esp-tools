@@ -6,11 +6,6 @@ declare module "*.vue" {
   export default component;
 }
 
-declare module "*.vrm?url" {
-  const src: string;
-  export default src;
-}
-
 /** Node moduleResolution 无法解析该包 exports.types，在此补声明 */
 declare module "libopus-wasm" {
   export const Application: {

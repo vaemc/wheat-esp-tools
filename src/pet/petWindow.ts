@@ -5,6 +5,7 @@ import { loadPetSettings } from "./settings";
 import { resolveAppearance } from "./skins";
 import { petWindowSize } from "./sizes";
 import { PET_WINDOW_LABEL } from "./types";
+import { isPetVrmReady } from "./vrmStorage";
 
 function petUrl(): string {
   if (import.meta.env.DEV) {
@@ -133,7 +134,7 @@ async function waitWebviewReady(
 
 export async function syncPetWindow(): Promise<void> {
   const settings = loadPetSettings();
-  if (settings.enabled) {
+  if (settings.enabled && isPetVrmReady(settings)) {
     await openPetWindow();
   } else {
     await closePetWindow();

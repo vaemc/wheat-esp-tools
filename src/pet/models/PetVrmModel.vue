@@ -1,12 +1,12 @@
 <template>
   <div class="vrm-wrap" aria-hidden="true">
     <canvas ref="canvasRef" class="vrm-canvas" />
-    <div v-if="loadError" class="vrm-fallback">乐心</div>
+    <div v-if="src && loadError" class="vrm-fallback">{{ displayError }}</div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref, watch } from "vue";
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from "vue";
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { VRMLoaderPlugin, VRMUtils, type VRM } from "@pixiv/three-vrm";
@@ -17,10 +17,16 @@ import {
   type BoneEuler,
   type VrmBoneName,
 } from "../vrmPoses";
-import gimoUrl from "../vrm_mode/GimoZard_VRM.vrm?url";
+
+function defaultVrmLoadFailText(): string {
+  return localStorage.getItem("language") === "en"
+    ? "Failed to load model"
+    : "模型加载失败";
+}
 
 const props = withDefaults(
   defineProps<{
+    src?: string | null;
     mood: PetMood;
     gaze: { x: number; y: number };
     motion?: PetIdleMotion;
@@ -29,19 +35,25 @@ const props = withDefaults(
     faceYaw?: number;
     orbitYaw?: number;
     orbitPitch?: number;
+    errorText?: string;
   }>(),
   {
+    src: null,
     motion: "idle-float",
     blinking: false,
     lifting: false,
     faceYaw: 0,
     orbitYaw: 0,
     orbitPitch: 8,
+    errorText: undefined,
   }
 );
 
 const canvasRef = ref<HTMLCanvasElement | null>(null);
 const loadError = ref(false);
+const displayError = computed(
+  () => props.errorText?.trim() || defaultVrmLoadFailText()
+);
 
 let renderer: THREE.WebGLRenderer | null = null;
 let scene: THREE.Scene | null = null;
@@ -56,6 +68,7 @@ let lastTs = 0;
 let disposed = false;
 let clockT = 0;
 let ro: ResizeObserver | null = null;
+let loadGen = 0;
 
 const FACE_FRONT = 0;
 
@@ -85,8 +98,6 @@ const targetQ = new THREE.Quaternion();
 const targetE = new THREE.Euler(0, 0, 0, "XYZ");
 
 function boneNode(name: VrmBoneName) {
-  // 只用 normalized：autoUpdate 会把 normalized 同步到 raw。
-  // 若改 raw，下一帧 humanoid.update() 会被 T-pose 覆盖。
   return vrm?.humanoid?.getNormalizedBoneNode(name) ?? null;
 }
 
@@ -129,7 +140,7 @@ function fitCameraToVrm(model: VRM) {
   const height = Math.max(0.2, size.y);
   const width = Math.max(0.1, size.x);
   modelHeight = height;
-  cameraDist = Math.max(height * 2.05, width * 2.6);
+  cameraDist = Math.max(height * 2.35, width * 2.9);
 
   camera.fov = 32;
   camera.near = Math.max(0.05, cameraDist / 100);
@@ -180,7 +191,6 @@ const lookTarget = new THREE.Vector3();
 
 function applyLookAt() {
   if (!vrm?.lookAt || props.lifting || !modelRoot) return;
-  // 仅眼球注视：目标夹在脸前方小范围内，不拧头骨
   const gx = Math.max(-1, Math.min(1, props.gaze.x / 2.2));
   const gy = Math.max(-1, Math.min(1, props.gaze.y / 2.2));
   lookTarget.set(gx * 0.55, modelHeight * 0.72 - gy * 0.35, 1.35);
@@ -235,9 +245,60 @@ function resizeToCanvas() {
   camera.updateProjectionMatrix();
 }
 
-async function boot() {
+function disposeVrm() {
+  if (vrm) {
+    modelRoot?.remove(vrm.scene);
+    VRMUtils.deepDispose(vrm.scene);
+    vrm = null;
+  }
+  for (const k of Object.keys(smoothedQ)) {
+    delete smoothedQ[k as VrmBoneName];
+  }
+}
+
+async function loadModel(url: string | null | undefined) {
+  const gen = ++loadGen;
+  disposeVrm();
+  loadError.value = false;
+  if (!url || !scene || !modelRoot) return;
+
+  const loader = new GLTFLoader();
+  loader.register((parser) => new VRMLoaderPlugin(parser));
+
+  try {
+    const gltf = await loader.loadAsync(url);
+    if (disposed || gen !== loadGen) {
+      const loaded = gltf.userData.vrm as VRM | undefined;
+      if (loaded) VRMUtils.deepDispose(loaded.scene);
+      return;
+    }
+    const loaded = gltf.userData.vrm as VRM | undefined;
+    if (!loaded) {
+      loadError.value = true;
+      return;
+    }
+
+    VRMUtils.removeUnnecessaryVertices(gltf.scene);
+    VRMUtils.rotateVRM0(loaded);
+    loaded.humanoid.autoUpdateHumanBones = true;
+
+    vrm = loaded;
+    modelRoot.add(vrm.scene);
+    fitCameraToVrm(vrm);
+
+    clockT = 0;
+    applyPose(1);
+    vrm.humanoid.update();
+    vrm.update(0);
+  } catch (err) {
+    console.warn("[pet] vrm load failed", url, err);
+    if (gen === loadGen) loadError.value = true;
+  }
+}
+
+function ensureScene() {
   const canvas = canvasRef.value;
-  if (!canvas) return;
+  if (!canvas || renderer) return;
 
   const width = Math.max(1, canvas.clientWidth || 180);
   const height = Math.max(1, canvas.clientHeight || 180);
@@ -269,51 +330,16 @@ async function boot() {
   fill.position.set(-0.4, 1.0, 1.8);
   scene.add(fill);
 
-  // 脚下影由预览 CSS .orbit-floor 统一绘制，此处不再加 3D 圆影
-
   modelRoot = new THREE.Group();
   scene.add(modelRoot);
-
-  const loader = new GLTFLoader();
-  loader.register((parser) => new VRMLoaderPlugin(parser));
-
-  try {
-    const gltf = await loader.loadAsync(gimoUrl);
-    if (disposed) return;
-    const loaded = gltf.userData.vrm as VRM | undefined;
-    if (!loaded) {
-      loadError.value = true;
-      return;
-    }
-
-    // combineSkeletons 在部分 VRM0 上会弄坏蒙皮绑定，导致姿态不生效
-    VRMUtils.removeUnnecessaryVertices(gltf.scene);
-    VRMUtils.rotateVRM0(loaded);
-
-    loaded.humanoid.autoUpdateHumanBones = true;
-
-    vrm = loaded;
-    modelRoot.add(vrm.scene);
-    fitCameraToVrm(vrm);
-
-    // 立刻落到休息姿势，避免首帧 T-pose
-    clockT = 0;
-    for (const k of Object.keys(smoothedQ)) {
-      delete smoothedQ[k as VrmBoneName];
-    }
-    applyPose(1);
-    vrm.humanoid.update();
-    vrm.update(0);
-  } catch {
-    loadError.value = true;
-  }
-
-  resizeToCanvas();
-  raf = requestAnimationFrame(tick);
 }
 
-onMounted(() => {
-  void boot();
+onMounted(async () => {
+  ensureScene();
+  await nextTick();
+  resizeToCanvas();
+  void loadModel(props.src);
+  raf = requestAnimationFrame(tick);
   const canvas = canvasRef.value;
   if (canvas && typeof ResizeObserver !== "undefined") {
     ro = new ResizeObserver(() => resizeToCanvas());
@@ -323,20 +349,24 @@ onMounted(() => {
 
 onUnmounted(() => {
   disposed = true;
+  loadGen += 1;
   ro?.disconnect();
   ro = null;
   if (raf) cancelAnimationFrame(raf);
-  if (vrm) {
-    modelRoot?.remove(vrm.scene);
-    VRMUtils.deepDispose(vrm.scene);
-    vrm = null;
-  }
+  disposeVrm();
   renderer?.dispose();
   renderer = null;
   scene = null;
   camera = null;
   modelRoot = null;
 });
+
+watch(
+  () => props.src,
+  (next) => {
+    void loadModel(next);
+  }
+);
 
 watch(
   () => [props.orbitYaw, props.orbitPitch],
@@ -376,8 +406,11 @@ watch(
   inset: 0;
   display: grid;
   place-items: center;
+  padding: 12px;
+  text-align: center;
   color: #9adfff;
-  font-size: 14px;
-  opacity: 0.8;
+  font-size: 13px;
+  line-height: 1.45;
+  opacity: 0.88;
 }
 </style>

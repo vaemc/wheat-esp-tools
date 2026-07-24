@@ -7,7 +7,7 @@
     :style="rootVars"
     aria-hidden="true"
   >
-    <i class="fig-shadow" />
+    <i v-if="showShadow" class="fig-shadow" />
     <div class="fig-bob">
       <img class="fig-art" :src="artSrc" alt="" draggable="false" />
       <span v-if="mood === 'sleep'" class="fig-zzz">z</span>
@@ -52,10 +52,12 @@ const props = withDefaults(
     gaze: { x: number; y: number };
     motion?: PetIdleMotion;
     figArtId?: PetFigArtId | null;
+    showShadow?: boolean;
   }>(),
   {
     motion: "idle-float",
     figArtId: "sunny",
+    showShadow: true,
   }
 );
 
@@ -81,8 +83,10 @@ const rootVars = computed(
   width: 100%;
   height: 100%;
   display: grid;
-  place-items: end center;
-  overflow: visible;
+  place-items: center;
+  box-sizing: border-box;
+  padding: 2% 3% 4%;
+  overflow: hidden;
   pointer-events: none;
   user-select: none;
 }
@@ -91,7 +95,7 @@ const rootVars = computed(
   position: absolute;
   left: 24%;
   right: 24%;
-  bottom: 0;
+  bottom: 3%;
   height: 8px;
   border-radius: 50%;
   background: radial-gradient(

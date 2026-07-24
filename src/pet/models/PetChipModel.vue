@@ -346,8 +346,8 @@ const pins: PinDef[] = [
   top: 50%;
   width: var(--body);
   height: var(--body);
-  margin: calc(var(--body-half) * -1) 0 0 calc(var(--body-half) * -1);
-  transform: rotateY(-32deg) rotateX(22deg);
+  margin: 0;
+  transform: translate(-50%, -50%) rotateY(-32deg) rotateX(22deg);
   transform-style: preserve-3d;
   z-index: 1;
 }

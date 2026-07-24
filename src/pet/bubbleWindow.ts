@@ -14,6 +14,7 @@ import {
   PET_BUBBLE_H_TALL,
   PET_BUBBLE_W,
   PET_BUBBLE_W_WIDE,
+  petBodyBox,
   petBubbleAnchor,
 } from "./sizes";
 import { loadPetSettings } from "./settings";
@@ -124,12 +125,15 @@ async function resolveBubblePlacement(
   const gap = PET_BUBBLE_GAP;
   const s = loadPetSettings();
   const model = resolveAppearance(s.modelKind, s.themeId).model;
+  const body = petBodyBox(model, s.zoomPercent);
   const anchor = petBubbleAnchor(model, s.zoomPercent);
-  const halfW = anchor.halfW;
+  const halfW = body.w / 2;
+  const halfH = body.h / 2;
   const petCenterX = outer.x + size.width / 2;
   const petCenterY = outer.y + size.height / 2;
-  const chipLeft = petCenterX - halfW;
-  const chipRight = petCenterX + halfW;
+  const bodyLeft = petCenterX - halfW;
+  const bodyRight = petCenterX + halfW;
+  const bodyTop = petCenterY - halfH;
   const bubbleAnchorY = petCenterY + anchor.offsetY;
 
   let workLeft = 0;
@@ -146,8 +150,8 @@ async function resolveBubblePlacement(
     workBottom = (wp.y + ws.height) / scale;
   }
 
-  const spaceRight = workRight - chipRight;
-  const spaceLeft = chipLeft - workLeft;
+  const spaceRight = workRight - bodyRight;
+  const spaceLeft = bodyLeft - workLeft;
   const need = bubbleW + gap;
   let side: "left" | "right";
   if (spaceRight >= need) {
@@ -158,7 +162,7 @@ async function resolveBubblePlacement(
     side = spaceRight >= spaceLeft ? "right" : "left";
   }
 
-  let x = side === "right" ? chipRight + gap : chipLeft - gap - bubbleW;
+  let x = side === "right" ? bodyRight + gap : bodyLeft - gap - bubbleW;
   let y = bubbleAnchorY - bubbleH / 2;
 
   const minX = workLeft + 4;
@@ -167,19 +171,31 @@ async function resolveBubblePlacement(
   const maxY = Math.max(minY, workBottom - bubbleH - 4);
 
   const clampedX = clamp(x, minX, maxX);
-  if (side === "left" && clampedX > chipLeft + 8 && spaceRight > 24) {
-    side = "right";
-    x = clamp(chipRight + gap, minX, maxX);
-  } else if (side === "right" && clampedX + bubbleW < chipRight - 8 && spaceLeft > 24) {
-    side = "left";
-    x = clamp(chipLeft - gap - bubbleW, minX, maxX);
+  const overlapsBody =
+    (side === "right" && clampedX < bodyRight + gap - 0.5) ||
+    (side === "left" && clampedX + bubbleW > bodyLeft - gap + 0.5);
+
+  if (overlapsBody) {
+    if (side === "left" && spaceRight >= need) {
+      side = "right";
+      x = clamp(bodyRight + gap, minX, maxX);
+      y = clamp(bubbleAnchorY - bubbleH / 2, minY, maxY);
+    } else if (side === "right" && spaceLeft >= need) {
+      side = "left";
+      x = clamp(bodyLeft - gap - bubbleW, minX, maxX);
+      y = clamp(bubbleAnchorY - bubbleH / 2, minY, maxY);
+    } else {
+      side = "right";
+      x = clamp(petCenterX - bubbleW / 2, minX, maxX);
+      y = clamp(bodyTop - gap - bubbleH, minY, maxY);
+    }
   } else {
     x = clampedX;
+    y = clamp(y, minY, maxY);
   }
-  y = clamp(y, minY, maxY);
 
   if (!Number.isFinite(x) || !Number.isFinite(y)) {
-    x = petCenterX + halfW + gap;
+    x = bodyRight + gap;
     y = bubbleAnchorY - bubbleH / 2;
   }
 

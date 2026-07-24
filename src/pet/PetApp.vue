@@ -28,17 +28,21 @@
         @pointercancel="onPointerUp"
         @contextmenu.prevent="onContextMenu"
       >
+        <i v-show="showHitBounds" class="pet-hit-bounds" aria-hidden="true" />
         <template v-if="activeSkin.model === 'vrm'">
-          <i class="vrm-ground-shadow" aria-hidden="true" />
-          <PetVrmModel
-            class="vrm-host"
-            :mood="mood"
-            :gaze="gaze"
-            :motion="idleMotion"
-            :blinking="blinking"
-            :lifting="isDragging"
-            :face-yaw="vrmFaceYaw"
-          />
+          <template v-if="vrmSrc">
+            <i class="vrm-ground-shadow" aria-hidden="true" />
+            <PetVrmModel
+              class="vrm-host"
+              :src="vrmSrc"
+              :mood="mood"
+              :gaze="gaze"
+              :motion="idleMotion"
+              :blinking="blinking"
+              :lifting="isDragging"
+              :face-yaw="vrmFaceYaw"
+            />
+          </template>
         </template>
         <span
           v-else
@@ -115,6 +119,7 @@ import { loadPetSettings, normalizePetSettings } from "./settings";
 import { resolveAppearance, resolveNickname } from "./skins";
 import { petBodyBox, petWindowSize } from "./sizes";
 import { resolveTrailStyle } from "./trailStyles";
+import { resolvePetVrmSrc } from "./vrmStorage";
 import {
   PET_INTRO_EVENT,
   PET_SETTINGS_EVENT,
@@ -140,6 +145,7 @@ const TAP_WINDOW_MS = 700;
 const TAP_EGG_NEED = 3;
 
 const settings = ref<PetSettings>(loadPetSettings());
+const vrmSrc = ref<string | null>(null);
 const mood = ref<PetMood>("idle");
 const lastLine = ref<string | null>(null);
 const blinking = ref(false);
@@ -147,6 +153,7 @@ const idleMotion = ref<PetIdleMotion>("idle-float");
 const motionPlayId = ref(0);
 const speaking = ref(false);
 const isDragging = ref(false);
+const showHitBounds = ref(false);
 const swingAngle = ref(0);
 const tiltY = ref(0);
 const tiltX = ref(0);
@@ -279,6 +286,19 @@ let cachedScale = 1;
 let winCenter = { x: 0, y: 0 };
 let wantPos: { x: number; y: number } | null = null;
 let posWriting = false;
+let ignoreCursor = false;
+const HIT_PAD = 2;
+
+async function syncCursorPassThrough(overPet: boolean) {
+  const shouldIgnore = !overPet && !isDragging.value;
+  if (shouldIgnore === ignoreCursor) return;
+  ignoreCursor = shouldIgnore;
+  try {
+    await getCurrentWindow().setIgnoreCursorEvents(shouldIgnore);
+  } catch {
+    // ignore
+  }
+}
 
 function clearTimer(id: number | null) {
   if (id != null) window.clearTimeout(id);
@@ -659,6 +679,14 @@ function refreshUsbWatch() {
   syncPetUsbWatch(settings.value.usbWatchEnabled, onUsbAnnounce);
 }
 
+async function refreshVrmSrc() {
+  if (!settings.value.vrmModelName) {
+    vrmSrc.value = null;
+    return;
+  }
+  vrmSrc.value = await resolvePetVrmSrc(settings.value.vrmModelRev);
+}
+
 function applySettings(
   next: PetSettings | Partial<PetSettings>,
   options?: { introIfSkinChanged?: boolean }
@@ -667,6 +695,9 @@ function applySettings(
   const prevModel = activeSkin.value.model;
   const prevZoom = settings.value.zoomPercent;
   const prevUsb = settings.value.usbWatchEnabled;
+  const prevRandomIdle = settings.value.randomIdleEnabled;
+  const prevVrmName = settings.value.vrmModelName;
+  const prevVrmRev = settings.value.vrmModelRev;
   settings.value = normalizePetSettings(next);
   const nextLook = resolveAppearance(
     settings.value.modelKind,
@@ -677,6 +708,20 @@ function applySettings(
   }
   if (settings.value.usbWatchEnabled !== prevUsb) {
     refreshUsbWatch();
+  }
+  if (settings.value.randomIdleEnabled !== prevRandomIdle) {
+    if (settings.value.randomIdleEnabled) {
+      scheduleIdleAction();
+    } else {
+      clearTimer(idleActionTimer);
+      idleActionTimer = null;
+    }
+  }
+  if (
+    settings.value.vrmModelName !== prevVrmName ||
+    settings.value.vrmModelRev !== prevVrmRev
+  ) {
+    void refreshVrmSrc();
   }
   if (
     nextLook.model !== prevModel ||
@@ -924,16 +969,27 @@ async function sampleCursor() {
 
     lastCursorLog = { x: cursor.x, y: cursor.y };
 
+    if (isDragging.value || frame % 6 === 0) {
+      const outer = (
+        await getCurrentWindow().outerPosition()
+      ).toLogical(scale);
+      winCenter = {
+        x: outer.x + winSize.value.w / 2,
+        y: outer.y + winSize.value.h / 2,
+      };
+    }
+
+    const halfW = bodyBox.value.w / 2 + HIT_PAD;
+    const halfH = bodyBox.value.h / 2 + HIT_PAD;
+    const overPet =
+      isDragging.value ||
+      (Math.abs(cursor.x - winCenter.x) <= halfW &&
+        Math.abs(cursor.y - winCenter.y) <= halfH);
+    showHitBounds.value =
+      settings.value.hitBoundsEnabled && overPet && !isDragging.value;
+    void syncCursorPassThrough(overPet);
+
     if (mood.value !== "sleep") {
-      if (!isDragging.value && frame % 30 === 0) {
-        const outer = (
-          await getCurrentWindow().outerPosition()
-        ).toLogical(scale);
-        winCenter = {
-          x: outer.x + winSize.value.w / 2,
-          y: outer.y + winSize.value.h / 2,
-        };
-      }
       const gdx = cursor.x - winCenter.x;
       const gdy = cursor.y - winCenter.y;
       const len = Math.hypot(gdx, gdy) || 1;
@@ -1000,7 +1056,15 @@ function scheduleBlink() {
 
 function scheduleIdleAction() {
   clearTimer(idleActionTimer);
+  if (!settings.value.randomIdleEnabled) {
+    idleActionTimer = null;
+    return;
+  }
   idleActionTimer = window.setTimeout(() => {
+    if (!settings.value.randomIdleEnabled) {
+      idleActionTimer = null;
+      return;
+    }
     if (
       mood.value === "sleep" ||
       speaking.value ||
@@ -1056,6 +1120,7 @@ onMounted(async () => {
   scheduleBlink();
   scheduleIdleAction();
   scheduleAutoSpeak();
+  void refreshVrmSrc();
 
   unlistenSettings = await listen<PetSettings>(PET_SETTINGS_EVENT, (event) => {
     applySettings(event.payload, { introIfSkinChanged: true });
@@ -1066,7 +1131,7 @@ onMounted(async () => {
     playMotionOnce(motion);
   });
   unlistenIntro = await listen(PET_INTRO_EVENT, () => {
-    settings.value = loadPetSettings();
+    applySettings(loadPetSettings(), { introIfSkinChanged: false });
     speakIntro();
   });
   refreshUsbWatch();
@@ -1100,6 +1165,11 @@ onUnmounted(() => {
   stopPetUsbWatch();
   window.removeEventListener("storage", onStorage);
   void hidePetBubble();
+  showHitBounds.value = false;
+  if (ignoreCursor) {
+    ignoreCursor = false;
+    void getCurrentWindow().setIgnoreCursorEvents(false);
+  }
 });
 </script>
 
@@ -1151,6 +1221,17 @@ onUnmounted(() => {
   cursor: grab;
 }
 
+.pet-hit-bounds {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  box-sizing: border-box;
+  border: 1px solid rgba(120, 120, 120, 0.55);
+  background: rgba(128, 128, 128, 0.28);
+  border-radius: 4px;
+  pointer-events: none;
+}
+
 .pet-avatar:active {
   cursor: grabbing;
 }
@@ -1173,8 +1254,8 @@ onUnmounted(() => {
   position: absolute;
   left: 22%;
   right: 22%;
-  bottom: 4%;
-  height: 16px;
+  bottom: 3%;
+  height: 14px;
   border-radius: 50%;
   background: radial-gradient(
     ellipse at center,

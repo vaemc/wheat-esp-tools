@@ -1060,14 +1060,15 @@ const scenePixels = computed((): Pix[] => {
   z-index: 1;
   image-rendering: pixelated;
   image-rendering: crisp-edges;
+  overflow: hidden;
 }
 
 .pix-shadow {
   position: absolute;
   left: 22%;
   right: 22%;
-  bottom: 4%;
-  height: 9%;
+  bottom: 6%;
+  height: 8%;
   border-radius: 50%;
   background: radial-gradient(
     ellipse,
@@ -1082,7 +1083,7 @@ const scenePixels = computed((): Pix[] => {
 
 .pix-stage {
   position: absolute;
-  inset: 0;
+  inset: 10% 8% 12% 8%;
   z-index: 1;
   display: grid;
   place-items: center;
