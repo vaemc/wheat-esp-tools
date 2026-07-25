@@ -365,7 +365,7 @@ const messages = {
       previewTextPlaceholder: "输入要预览的文字",
       lvglOptions: "LVGL 参数",
       lvglOptionsHint:
-        "本地 Rust 转换，快速输出无压缩、无字距的 LVGL C 字库",
+        "本地快速转换，输出无压缩、无字距的 LVGL C 字库",
       fontName: "字体名称",
       fontNameHint:
         "输出 C 变量名与文件名，如 arial_16。只能包含字母、数字和下划线",
@@ -441,7 +441,9 @@ const messages = {
         latin1: "Latin-1 (0x20-0xFF)",
         digits: "数字 0-9",
         cjkBasic: "基本汉字 (0x4E00-0x9FA5)",
+        cjkBasicAscii: "基本汉字 + ASCII (0x20-0x7F)",
         fontAwesome: "FontAwesome 内置符号",
+        unicodeWide: "宽范围 (0x0-0xfffff)",
       },
     },
     file: {
@@ -1247,7 +1249,7 @@ const messages = {
       previewTextPlaceholder: "Text to preview",
       lvglOptions: "LVGL options",
       lvglOptionsHint:
-        "Local Rust converter for fast uncompressed, kerning-free LVGL C fonts",
+        "Local fast conversion for uncompressed, kerning-free LVGL C fonts",
       fontName: "Font name",
       fontNameHint:
         "C symbol and file name, e.g. arial_16. Letters, digits, and underscore only",
@@ -1324,7 +1326,9 @@ const messages = {
         latin1: "Latin-1 (0x20-0xFF)",
         digits: "Digits 0-9",
         cjkBasic: "CJK Unified Ideographs",
+        cjkBasicAscii: "CJK + printable ASCII",
         fontAwesome: "Built-in FontAwesome symbols",
+        unicodeWide: "Wide range (0x0-0xfffff)",
       },
     },
     file: {
