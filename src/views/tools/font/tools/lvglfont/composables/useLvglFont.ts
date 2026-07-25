@@ -33,6 +33,16 @@ export interface CurrentFont {
 
 let faceSeq = 1;
 
+/** DOM lib 对 FontFaceSet 的 add/delete 类型不完整，运行时存在 */
+type FontFaceSetMut = FontFaceSet & {
+  add(font: FontFace): void;
+  delete(font: FontFace): boolean;
+};
+
+function fontFaceSet(): FontFaceSetMut {
+  return document.fonts as FontFaceSetMut;
+}
+
 function isFontFile(file: File) {
   return (
     /\.(ttf|otf)$/i.test(file.name) ||
@@ -121,7 +131,7 @@ export function useLvglFont() {
     const prev = current.value;
     if (prev) {
       try {
-        document.fonts.delete(prev.fontFace);
+        fontFaceSet().delete(prev.fontFace);
       } catch {
         // ignore
       }
@@ -148,7 +158,7 @@ export function useLvglFont() {
     try {
       face = new FontFace(familyName, `url(${objectUrl})`);
       await face.load();
-      document.fonts.add(face);
+      fontFaceSet().add(face);
     } catch {
       URL.revokeObjectURL(objectUrl);
       throw new Error("FONT_LOAD_FAILED");

@@ -63,6 +63,7 @@ export const useFontHistoryStore = defineStore("fontHistory", {
   },
 
   persist: {
-    pick: ["paths"],
+    // v3 API：只持久化路径列表，不持久化 activatePath
+    paths: ["paths"],
   },
 });
