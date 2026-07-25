@@ -1,11 +1,16 @@
-import { computed, ref } from "vue";
+import { computed, ref, watch } from "vue";
 import {
   DEFAULT_LVGL_FONT_OPTIONS,
+  LVGL_FONT_SIZE_MAX,
+  LVGL_FONT_SIZE_MIN,
   sanitizeFontName,
   type LvglFontBpp,
   type LvglFontConvertOptions,
   type LvglFontConvertResult,
 } from "@/utils/font/lvgl";
+import { buildAutoLvglFontName } from "@/utils/font/lvgl/autoFontName";
+import { readFontInternalName } from "@/utils/font/lvgl/fontInternalName";
+import { toIdentPinyin } from "@/utils/font/lvgl/toIdentPinyin";
 
 export type FontStatus = "idle" | "converting" | "done" | "error";
 
@@ -15,6 +20,11 @@ export interface CurrentFont {
   sourcePath: string | null;
   objectUrl: string;
   familyName: string;
+  fontFace: FontFace;
+  /** 字体文件内建名称（name 表）；失败时回退文件名 */
+  internalName: string;
+  /** 内建名转成的 ASCII slug（中文已转拼音） */
+  nameSlug: string;
   sourceBytes: Uint8Array;
   byteLength: number;
   status: FontStatus;
@@ -44,10 +54,23 @@ function baseNameFrom(fileName: string) {
   return dot > 0 ? fileName.slice(0, dot) : fileName;
 }
 
+function clampSize(value: unknown): number {
+  const n = typeof value === "number" ? value : Number(value);
+  if (!Number.isFinite(n)) {
+    return DEFAULT_LVGL_FONT_OPTIONS.size;
+  }
+  return Math.min(
+    LVGL_FONT_SIZE_MAX,
+    Math.max(LVGL_FONT_SIZE_MIN, Math.round(n))
+  );
+}
+
 export function useLvglFont() {
   const current = ref<CurrentFont | null>(null);
   const loading = ref(false);
 
+  /** 默认开启：按内建名 + 字号 + bpp 自动生成 C 符号名 */
+  const autoName = ref(true);
   const fontName = ref(DEFAULT_LVGL_FONT_OPTIONS.fontName);
   const size = ref(DEFAULT_LVGL_FONT_OPTIONS.size);
   const bpp = ref<LvglFontBpp>(DEFAULT_LVGL_FONT_OPTIONS.bpp);
@@ -59,10 +82,32 @@ export function useLvglFont() {
 
   const hasFont = computed(() => current.value != null);
 
+  function applyAutoName() {
+    if (!autoName.value || !current.value) {
+      return;
+    }
+    fontName.value = buildAutoLvglFontName(
+      current.value.nameSlug,
+      size.value,
+      bpp.value
+    );
+  }
+
+  watch(size, (v) => {
+    const next = clampSize(v);
+    if (v !== next) {
+      size.value = next;
+    }
+  });
+
+  watch([autoName, size, bpp], () => {
+    applyAutoName();
+  });
+
   function currentOptions(): LvglFontConvertOptions {
     return {
       fontName: sanitizeFontName(fontName.value),
-      size: size.value,
+      size: clampSize(size.value),
       bpp: bpp.value,
       format: "lvgl",
       range: range.value,
@@ -73,8 +118,14 @@ export function useLvglFont() {
   }
 
   function clearCurrent() {
-    if (current.value?.objectUrl) {
-      URL.revokeObjectURL(current.value.objectUrl);
+    const prev = current.value;
+    if (prev) {
+      try {
+        document.fonts.delete(prev.fontFace);
+      } catch {
+        // ignore
+      }
+      URL.revokeObjectURL(prev.objectUrl);
     }
     current.value = null;
   }
@@ -93,14 +144,19 @@ export function useLvglFont() {
       new Blob([copy], { type: guessMime(name) })
     );
 
+    let face: FontFace;
     try {
-      const face = new FontFace(familyName, `url(${objectUrl})`);
+      face = new FontFace(familyName, `url(${objectUrl})`);
       await face.load();
-      (document.fonts as FontFaceSet & { add(font: FontFace): void }).add(face);
+      document.fonts.add(face);
     } catch {
       URL.revokeObjectURL(objectUrl);
       throw new Error("FONT_LOAD_FAILED");
     }
+
+    const internalName =
+      readFontInternalName(copy) || baseNameFrom(name) || "font";
+    const nameSlug = await toIdentPinyin(internalName);
 
     clearCurrent();
     current.value = {
@@ -108,12 +164,21 @@ export function useLvglFont() {
       sourcePath,
       objectUrl,
       familyName,
+      fontFace: face,
+      internalName,
+      nameSlug,
       sourceBytes: copy,
       byteLength: copy.byteLength,
       status: "idle",
     };
 
-    fontName.value = sanitizeFontName(`${baseNameFrom(name)}_${size.value}`);
+    if (autoName.value) {
+      applyAutoName();
+    } else {
+      fontName.value = sanitizeFontName(
+        `${baseNameFrom(name)}_${clampSize(size.value)}`
+      );
+    }
   }
 
   async function loadFile(file: File) {
@@ -168,6 +233,7 @@ export function useLvglFont() {
   return {
     current,
     loading,
+    autoName,
     fontName,
     size,
     bpp,

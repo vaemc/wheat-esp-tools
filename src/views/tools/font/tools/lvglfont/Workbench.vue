@@ -19,18 +19,33 @@
           <div class="settings-block">
             <div class="block-title">{{ $t("font.lvglOptions") }}</div>
             <div class="field-grid">
-              <label class="field">
+              <label class="field field--span2">
                 <span class="field-label-with-tip">
                   {{ $t("font.fontName") }}
                   <a-tooltip :title="$t('font.fontNameHint')">
                     <span class="tip-icon">?</span>
                   </a-tooltip>
                 </span>
-                <a-input
-                  v-model:value="font.fontName.value"
-                  :disabled="!font.hasFont.value"
-                  placeholder="font_16"
-                />
+                <div class="font-name-row">
+                  <a-input
+                    v-model:value="font.fontName.value"
+                    :disabled="!font.hasFont.value || font.autoName.value"
+                    placeholder="font_arial_16_4"
+                  />
+                  <a-checkbox
+                    v-model:checked="font.autoName.value"
+                    :disabled="!font.hasFont.value"
+                  >
+                    {{ $t("font.autoName") }}
+                  </a-checkbox>
+                </div>
+                <p v-if="font.autoName.value && font.current.value" class="field-hint">
+                  {{
+                    $t("font.autoNameHint", {
+                      name: font.current.value.internalName,
+                    })
+                  }}
+                </p>
               </label>
 
               <label class="field">
@@ -211,7 +226,7 @@
           :file-name="font.current.value?.fileName"
           :byte-length="font.current.value?.byteLength"
           :sample-text="font.previewText.value"
-          :preview-size="Math.min(56, Math.max(18, font.size.value))"
+          :preview-size="Math.min(56, Math.max(18, Number(font.size.value) || 16))"
           :empty-text="$t('font.previewEmpty')"
         />
       </section>
@@ -240,17 +255,6 @@ import {
   saveTextWithDialog,
 } from "@/utils/image/shared/saveDialog";
 
-const emit = defineEmits<{
-  summary: [
-    payload: {
-      hasFont: boolean;
-      done: boolean;
-      fileName?: string;
-      sourcePath?: string | null;
-    },
-  ];
-}>();
-
 const { t } = useI18n();
 const converting = ref(false);
 const progressPercent = ref(0);
@@ -277,37 +281,48 @@ const rangePresetOptions = computed(() =>
 
 onMounted(async () => {
   unlistenProgress = await onLvglFontProgress((payload) => {
-    if (activeJobId.value && payload.jobId !== activeJobId.value) {
+    if (!activeJobId.value || payload.jobId !== activeJobId.value) {
       return;
     }
     progressPercent.value = payload.percent;
-    progressMessage.value = payload.message;
+    progressMessage.value = formatProgressMessage(payload);
   });
 });
 
 onBeforeUnmount(() => {
   unlistenProgress?.();
   unlistenProgress = null;
+  activeJobId.value = null;
   font.clearCurrent();
 });
 
-
-watch(
-  [
-    () => font.hasFont.value,
-    () => font.current.value?.status === "done",
-    () => font.current.value?.fileName,
-    () => font.current.value?.sourcePath,
-  ],
-  ([hasFont, done, fileName, sourcePath]) =>
-    emit("summary", {
-      hasFont: !!hasFont,
-      done: !!done,
-      fileName: typeof fileName === "string" ? fileName : undefined,
-      sourcePath: typeof sourcePath === "string" ? sourcePath : null,
-    }),
-  { immediate: true }
-);
+function formatProgressMessage(payload: {
+  stage: string;
+  current: number;
+  total: number;
+  message: string;
+}) {
+  switch (payload.stage) {
+    case "load":
+      return t("font.progress.load");
+    case "cmap":
+      return t("font.progress.cmap", { n: payload.current || payload.total });
+    case "render":
+      return t("font.progress.render", {
+        current: payload.current,
+        total: payload.total,
+      });
+    case "write":
+      return t("font.progress.write", {
+        current: payload.current,
+        total: payload.total,
+      });
+    case "done":
+      return t("font.progress.done");
+    default:
+      return payload.message || t("font.converting");
+  }
+}
 
 watch(activatePath, (path) => {
   if (!path) {
@@ -368,6 +383,10 @@ function reportConvertError(error: unknown) {
   }
   if (code === "TOO_MANY_GLYPHS" || code.includes("TOO_MANY_GLYPHS")) {
     message.warning(t("font.tooManyGlyphs"));
+    return;
+  }
+  if (code === "RANGE_TOO_WIDE" || code.includes("RANGE_TOO_WIDE")) {
+    message.warning(t("font.rangeTooWide"));
     return;
   }
   if (code.startsWith("INVALID_RANGE:") || code.includes("INVALID_RANGE:")) {
@@ -609,10 +628,28 @@ useTauriDragDrop({
   gap: 12px 14px;
 }
 
-.check-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px 14px;
+.field-hint {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.38);
+  line-height: 1.4;
+}
+
+.font-name-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.font-name-row :deep(.ant-input) {
+  flex: 1;
+  min-width: 0;
+}
+
+.font-name-row :deep(.ant-checkbox-wrapper) {
+  flex-shrink: 0;
+  white-space: nowrap;
+  color: rgba(255, 255, 255, 0.72);
 }
 
 .field {
@@ -706,8 +743,7 @@ useTauriDragDrop({
     max-height: 220px;
   }
 
-  .field-grid,
-  .check-grid {
+  .field-grid {
     grid-template-columns: 1fr;
   }
 

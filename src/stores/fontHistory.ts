@@ -14,7 +14,7 @@ export interface FontHistoryItem {
 export const useFontHistoryStore = defineStore("fontHistory", {
   state: () => ({
     paths: [] as string[],
-    /** 点击历史项时写入；Workbench 加载后清空（不持久化语义，启动时忽略） */
+    /** 点击历史项时写入；Workbench 加载后清空（不持久化） */
     activatePath: null as string | null,
   }),
 
@@ -62,5 +62,7 @@ export const useFontHistoryStore = defineStore("fontHistory", {
     },
   },
 
-  persist: true,
+  persist: {
+    pick: ["paths"],
+  },
 });

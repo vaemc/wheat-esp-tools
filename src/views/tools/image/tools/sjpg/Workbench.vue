@@ -136,14 +136,6 @@
       </div>
     </aside>
 
-    <input
-      ref="fileInputRef"
-      type="file"
-      accept="image/*"
-      multiple
-      class="hidden-input"
-      @change="onFileInputChange"
-    />
   </div>
 </template>
 
@@ -151,6 +143,7 @@
 import { computed, onBeforeUnmount, ref, watch } from "vue";
 import { message } from "ant-design-vue";
 import { useI18n } from "vue-i18n";
+import { open } from "@tauri-apps/plugin-dialog";
 import { readFile } from "@tauri-apps/plugin-fs";
 import ImageBatchGrid from "../../shared/components/ImageBatchGrid.vue";
 import { useSjpgBatch } from "./composables/useSjpgBatch";
@@ -167,7 +160,6 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n();
-const fileInputRef = ref<HTMLInputElement | null>(null);
 const converting = ref(false);
 const sjpg = useSjpgBatch();
 
@@ -190,8 +182,26 @@ watch(
   { immediate: true }
 );
 
-function pickFiles() {
-  fileInputRef.value?.click();
+async function pickFiles() {
+  try {
+    const selected = await open({
+      multiple: true,
+      filters: [
+        {
+          name: "Image",
+          extensions: ["jpg", "jpeg", "png", "webp", "bmp", "gif"],
+        },
+      ],
+    });
+    if (selected == null) {
+      return;
+    }
+    const paths = Array.isArray(selected) ? selected : [selected];
+    await loadFromPaths(paths);
+  } catch (error) {
+    console.error("[image/sjpg] pick files failed:", error);
+    message.error(t("image.loadFailed"));
+  }
 }
 
 async function onDropFiles(files: FileList | File[]) {
@@ -204,15 +214,6 @@ async function onDropFiles(files: FileList | File[]) {
       return;
     }
     message.error(t("image.loadFailed"));
-  }
-}
-
-async function onFileInputChange(event: Event) {
-  const input = event.target as HTMLInputElement;
-  const files = input.files;
-  input.value = "";
-  if (files?.length) {
-    await onDropFiles(files);
   }
 }
 
@@ -540,9 +541,5 @@ onBeforeUnmount(() => {
   flex-direction: column;
   gap: 8px;
   margin-top: auto;
-}
-
-.hidden-input {
-  display: none;
 }
 </style>

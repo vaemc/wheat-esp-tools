@@ -38,6 +38,7 @@ base64 = "0.22.1"
 # 纯 Rust 字体栅格化 + cmap表解析（无系统 FreeType 依赖）
 fontdue = "0.9"
 ttf-parser = "0.25"
+pinyin = "0.10"
 
 [target.'cfg(windows)'.dependencies]
 windows = { version = "0.62", features = [

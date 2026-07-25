@@ -26,7 +26,11 @@ function baseNameFrom(fileName: string) {
 }
 
 function isImageFile(file: File) {
-  return file.type.startsWith("image/");
+  if (file.type.startsWith("image/")) {
+    return true;
+  }
+  // Windows 上部分选择器会给出空 MIME，按扩展名兜底
+  return /\.(jpe?g|png|webp|bmp|gif)$/i.test(file.name);
 }
 
 function isImagePath(path: string) {

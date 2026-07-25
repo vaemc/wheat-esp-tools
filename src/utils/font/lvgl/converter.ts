@@ -83,7 +83,10 @@ export async function convertLvglFont(
 
   const rustOptions = {
     fontName,
-    size: Math.max(1, Math.min(512, Math.round(options.size) || 16)),
+    size: Math.max(
+      4,
+      Math.min(256, Math.round(options.size) || 16)
+    ),
     bpp: options.bpp,
     format: "lvgl",
     range,

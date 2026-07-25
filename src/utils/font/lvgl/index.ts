@@ -7,6 +7,9 @@ export type {
 } from "./types";
 export {
   DEFAULT_LVGL_FONT_OPTIONS,
+  LVGL_FONT_SIZE_MAX,
+  LVGL_FONT_SIZE_MIN,
+  LVGL_MAX_RANGE_SPAN,
   RANGE_PRESETS,
 } from "./types";
 export {
@@ -14,4 +17,7 @@ export {
   onLvglFontProgress,
   sanitizeFontName,
 } from "./converter";
-export { parseUnicodeRange } from "./range";
+export { parseUnicodeRange, sanitizeIdentFragment } from "./range";
+export { buildAutoLvglFontName } from "./autoFontName";
+export { readFontInternalName } from "./fontInternalName";
+export { toIdentPinyin } from "./toIdentPinyin";

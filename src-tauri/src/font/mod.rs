@@ -2,3 +2,4 @@
 //! 结构：`font::{tool}`，每个转换工具独立子模块。
 
 pub mod lvgl;
+pub mod pinyin_ident;

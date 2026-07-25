@@ -759,6 +759,11 @@ async fn convert_gif_to_eaf(
 }
 
 #[tauri::command]
+fn to_ident_pinyin(text: String) -> String {
+    font::pinyin_ident::to_ident_pinyin(&text)
+}
+
+#[tauri::command]
 async fn convert_lvgl_font(
     window: WebviewWindow,
     font_file_name: String,
@@ -837,6 +842,7 @@ fn main() {
             compress_gif,
             convert_gif_to_eaf,
             convert_lvgl_font,
+            to_ident_pinyin,
             probe_mmap_assets_dir,
             pack_mmap_assets,
             preview_mmap_index_from_dir,
