@@ -67,6 +67,8 @@ const messages = {
       rememberWindowTitle: "记住窗口位置和大小",
       rememberWindowDesc: "下次启动时恢复本次关闭时的窗口位置与尺寸",
       rememberWindowSaveFailed: "保存窗口偏好失败",
+      languageTitle: "界面语言",
+      languageDesc: "切换应用显示语言",
       autostartTitle: "开机自启",
       autostartDesc: "登录后自动启动并最小化到托盘（不弹出主窗口）",
       autostartSaveFailed: "设置开机自启失败",
@@ -901,6 +903,8 @@ const messages = {
       rememberWindowDesc:
         "Restore this window’s position and size the next time the app opens",
       rememberWindowSaveFailed: "Failed to save window preference",
+      languageTitle: "Language",
+      languageDesc: "Choose the app display language",
       autostartTitle: "Launch at login",
       autostartDesc:
         "Start minimized to the tray after sign-in (main window stays hidden)",

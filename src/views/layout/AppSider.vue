@@ -39,15 +39,10 @@
         </ul>
       </section>
     </nav>
-
-    <div class="sider-footer">
-      <LanguageSwitch />
-    </div>
   </aside>
 </template>
 
 <script setup lang="ts">
-import LanguageSwitch from "@/components/LanguageSwitch.vue";
 import MenuIcon from "@/components/icons/MenuIcon.vue";
 import { useAppSplash } from "@/composables/useAppSplash";
 import { useMenuNavigation } from "@/composables/useMenuNavigation";
@@ -275,15 +270,5 @@ function onSelect(name: string) {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-
-.sider-footer {
-  flex-shrink: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 12px 14px 10px;
-  border-top: 1px solid var(--sider-border);
-  background: rgba(0, 0, 0, 0.18);
 }
 </style>

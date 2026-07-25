@@ -281,7 +281,8 @@ fn create_ui_font(state: &mut AppState) {
         lf.lfWeight = FW_NORMAL.0 as i32;
         lf.lfCharSet = DEFAULT_CHARSET;
         lf.lfQuality = CLEARTYPE_QUALITY;
-        let face = to_wide("Segoe UI");
+        // 与 Win11 任务栏小字号一致；系统无此字体时 GDI 会回退到 Segoe UI
+        let face = to_wide("Segoe UI Variable Small");
         let n = face.len().min(lf.lfFaceName.len());
         lf.lfFaceName[..n].copy_from_slice(&face[..n]);
         state.font = CreateFontIndirectW(&lf);

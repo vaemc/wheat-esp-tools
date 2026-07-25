@@ -11,7 +11,8 @@ export type SettingsItemId =
   | "opensource"
   | "window"
   | "autostart"
-  | "taskbarCom";
+  | "taskbarCom"
+  | "language";
 
 export interface SettingsItemDef {
   id: SettingsItemId;
@@ -19,6 +20,12 @@ export interface SettingsItemDef {
 }
 
 export const SETTINGS_ITEMS: SettingsItemDef[] = [
+  {
+    id: "language",
+    component: defineAsyncComponent(
+      () => import("./items/language/LanguageItem.vue")
+    ),
+  },
   {
     id: "window",
     component: defineAsyncComponent(

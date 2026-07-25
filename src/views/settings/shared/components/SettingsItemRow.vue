@@ -28,7 +28,8 @@ withDefaults(
       | "version"
       | "window"
       | "autostart"
-      | "taskbar";
+      | "taskbar"
+      | "language";
   }>(),
   {
     description: "",
@@ -103,6 +104,11 @@ withDefaults(
 .item-icon[data-tone="taskbar"] {
   --tone: rgba(82, 196, 26, 0.14);
   color: #52c41a;
+}
+
+.item-icon[data-tone="language"] {
+  --tone: rgba(145, 213, 255, 0.14);
+  color: #91d5ff;
 }
 
 .item-text {
