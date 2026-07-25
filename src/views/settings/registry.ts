@@ -38,15 +38,15 @@ export const SETTINGS_ITEMS: SettingsItemDef[] = [
     ),
   },
   {
-    id: "update",
-    component: defineAsyncComponent(
-      () => import("./items/update/CheckUpdateItem.vue")
-    ),
-  },
-  {
     id: "cache",
     component: defineAsyncComponent(
       () => import("./items/cache/CacheItem.vue")
+    ),
+  },
+  {
+    id: "update",
+    component: defineAsyncComponent(
+      () => import("./items/update/CheckUpdateItem.vue")
     ),
   },
   {
