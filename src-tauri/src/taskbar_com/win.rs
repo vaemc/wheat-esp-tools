@@ -28,6 +28,9 @@ const TOPMOST_INTERVAL_MS: u32 = 100;
 
 const HORIZONTAL_PADDING: i32 = 14;
 const RIGHT_RESERVE_DEFAULT: i32 = 200;
+/// 托盘「显示隐藏的图标」箭头（^）预留宽度，避免盖住
+const CHEVRON_RESERVE: i32 = 36;
+const EDGE_GAP: i32 = 6;
 const COLUMN_GAP: i32 = 12;
 const TRANSPARENT_KEY: COLORREF = COLORREF(0x0001_0101);
 
@@ -342,7 +345,6 @@ fn adjust_window_position(force: bool) {
     with_state(|state| {
         state.dpi = get_window_dpi(state.hwnd);
         let text_size = measure_two_row_size(state);
-        let width = text_size.cx;
         let mut taskbar_h = rc_taskbar.bottom - rc_taskbar.top;
         if taskbar_h <= 0 {
             taskbar_h = dpi_scale(40, state.dpi);
@@ -353,16 +355,23 @@ fn adjust_window_position(force: bool) {
             taskbar_h
         };
 
-        let right_edge = match rc_notify_opt {
+        // 右边界：通知区左侧再左移，给展开托盘箭头留空
+        let notify_left = match rc_notify_opt {
             Some(rc) => rc.left,
             None => rc_taskbar.right - dpi_scale(RIGHT_RESERVE_DEFAULT, state.dpi),
         };
-        let mut left = right_edge - width - dpi_scale(4, state.dpi);
-        let top = rc_taskbar.top;
+        let right_limit =
+            notify_left - dpi_scale(CHEVRON_RESERVE + EDGE_GAP, state.dpi);
         let min_left = rc_taskbar.left + dpi_scale(80, state.dpi);
+        let max_width = (right_limit - min_left).max(dpi_scale(48, state.dpi));
+        let width = text_size.cx.min(max_width);
+        let mut left = right_limit - width;
         if left < min_left {
             left = min_left;
         }
+        // 夹紧后仍保证右边缘不越过 right_limit（避免盖住箭头）
+        let width = width.min((right_limit - left).max(dpi_scale(48, state.dpi)));
+        let top = rc_taskbar.top;
 
         unsafe {
             let flags = if force {
@@ -502,15 +511,13 @@ unsafe extern "system" fn wnd_proc(
                     let _ = DestroyWindow(hwnd);
                     return LRESULT(0);
                 }
-                let text_changed = with_state(|state| {
+                let _ = with_state(|state| {
                     update_theme_colors(state);
                     build_port_rows(enumerate_com_ports(), &mut state.row1, &mut state.row2);
-                    let snap = rows_snapshot(state);
-                    let changed = snap != state.last_text;
-                    state.last_text = snap;
-                    changed
+                    state.last_text = rows_snapshot(state);
                 });
-                adjust_window_position(text_changed);
+                // 始终重定位：托盘图标增减时通知区会移动，避免盖住展开箭头
+                adjust_window_position(true);
                 let _ = InvalidateRect(Some(hwnd), None, false);
             } else if wparam.0 == TOPMOST_TIMER_ID {
                 force_topmost(hwnd);
