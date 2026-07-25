@@ -19,14 +19,25 @@ export default defineConfig(async () => ({
   },
   plugins: [
     vue(),
-    // lv_font_conv（FreeType WASM + CommonJS）需要 Buffer / path 等 Node polyfill
+    // lv_font_conv / libopus-wasm：Emscripten 胶水与 pngjs 会引用 Node 内置模块
     nodePolyfills({
-      include: ["buffer", "path", "process", "util", "stream"],
+      include: [
+        "buffer",
+        "path",
+        "process",
+        "util",
+        "stream",
+        "zlib",
+        "fs",
+        "module",
+      ],
       globals: {
         Buffer: true,
         global: true,
         process: true,
       },
+      // 覆盖 libopus-wasm 的 node:module 等 node: 协议导入
+      protocolImports: true,
     }),
   ],
 
@@ -35,6 +46,7 @@ export default defineConfig(async () => ({
       "lv_font_conv/lib/convert.js",
       "lv_font_conv/lib/collect_font_data.js",
       "buffer",
+      "zlib",
     ],
     esbuildOptions: {
       define: {
