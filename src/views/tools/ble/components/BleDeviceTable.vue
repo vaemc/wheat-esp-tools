@@ -1,145 +1,160 @@
 <template>
-  <a-table
-    class="ble-table"
-    :bordered="true"
-    :pagination="false"
-    size="small"
-    row-key="address"
-    :scroll="{ y: tableHeight }"
-    :data-source="devices"
-    :columns="columns"
-    :expanded-row-keys="expandedKeys"
-    @expand="onExpand"
-  >
-    <template #emptyText>
-      <PlaceholderHint :text="emptyText" />
-    </template>
-    <template #bodyCell="{ column, record }">
-      <template v-if="column.key === 'rssi'">
-        <span class="rssi-text" :style="{ color: rssiColor(record.rssi) }">
-          {{ record.rssi }}
-        </span>
-      </template>
-      <template v-else-if="column.key === 'name'">
-        <span
-          class="device-name"
-          :title="displayName(record.local_name, $t('ble.unknownName'))"
-        >
-          {{ displayName(record.local_name, $t("ble.unknownName")) }}
-        </span>
-      </template>
-      <template v-else-if="column.key === 'address'">
-        <p v-copy class="mono addr">{{ record.address }}</p>
-      </template>
-      <template v-else-if="column.key === 'services'">
-        <span v-if="record.services.length" class="svc-inline">
-          {{ formatServicesShort(record.services) }}
-        </span>
-        <span v-else class="muted">—</span>
-      </template>
-      <template v-else-if="column.key === 'lastSeen'">
-        <span class="seen-text">{{ formatAgoShort(record.lastSeen, tick) }}</span>
-      </template>
-    </template>
-
-    <template #expandedRowRender="{ record }">
-      <div class="detail-panel">
-        <div v-if="mfgRows(record).length" class="detail-block">
-          <div class="detail-label">{{ $t("ble.manufacturer") }}</div>
-          <div
-            v-for="row in mfgRows(record)"
-            :key="row.id"
-            class="detail-row"
-          >
-            <span class="detail-key">{{ row.label }}</span>
-            <code class="detail-val">{{ row.hex }}</code>
+  <div class="device-list">
+    <PlaceholderHint v-if="!devices.length" :text="emptyText" class="empty" />
+    <TransitionGroup v-else name="device-fade" tag="div" class="device-stack">
+      <article
+        v-for="record in devices"
+        :key="record.address"
+        class="device-card"
+        :class="{
+          expanded: expandedKey === record.address,
+          connecting: connectingAddress === record.address,
+          active: connectedAddress === record.address,
+        }"
+        @click="toggleExpand(record.address)"
+      >
+        <div class="card-main">
+          <div class="avatar" :style="{ '--sig': rssiColor(record.rssi) }">
+            <SignalBars :bars="rssiBars(record.rssi)" />
           </div>
-        </div>
 
-        <div v-if="record.services.length" class="detail-block">
-          <div class="detail-label">{{ $t("ble.services") }}</div>
-          <a-space wrap :size="4">
-            <a-tag
-              v-for="svc in record.services"
-              :key="svc"
-              color="geekblue"
-              class="mono"
+          <div class="info">
+            <div class="title-row">
+              <h3
+                class="name"
+                :title="displayName(record.local_name, $t('ble.unknownName'))"
+              >
+                {{ displayName(record.local_name, $t("ble.unknownName")) }}
+              </h3>
+              <span
+                class="rssi-pill"
+                :style="{ color: rssiColor(record.rssi) }"
+              >
+                {{ record.rssi }} dBm
+              </span>
+            </div>
+            <p v-copy class="mac" @click.stop>{{ record.address }}</p>
+            <div class="meta-row">
+              <span class="seen">{{ formatAgoShort(record.lastSeen, tick) }}</span>
+              <span v-if="record.services.length" class="chips">
+                <span
+                  v-for="svc in record.services.slice(0, 3)"
+                  :key="svc"
+                  class="chip"
+                >
+                  {{ shortUuid(svc) }}
+                </span>
+                <span v-if="record.services.length > 3" class="chip more">
+                  +{{ record.services.length - 3 }}
+                </span>
+              </span>
+              <span v-else class="chips muted">{{ $t("ble.noServices") }}</span>
+            </div>
+          </div>
+
+          <div class="actions" @click.stop>
+            <a-button
+              type="primary"
+              size="small"
+              class="connect-btn"
+              :loading="connectingAddress === record.address"
+              :disabled="
+                (!!connectingAddress &&
+                  connectingAddress !== record.address) ||
+                connectedAddress === record.address
+              "
+              @click="$emit('connect', record)"
             >
-              {{ svc }}
-            </a-tag>
-          </a-space>
-        </div>
-
-        <div v-if="svcDataRows(record).length" class="detail-block">
-          <div class="detail-label">{{ $t("ble.serviceData") }}</div>
-          <div
-            v-for="row in svcDataRows(record)"
-            :key="row.uuid"
-            class="detail-row"
-          >
-            <span class="detail-key mono">{{ row.uuid }}</span>
-            <code class="detail-val">{{ row.hex }}</code>
+              {{
+                connectedAddress === record.address
+                  ? $t("ble.connected")
+                  : $t("ble.connect")
+              }}
+            </a-button>
           </div>
         </div>
 
-        <div v-if="record.adv.length" class="detail-block">
-          <div class="detail-label">{{ $t("ble.rawAdv") }}</div>
-          <code class="detail-val block">{{ bytesToHex(record.adv) }}</code>
-        </div>
+        <div v-if="expandedKey === record.address" class="card-detail" @click.stop>
+          <div v-if="mfgRows(record).length" class="detail-block">
+            <div class="detail-label">{{ $t("ble.manufacturer") }}</div>
+            <div v-for="row in mfgRows(record)" :key="row.id" class="detail-row">
+              <span class="detail-key">{{ row.label }}</span>
+              <code class="detail-val">{{ row.hex }}</code>
+            </div>
+          </div>
 
-        <div class="detail-meta">
-          {{ $t("ble.seenCount", { n: record.seenCount }) }}
+          <div v-if="record.services.length" class="detail-block">
+            <div class="detail-label">{{ $t("ble.services") }}</div>
+            <div class="tag-wrap">
+              <span v-for="svc in record.services" :key="svc" class="svc-tag">
+                {{ svc }}
+              </span>
+            </div>
+          </div>
+
+          <div v-if="svcDataRows(record).length" class="detail-block">
+            <div class="detail-label">{{ $t("ble.serviceData") }}</div>
+            <div
+              v-for="row in svcDataRows(record)"
+              :key="row.uuid"
+              class="detail-row"
+            >
+              <span class="detail-key mono">{{ row.uuid }}</span>
+              <code class="detail-val">{{ row.hex }}</code>
+            </div>
+          </div>
+
+          <div v-if="record.adv.length" class="detail-block">
+            <div class="detail-label">{{ $t("ble.rawAdv") }}</div>
+            <code class="detail-val block">{{ bytesToHex(record.adv) }}</code>
+          </div>
+
+          <div class="detail-meta">
+            {{ $t("ble.seenCount", { n: record.seenCount }) }}
+          </div>
         </div>
-      </div>
-    </template>
-  </a-table>
+      </article>
+    </TransitionGroup>
+  </div>
 </template>
 <script setup lang="ts">
-import { computed, ref } from "vue";
-import { useI18n } from "vue-i18n";
+import { ref } from "vue";
 import type { BleDeviceRecord } from "../types";
 import PlaceholderHint from "@/components/PlaceholderHint.vue";
+import SignalBars from "./SignalBars.vue";
 import { useRelativeTimeTick } from "../composables/useRelativeTimeTick";
 import {
   bytesToHex,
   displayName,
   formatAgoShort,
   formatManufacturerId,
+  rssiBars,
   rssiColor,
 } from "../utils/bleFormat";
 
-const props = defineProps<{
+defineProps<{
   devices: BleDeviceRecord[];
   emptyText: string;
-  tableHeight: number;
+  connectingAddress?: string | null;
+  connectedAddress?: string | null;
 }>();
 
-const { t } = useI18n();
-const expandedKeys = ref<string[]>([]);
+defineEmits<{
+  connect: [record: BleDeviceRecord];
+}>();
+
+const expandedKey = ref<string | null>(null);
 const tick = useRelativeTimeTick();
 
-const columns = computed(() => [
-  { title: t("ble.colRssi"), key: "rssi", width: 52, align: "center" as const },
-  { title: t("ble.colName"), key: "name", minWidth: 96, ellipsis: true },
-  { title: "MAC", key: "address", width: 128, ellipsis: true },
-  { title: t("ble.colServices"), key: "services", ellipsis: true },
-  { title: t("ble.colLastSeen"), key: "lastSeen", width: 72, align: "right" as const },
-]);
-
 function shortUuid(uuid: string): string {
-  const u = uuid.replace(/^0x/i, "").toUpperCase();
+  const u = uuid.replace(/^0x/i, "").replace(/-/g, "").toUpperCase();
+  if (u.length === 32 && u.startsWith("0000") && u.endsWith("00001000800000805F9B34FB")) {
+    return `0x${u.slice(4, 8)}`;
+  }
   if (u.length <= 8) {
     return `0x${u}`;
   }
-  return `0x${u.slice(0, 4)}…${u.slice(-4)}`;
-}
-
-function formatServicesShort(services: string[]): string {
-  if (services.length === 0) {
-    return "—";
-  }
-  const head = services.slice(0, 2).map(shortUuid).join(" ");
-  return services.length > 2 ? `${head} +${services.length - 2}` : head;
+  return `${u.slice(0, 4)}…${u.slice(-4)}`;
 }
 
 function mfgRows(record: BleDeviceRecord) {
@@ -157,108 +172,233 @@ function svcDataRows(record: BleDeviceRecord) {
   }));
 }
 
-function onExpand(expanded: boolean, record: BleDeviceRecord) {
-  if (expanded) {
-    expandedKeys.value = [record.address];
-  } else {
-    expandedKeys.value = [];
-  }
+function toggleExpand(address: string) {
+  expandedKey.value = expandedKey.value === address ? null : address;
 }
 </script>
 <style scoped>
-.ble-table :deep(.ant-table) {
-  background: transparent;
-  font-size: 12px;
+.device-list {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 0 8px 8px;
 }
-.ble-table :deep(.ant-table-thead > tr > th) {
-  padding: 4px 6px !important;
-  font-size: 11px;
-  font-weight: 500;
+.empty {
+  min-height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 16px;
+  text-align: center;
+  box-sizing: border-box;
 }
-.ble-table :deep(.ant-table-tbody > tr > td) {
-  padding: 2px 6px !important;
-  line-height: 1.25;
+.device-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
-.ble-table :deep(.ant-table-row-expand-icon-cell) {
-  width: 28px !important;
-  padding: 2px 4px !important;
+.device-card {
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  cursor: pointer;
+  transition:
+    border-color 0.18s ease,
+    background 0.18s ease,
+    transform 0.18s ease;
 }
-.ble-table :deep(.ant-table-expanded-row > td) {
-  padding: 4px 6px 6px !important;
+.device-card:hover {
+  border-color: rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.05);
 }
-.rssi-text {
-  font-family: Consolas, "Courier New", monospace;
-  font-size: 11px;
+.device-card.active {
+  border-color: rgba(62, 207, 142, 0.45);
+  background: rgba(62, 207, 142, 0.06);
+}
+.device-card.connecting {
+  border-color: rgba(105, 177, 255, 0.4);
+}
+.card-main {
+  display: grid;
+  grid-template-columns: 44px 1fr auto;
+  gap: 12px;
+  align-items: center;
+  padding: 12px 14px;
+}
+.avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  background: color-mix(in srgb, var(--sig) 16%, transparent);
+  border: 1px solid color-mix(in srgb, var(--sig) 28%, transparent);
+}
+.info {
+  min-width: 0;
+}
+.title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 2px;
+}
+.name {
+  margin: 0;
+  font-size: 14px;
   font-weight: 600;
-}
-.device-name {
-  display: block;
+  letter-spacing: 0.01em;
+  color: rgba(255, 255, 255, 0.92);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 12px;
-  font-weight: 500;
 }
-.mono {
+.rssi-pill {
+  flex-shrink: 0;
   font-family: Consolas, "Courier New", monospace;
   font-size: 11px;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.28);
 }
-.addr {
-  margin: 0;
-  cursor: pointer;
-  color: rgba(255, 255, 255, 0.85);
+.mac {
+  margin: 0 0 6px;
+  font-family: Consolas, "Courier New", monospace;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.45);
+  cursor: copy;
+  width: fit-content;
 }
-.svc-inline {
+.mac:hover {
+  color: rgba(255, 255, 255, 0.75);
+}
+.meta-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.seen {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.38);
+  font-variant-numeric: tabular-nums;
+}
+.chips {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+.chip {
   font-family: Consolas, "Courier New", monospace;
   font-size: 10px;
-  color: rgba(255, 255, 255, 0.65);
+  padding: 1px 6px;
+  border-radius: 4px;
+  color: rgba(145, 202, 255, 0.95);
+  background: rgba(105, 177, 255, 0.12);
+  border: 1px solid rgba(105, 177, 255, 0.18);
+}
+.chip.more {
+  color: rgba(255, 255, 255, 0.5);
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.08);
 }
 .muted {
-  color: rgba(255, 255, 255, 0.35);
   font-size: 11px;
+  color: rgba(255, 255, 255, 0.3);
 }
-.seen-text {
-  font-size: 11px;
-  color: rgba(255, 255, 255, 0.5);
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
+.actions {
+  flex-shrink: 0;
 }
-.detail-panel {
-  padding: 4px 2px 2px;
+.connect-btn {
+  border-radius: 8px;
+  font-weight: 500;
+  min-width: 72px;
+}
+.card-detail {
+  padding: 0 14px 12px 70px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  margin-top: -2px;
+  animation: detail-in 0.18s ease;
+}
+@keyframes detail-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 .detail-block {
-  margin-bottom: 8px;
+  margin-top: 10px;
 }
 .detail-label {
   font-size: 11px;
-  color: rgba(255, 255, 255, 0.45);
+  color: rgba(255, 255, 255, 0.4);
   margin-bottom: 4px;
 }
 .detail-row {
   display: grid;
-  grid-template-columns: 140px 1fr;
-  gap: 6px;
+  grid-template-columns: minmax(100px, 160px) 1fr;
+  gap: 8px;
   margin-bottom: 4px;
-  align-items: start;
 }
 .detail-key {
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.7);
+  color: rgba(255, 255, 255, 0.65);
 }
 .detail-val {
   font-family: Consolas, "Courier New", monospace;
   font-size: 11px;
-  color: rgba(255, 255, 255, 0.9);
+  color: rgba(255, 255, 255, 0.88);
   word-break: break-all;
 }
 .detail-val.block {
   display: block;
-  padding: 4px 6px;
-  background: rgba(0, 0, 0, 0.25);
+  padding: 6px 8px;
+  background: rgba(0, 0, 0, 0.28);
+  border-radius: 6px;
+}
+.tag-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.svc-tag {
+  font-family: Consolas, "Courier New", monospace;
+  font-size: 10px;
+  padding: 2px 7px;
   border-radius: 4px;
+  color: rgba(255, 255, 255, 0.75);
+  background: rgba(255, 255, 255, 0.06);
 }
 .detail-meta {
+  margin-top: 8px;
   font-size: 11px;
-  color: rgba(255, 255, 255, 0.38);
+  color: rgba(255, 255, 255, 0.32);
+}
+.device-fade-enter-active,
+.device-fade-leave-active {
+  transition: all 0.2s ease;
+}
+.device-fade-enter-from,
+.device-fade-leave-to {
+  opacity: 0;
+  transform: translateY(6px);
+}
+@media (max-width: 640px) {
+  .card-main {
+    grid-template-columns: 40px 1fr;
+  }
+  .actions {
+    grid-column: 2;
+    justify-self: start;
+  }
+  .card-detail {
+    padding-left: 14px;
+  }
 }
 </style>

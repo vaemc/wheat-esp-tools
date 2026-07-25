@@ -5566,6 +5566,7 @@ dependencies = [
  "tauri-plugin-shell",
  "tauri-plugin-updater",
  "tokio",
+ "uuid",
  "windows 0.62.2",
  "windows-collections 0.3.2",
 ]

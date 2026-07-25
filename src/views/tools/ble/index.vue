@@ -1,30 +1,44 @@
 <template>
   <div class="ble-page">
-    <section class="ble-toolbar panel">
-      <a-segmented
-        v-model:value="scanMode"
-        :options="modeOptions"
-        :disabled="isScanning"
-        @change="onModeChange"
-      />
-      <a-button
-        type="primary"
-        :danger="isScanning"
-        :loading="false"
-        @click="toggleScan"
-      >
-        {{ isScanning ? $t("ble.stopScanning") : $t("ble.startScanning") }}
-      </a-button>
-      <a-button :disabled="isScanning" @click="clearDevices">
-        {{ $t("ble.clearList") }}
-      </a-button>
+    <section class="ble-toolbar">
+      <div class="toolbar-left">
+        <a-segmented
+          v-model:value="scanMode"
+          :options="modeOptions"
+          :disabled="isScanning || bleConn.connecting.value"
+          @change="onModeChange"
+        />
+        <a-button
+          type="primary"
+          :danger="isScanning"
+          :disabled="bleConn.connecting.value"
+          @click="toggleScan"
+        >
+          {{ isScanning ? $t("ble.stopScanning") : $t("ble.startScanning") }}
+        </a-button>
+        <a-button
+          :disabled="isScanning || bleConn.connecting.value"
+          @click="clearDevices"
+        >
+          {{ $t("ble.clearList") }}
+        </a-button>
+      </div>
       <div class="stats">
-        <a-tag color="processing" v-if="isScanning">{{ $t("ble.scanning") }}</a-tag>
+        <span v-if="isScanning" class="live-pill">
+          <span class="pulse" />
+          {{ $t("ble.scanning") }}
+        </span>
+        <span v-if="bleConn.connected.value" class="live-pill ok">
+          {{ $t("ble.connected") }}
+        </span>
         <span class="stat-item">
           {{ $t("ble.deviceCount", { total: stats.total, visible: stats.visible }) }}
         </span>
         <span v-if="stats.strongest != null" class="stat-item">
-          {{ $t("ble.strongest") }}: {{ stats.strongest }} dBm
+          {{ $t("ble.strongest") }}
+          <em :style="{ color: rssiColor(stats.strongest) }">
+            {{ stats.strongest }} dBm
+          </em>
         </span>
         <template v-if="scanMode === 'classic'">
           <span v-if="classicStats.paired > 0" class="stat-item">
@@ -41,36 +55,56 @@
       {{ $t("ble.classicHint") }}
     </p>
 
-    <a-row :gutter="16" class="ble-body">
-      <a-col :xs="24" :lg="17">
-        <section class="ble-list panel">
-          <BleDeviceTable
-            v-if="scanMode === 'ble'"
-            :devices="bleDevices"
-            :empty-text="emptyText"
-            :table-height="tableHeight"
-          />
-          <ClassicBtDeviceTable
-            v-else
-            :devices="classicDevices"
-            :empty-text="emptyText"
-            :table-height="tableHeight"
-          />
-        </section>
-      </a-col>
-      <a-col :xs="24" :lg="7">
-        <BleFilterPanel
+    <div class="ble-layout" :class="{ classic: scanMode === 'classic' }">
+      <section class="ble-list">
+        <header class="list-head">
+          <span>{{ $t("ble.deviceList") }}</span>
+          <span class="list-sub">{{ $t("ble.tapForDetail") }}</span>
+        </header>
+        <BleDeviceTable
           v-if="scanMode === 'ble'"
-          :filter="bleFilter"
-          :reset-filter="resetBleFilter"
+          :devices="bleDevices"
+          :empty-text="emptyText"
+          :connecting-address="connectingAddress"
+          :connected-address="bleConn.info.value?.address ?? null"
+          @connect="onConnectDevice"
         />
+        <ClassicBtDeviceTable
+          v-else
+          :devices="classicDevices"
+          :empty-text="emptyText"
+        />
+      </section>
+
+      <aside class="ble-side">
+        <template v-if="scanMode === 'ble'">
+          <BleGattPanel
+            :connected="bleConn.connected.value"
+            :busy="bleConn.busy.value"
+            :info="bleConn.info.value"
+            :logs="bleConn.logs.value"
+            :last-counter="bleConn.lastCounter.value"
+            :is-subscribed="bleConn.isSubscribed"
+            @disconnect="bleConn.disconnect"
+            @read="(s, c) => bleConn.read(s, c)"
+            @write="(s, c, text) => bleConn.write(s, c, text)"
+            @subscribe="(s, c) => bleConn.subscribe(s, c)"
+            @unsubscribe="(s, c) => bleConn.unsubscribe(s, c)"
+            @clear-logs="bleConn.clearLogs"
+            @send-echo="onSendEcho"
+          />
+          <BleFilterPanel
+            :filter="bleFilter"
+            :reset-filter="resetBleFilter"
+          />
+        </template>
         <ClassicBtFilterPanel
           v-else
           :filter="classicFilter"
           :reset-filter="resetClassicFilter"
         />
-      </a-col>
-    </a-row>
+      </aside>
+    </div>
   </div>
 </template>
 <script setup lang="ts">
@@ -80,13 +114,17 @@ import BleDeviceTable from "./components/BleDeviceTable.vue";
 import ClassicBtDeviceTable from "./components/ClassicBtDeviceTable.vue";
 import BleFilterPanel from "./components/BleFilterPanel.vue";
 import ClassicBtFilterPanel from "./components/ClassicBtFilterPanel.vue";
+import BleGattPanel from "./components/BleGattPanel.vue";
 import { useBleScanner } from "./composables/useBleScanner";
 import { useClassicBtScanner } from "./composables/useClassicBtScanner";
-import type { BleScanMode } from "./types";
+import { useBleConnection } from "./composables/useBleConnection";
+import { rssiColor } from "./utils/bleFormat";
+import type { BleDeviceRecord, BleScanMode } from "./types";
 
 const { t } = useI18n();
 
 const scanMode = ref<BleScanMode>("ble");
+const connectingAddress = ref<string | null>(null);
 
 const {
   scanning: bleScanning,
@@ -112,6 +150,8 @@ const {
   setupListener: setupClassicListener,
 } = useClassicBtScanner();
 
+const bleConn = useBleConnection();
+
 const modeOptions = computed(() => [
   { label: t("ble.modeBle"), value: "ble" },
   { label: t("ble.modeClassic"), value: "classic" },
@@ -126,8 +166,6 @@ const isScanning = computed(
 const stats = computed(() =>
   scanMode.value === "ble" ? bleStats.value : classicStats.value
 );
-
-const tableHeight = 480;
 
 const emptyText = computed(() => {
   if (isScanning.value) {
@@ -165,6 +203,26 @@ async function onModeChange() {
   }
 }
 
+async function onConnectDevice(record: BleDeviceRecord) {
+  if (bleScanning.value) {
+    await stopBleScan();
+  }
+  connectingAddress.value = record.address;
+  try {
+    await bleConn.connect(record.address, record.local_name || undefined);
+  } finally {
+    connectingAddress.value = null;
+  }
+}
+
+async function onSendEcho(text: string) {
+  try {
+    await bleConn.runEspTestEcho(text);
+  } catch {
+    /* logged */
+  }
+}
+
 onMounted(() => {
   setupBleListener();
   setupClassicListener();
@@ -172,20 +230,30 @@ onMounted(() => {
 </script>
 <style scoped>
 .ble-page {
-  padding: 12px 16px;
-}
-.panel {
-  margin-bottom: 12px;
+  padding: 14px 16px 18px;
+  height: 100%;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
 }
 .ble-toolbar {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 10px 12px;
-  padding: 10px 14px;
-  background: rgba(0, 0, 0, 0.2);
+  gap: 12px;
+  padding: 12px 14px;
+  margin-bottom: 12px;
+  flex-shrink: 0;
+  background: rgba(0, 0, 0, 0.22);
   border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 6px;
+  border-radius: 10px;
+}
+.toolbar-left {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
 }
 .stats {
   display: flex;
@@ -196,24 +264,106 @@ onMounted(() => {
 }
 .stat-item {
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.55);
+  color: rgba(255, 255, 255, 0.5);
+}
+.stat-item em {
+  font-style: normal;
+  font-family: Consolas, "Courier New", monospace;
+  font-weight: 600;
+  margin-left: 4px;
+}
+.live-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: 999px;
+  color: #91caff;
+  background: rgba(105, 177, 255, 0.12);
+  border: 1px solid rgba(105, 177, 255, 0.22);
+}
+.live-pill.ok {
+  color: #3ecf8e;
+  background: rgba(62, 207, 142, 0.12);
+  border-color: rgba(62, 207, 142, 0.22);
+}
+.pulse {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #69b1ff;
+  animation: pulse 1.2s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.35;
+    transform: scale(0.75);
+  }
 }
 .mode-hint {
-  margin: 0 0 10px;
+  margin: -4px 0 12px;
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.45);
+  color: rgba(255, 255, 255, 0.42);
+  flex-shrink: 0;
+}
+.ble-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(300px, 0.9fr);
+  gap: 12px;
+  align-items: stretch;
+  flex: 1;
+  min-height: 0;
+}
+.ble-layout.classic {
+  grid-template-columns: minmax(0, 1.6fr) minmax(260px, 0.7fr);
 }
 .ble-list {
-  padding: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  height: 100%;
   overflow: hidden;
-  background: rgba(0, 0, 0, 0.2);
+  background: rgba(0, 0, 0, 0.22);
   border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 6px;
+  border-radius: 10px;
 }
-.ble-list :deep(.ble-table) {
-  padding: 4px 6px;
+.list-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 14px 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.88);
+  flex-shrink: 0;
 }
-.ble-body {
-  margin-top: 0;
+.list-sub {
+  font-size: 11px;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.35);
+}
+.ble-side {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 0;
+  overflow: auto;
+}
+@media (max-width: 1100px) {
+  .ble-layout,
+  .ble-layout.classic {
+    grid-template-columns: 1fr;
+  }
+  .ble-list {
+    min-height: 360px;
+  }
 }
 </style>

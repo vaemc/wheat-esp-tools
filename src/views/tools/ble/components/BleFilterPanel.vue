@@ -68,9 +68,9 @@ defineProps<{
 <style scoped>
 .ble-filter {
   padding: 12px 14px;
-  background: rgba(0, 0, 0, 0.2);
+  background: rgba(0, 0, 0, 0.22);
   border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 6px;
+  border-radius: 10px;
 }
 .panel-head {
   display: flex;

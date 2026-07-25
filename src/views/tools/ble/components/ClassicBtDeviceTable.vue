@@ -1,252 +1,310 @@
 <template>
-  <a-table
-    class="ble-table"
-    :bordered="true"
-    :pagination="false"
-    size="small"
-    row-key="address"
-    :scroll="{ y: tableHeight }"
-    :data-source="devices"
-    :columns="columns"
-    :expanded-row-keys="expandedKeys"
-    @expand="onExpand"
-  >
-    <template #emptyText>
-      <PlaceholderHint :text="emptyText" />
-    </template>
-    <template #bodyCell="{ column, record }">
-      <template v-if="column.key === 'rssi'">
-        <span
-          v-if="record.rssi != null"
-          class="rssi-text"
-          :style="{ color: rssiColor(record.rssi) }"
-        >
-          {{ record.rssi }}
-        </span>
-        <span v-else class="muted">{{ $t("ble.classicRssiUnknown") }}</span>
-      </template>
-      <template v-else-if="column.key === 'name'">
-        <span
-          class="device-name"
-          :title="displayName(record.local_name, $t('ble.unknownName'))"
-        >
-          {{ displayName(record.local_name, $t("ble.unknownName")) }}
-        </span>
-      </template>
-      <template v-else-if="column.key === 'address'">
-        <p v-copy class="mono addr">{{ record.address }}</p>
-      </template>
-      <template v-else-if="column.key === 'class'">
-        <span class="class-cell">
-          <span class="mono">{{ record.class_of_device }}</span>
-          <span class="class-tag">{{ record.class_category }}</span>
-        </span>
-      </template>
-      <template v-else-if="column.key === 'status'">
-        <a-space :size="4" wrap>
-          <a-tag v-if="record.connected" color="green">
-            {{ $t("ble.classicConnected") }}
-          </a-tag>
-          <a-tag v-if="record.paired" color="blue">
-            {{ $t("ble.classicPaired") }}
-          </a-tag>
-          <a-tag v-if="record.authenticated" color="geekblue">
-            {{ $t("ble.classicAuthenticated") }}
-          </a-tag>
-          <span
-            v-if="!record.connected && !record.paired && !record.authenticated"
-            class="muted"
+  <div class="device-list">
+    <PlaceholderHint v-if="!devices.length" :text="emptyText" class="empty" />
+    <TransitionGroup v-else name="device-fade" tag="div" class="device-stack">
+      <article
+        v-for="record in devices"
+        :key="record.address"
+        class="device-card"
+        :class="{
+          expanded: expandedKey === record.address,
+          linked: record.connected,
+        }"
+        @click="toggleExpand(record.address)"
+      >
+        <div class="card-main">
+          <div
+            class="avatar"
+            :style="{
+              '--sig':
+                record.rssi != null ? rssiColor(record.rssi) : 'rgba(255,255,255,0.35)',
+            }"
           >
-            —
-          </span>
-        </a-space>
-      </template>
-      <template v-else-if="column.key === 'lastSeen'">
-        <span class="seen-text">{{ formatAgoShort(record.lastSeen, tick) }}</span>
-      </template>
-    </template>
-
-    <template #expandedRowRender="{ record }">
-      <div class="detail-panel">
-        <div class="detail-block">
-          <div class="detail-label">{{ $t("ble.classicClassOfDevice") }}</div>
-          <div class="detail-row">
-            <span class="detail-key">{{ $t("ble.classicCod") }}</span>
-            <code class="detail-val mono">{{ record.class_of_device }}</code>
+            <SignalBars
+              v-if="record.rssi != null"
+              :bars="rssiBars(record.rssi)"
+            />
+            <span v-else class="avatar-fallback">BT</span>
           </div>
-          <div class="detail-row">
-            <span class="detail-key">{{ $t("ble.classicCategory") }}</span>
-            <span class="detail-val">{{ record.class_category }}</span>
+
+          <div class="info">
+            <div class="title-row">
+              <h3
+                class="name"
+                :title="displayName(record.local_name, $t('ble.unknownName'))"
+              >
+                {{ displayName(record.local_name, $t("ble.unknownName")) }}
+              </h3>
+              <span
+                v-if="record.rssi != null"
+                class="rssi-pill"
+                :style="{ color: rssiColor(record.rssi) }"
+              >
+                {{ record.rssi }} dBm
+              </span>
+            </div>
+            <p v-copy class="mac" @click.stop>{{ record.address }}</p>
+            <div class="meta-row">
+              <span class="seen">{{ formatAgoShort(record.lastSeen, tick) }}</span>
+              <span class="chip">{{ record.class_category || record.class_of_device }}</span>
+              <span v-if="record.connected" class="status on">
+                {{ $t("ble.classicConnected") }}
+              </span>
+              <span v-if="record.paired" class="status">
+                {{ $t("ble.classicPaired") }}
+              </span>
+              <span v-if="record.authenticated" class="status">
+                {{ $t("ble.classicAuthenticated") }}
+              </span>
+            </div>
           </div>
         </div>
 
-        <div class="detail-block">
-          <div class="detail-label">{{ $t("ble.colRssi") }}</div>
-          <div class="detail-row">
-            <span class="detail-key">{{ $t("ble.colRssi") }}</span>
-            <span class="detail-val">
-              {{
-                record.rssi != null
-                  ? `${record.rssi} dBm`
-                  : $t("ble.classicRssiUnknown")
-              }}
-            </span>
+        <div v-if="expandedKey === record.address" class="card-detail" @click.stop>
+          <div class="detail-block">
+            <div class="detail-label">{{ $t("ble.classicClassOfDevice") }}</div>
+            <div class="detail-row">
+              <span class="detail-key">{{ $t("ble.classicCod") }}</span>
+              <code class="detail-val mono">{{ record.class_of_device }}</code>
+            </div>
+            <div class="detail-row">
+              <span class="detail-key">{{ $t("ble.classicCategory") }}</span>
+              <span class="detail-val">{{ record.class_category }}</span>
+            </div>
+          </div>
+          <div class="detail-block">
+            <div class="detail-label">{{ $t("ble.classicLinkState") }}</div>
+            <div class="detail-row">
+              <span class="detail-key">{{ $t("ble.classicConnected") }}</span>
+              <span class="detail-val">{{ yesNo(record.connected) }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-key">{{ $t("ble.classicPaired") }}</span>
+              <span class="detail-val">{{ yesNo(record.paired) }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-key">{{ $t("ble.classicAuthenticated") }}</span>
+              <span class="detail-val">{{ yesNo(record.authenticated) }}</span>
+            </div>
+          </div>
+          <div class="detail-meta">
+            {{ $t("ble.seenCount", { n: record.seenCount }) }}
           </div>
         </div>
-
-        <div class="detail-block">
-          <div class="detail-label">{{ $t("ble.classicLinkState") }}</div>
-          <div class="detail-row">
-            <span class="detail-key">{{ $t("ble.classicConnected") }}</span>
-            <span class="detail-val">{{ yesNo(record.connected) }}</span>
-          </div>
-          <div class="detail-row">
-            <span class="detail-key">{{ $t("ble.classicPaired") }}</span>
-            <span class="detail-val">{{ yesNo(record.paired) }}</span>
-          </div>
-          <div class="detail-row">
-            <span class="detail-key">{{ $t("ble.classicAuthenticated") }}</span>
-            <span class="detail-val">{{ yesNo(record.authenticated) }}</span>
-          </div>
-        </div>
-
-        <div class="detail-meta">
-          {{ $t("ble.seenCount", { n: record.seenCount }) }}
-        </div>
-      </div>
-    </template>
-  </a-table>
+      </article>
+    </TransitionGroup>
+  </div>
 </template>
 <script setup lang="ts">
-import { computed, ref } from "vue";
+import { ref } from "vue";
 import { useI18n } from "vue-i18n";
 import type { ClassicBtDeviceRecord } from "../types";
 import PlaceholderHint from "@/components/PlaceholderHint.vue";
+import SignalBars from "./SignalBars.vue";
 import { useRelativeTimeTick } from "../composables/useRelativeTimeTick";
-import { displayName, formatAgoShort, rssiColor } from "../utils/bleFormat";
+import {
+  displayName,
+  formatAgoShort,
+  rssiBars,
+  rssiColor,
+} from "../utils/bleFormat";
 
 defineProps<{
   devices: ClassicBtDeviceRecord[];
   emptyText: string;
-  tableHeight: number;
 }>();
 
 const { t } = useI18n();
-const expandedKeys = ref<string[]>([]);
+const expandedKey = ref<string | null>(null);
 const tick = useRelativeTimeTick();
-
-const columns = computed(() => [
-  { title: t("ble.colRssi"), key: "rssi", width: 52, align: "center" as const },
-  { title: t("ble.colName"), key: "name", minWidth: 96, ellipsis: true },
-  { title: "MAC", key: "address", width: 128, ellipsis: true },
-  { title: t("ble.classicColClass"), key: "class", ellipsis: true },
-  { title: t("ble.classicColStatus"), key: "status", width: 140 },
-  { title: t("ble.colLastSeen"), key: "lastSeen", width: 72, align: "right" as const },
-]);
 
 function yesNo(v: boolean): string {
   return v ? t("ble.classicYes") : t("ble.classicNo");
 }
 
-function onExpand(expanded: boolean, record: ClassicBtDeviceRecord) {
-  if (expanded) {
-    expandedKeys.value = [record.address];
-  } else {
-    expandedKeys.value = [];
-  }
+function toggleExpand(address: string) {
+  expandedKey.value = expandedKey.value === address ? null : address;
 }
 </script>
 <style scoped>
-.ble-table :deep(.ant-table) {
-  background: transparent;
-  font-size: 12px;
+.device-list {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 0 8px 8px;
 }
-.ble-table :deep(.ant-table-thead > tr > th) {
-  padding: 4px 6px !important;
+.empty {
+  min-height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 16px;
+  text-align: center;
+  box-sizing: border-box;
+}
+.device-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.device-card {
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  cursor: pointer;
+  transition:
+    border-color 0.18s ease,
+    background 0.18s ease;
+}
+.device-card:hover {
+  border-color: rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.05);
+}
+.device-card.linked {
+  border-color: rgba(62, 207, 142, 0.4);
+  background: rgba(62, 207, 142, 0.05);
+}
+.card-main {
+  display: grid;
+  grid-template-columns: 44px 1fr;
+  gap: 12px;
+  align-items: center;
+  padding: 12px 14px;
+}
+.avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  background: color-mix(in srgb, var(--sig) 16%, transparent);
+  border: 1px solid color-mix(in srgb, var(--sig) 28%, transparent);
+}
+.avatar-fallback {
   font-size: 11px;
-  font-weight: 500;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.55);
+  letter-spacing: 0.04em;
 }
-.ble-table :deep(.ant-table-tbody > tr > td) {
-  padding: 2px 6px !important;
-  line-height: 1.25;
+.info {
+  min-width: 0;
 }
-.ble-table :deep(.ant-table-row-expand-icon-cell) {
-  width: 28px !important;
-  padding: 2px 4px !important;
+.title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 2px;
 }
-.ble-table :deep(.ant-table-expanded-row > td) {
-  padding: 4px 6px 6px !important;
-}
-.rssi-text {
-  font-family: Consolas, "Courier New", monospace;
-  font-size: 11px;
+.name {
+  margin: 0;
+  font-size: 14px;
   font-weight: 600;
-}
-.device-name {
-  display: block;
+  color: rgba(255, 255, 255, 0.92);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 12px;
-  font-weight: 500;
 }
-.mono {
+.rssi-pill {
+  flex-shrink: 0;
   font-family: Consolas, "Courier New", monospace;
   font-size: 11px;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.28);
 }
-.addr {
-  margin: 0;
-  cursor: pointer;
-  color: rgba(255, 255, 255, 0.85);
+.mac {
+  margin: 0 0 6px;
+  font-family: Consolas, "Courier New", monospace;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.45);
+  cursor: copy;
+  width: fit-content;
 }
-.class-cell {
-  display: inline-flex;
+.meta-row {
+  display: flex;
   align-items: center;
   gap: 6px;
   flex-wrap: wrap;
 }
-.class-tag {
+.seen {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.38);
+}
+.chip {
   font-size: 10px;
-  color: rgba(255, 255, 255, 0.55);
+  padding: 1px 6px;
+  border-radius: 4px;
+  color: rgba(255, 255, 255, 0.65);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }
-.muted {
-  color: rgba(255, 255, 255, 0.35);
-  font-size: 11px;
+.status {
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  color: rgba(145, 202, 255, 0.95);
+  background: rgba(105, 177, 255, 0.12);
+  border: 1px solid rgba(105, 177, 255, 0.18);
 }
-.seen-text {
-  font-size: 11px;
-  color: rgba(255, 255, 255, 0.5);
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
+.status.on {
+  color: rgba(62, 207, 142, 0.95);
+  background: rgba(62, 207, 142, 0.12);
+  border-color: rgba(62, 207, 142, 0.22);
 }
-.detail-panel {
-  padding: 4px 2px 2px;
+.card-detail {
+  padding: 0 14px 12px 70px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  animation: detail-in 0.18s ease;
+}
+@keyframes detail-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 .detail-block {
-  margin-bottom: 8px;
+  margin-top: 10px;
 }
 .detail-label {
   font-size: 11px;
-  color: rgba(255, 255, 255, 0.45);
+  color: rgba(255, 255, 255, 0.4);
   margin-bottom: 4px;
 }
 .detail-row {
   display: grid;
   grid-template-columns: 120px 1fr;
-  gap: 6px;
+  gap: 8px;
   margin-bottom: 4px;
-  align-items: start;
 }
 .detail-key {
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.7);
+  color: rgba(255, 255, 255, 0.65);
 }
 .detail-val {
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.9);
+  color: rgba(255, 255, 255, 0.88);
+}
+.mono {
+  font-family: Consolas, "Courier New", monospace;
+  font-size: 11px;
 }
 .detail-meta {
+  margin-top: 8px;
   font-size: 11px;
-  color: rgba(255, 255, 255, 0.38);
+  color: rgba(255, 255, 255, 0.32);
+}
+.device-fade-enter-active,
+.device-fade-leave-active {
+  transition: all 0.2s ease;
+}
+.device-fade-enter-from,
+.device-fade-leave-to {
+  opacity: 0;
+  transform: translateY(6px);
 }
 </style>

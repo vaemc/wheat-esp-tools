@@ -40,12 +40,21 @@ export function rssiLevel(rssi: number): RssiLevel {
 
 export function rssiColor(rssi: number): string {
   const map: Record<RssiLevel, string> = {
-    excellent: "#52c41a",
-    good: "#73d13d",
-    fair: "#faad14",
-    weak: "#ff4d4f",
+    excellent: "#3ecf8e",
+    good: "#6bcb77",
+    fair: "#e6a23c",
+    weak: "#f07178",
   };
   return map[rssiLevel(rssi)];
+}
+
+/** 信号格 0–4，用于条形指示 */
+export function rssiBars(rssi: number): number {
+  if (rssi >= -50) return 4;
+  if (rssi >= -65) return 3;
+  if (rssi >= -80) return 2;
+  if (rssi >= -90) return 1;
+  return 0;
 }
 
 /** 多久前见到（秒） */

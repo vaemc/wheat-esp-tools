@@ -26,6 +26,7 @@ impl Drop for BleScanFlagGuard {
 }
 
 mod app_tray;
+mod ble_gatt;
 mod classic_bluetooth;
 mod espflash_ops;
 mod image;
@@ -732,6 +733,7 @@ fn main() {
                 .args(["--autostart"])
                 .build(),
         )
+        .manage(ble_gatt::BleGattState::default())
         .invoke_handler(tauri::generate_handler![
             get_serial_port_list,
             get_serial_port_details,
@@ -744,6 +746,13 @@ fn main() {
             generate_nvs_from_csv,
             start_ble_advertisement_scan,
             start_classic_bluetooth_scan,
+            ble_gatt::ble_connect,
+            ble_gatt::ble_disconnect,
+            ble_gatt::ble_is_connected,
+            ble_gatt::ble_read,
+            ble_gatt::ble_write,
+            ble_gatt::ble_subscribe,
+            ble_gatt::ble_unsubscribe,
             probe_gif,
             probe_gif_rich,
             compress_gif,
