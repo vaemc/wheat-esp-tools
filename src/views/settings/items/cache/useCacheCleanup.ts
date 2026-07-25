@@ -4,12 +4,12 @@ import { useI18n } from "vue-i18n";
 import prettyBytes from "pretty-bytes";
 import { openDirectoryInExplorer } from "@/utils/common";
 import {
-  calcDirSizeBytes,
-  clearDirContents,
+  calcCacheableSizeBytes,
+  clearCacheableContents,
   getTempWorkRoot,
 } from "@/utils/tempWorkDir";
 
-/** 设置页 · 缓存清理：仅清理临时工作目录，不动 firmware 固件 */
+/** 设置页 · 缓存清理：清理临时工作目录，保留 firmware 固件目录 */
 export function useCacheCleanup() {
   const { t } = useI18n();
   const loading = ref(false);
@@ -24,7 +24,7 @@ export function useCacheCleanup() {
     try {
       const tmp = await getTempWorkRoot();
       tempRoot.value = tmp;
-      totalBytes.value = await calcDirSizeBytes(tmp);
+      totalBytes.value = await calcCacheableSizeBytes(tmp);
     } catch (error) {
       console.error("[settings/cache] refresh failed:", error);
       message.error(t("settings.cacheRefreshFailed"));
@@ -53,7 +53,7 @@ export function useCacheCleanup() {
         clearing.value = true;
         try {
           const tmp = tempRoot.value || (await getTempWorkRoot());
-          await clearDirContents(tmp);
+          await clearCacheableContents(tmp);
           message.success(t("settings.cacheClearSuccess"));
           await refresh();
         } catch (error) {

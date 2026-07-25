@@ -1,9 +1,9 @@
-import { join } from "@tauri-apps/api/path";
 import type { Ref } from "vue";
-import { getCurrentDir, openFileInExplorer } from "@/utils/common";
+import { openFileInExplorer } from "@/utils/common";
 import { eraseFlash as eraseFlashOp, readFlash } from "@/utils/espflash";
 import { usePortStore } from "@/stores/port";
 import { nowMs } from "@/utils/datetime";
+import { joinTempWorkDir } from "@/utils/tempWorkDir";
 import { message } from "ant-design-vue";
 import { useI18n } from "vue-i18n";
 
@@ -46,9 +46,7 @@ export function useFlashQuickActions(baudRate: Ref<string>) {
       return;
     }
 
-    const currentDir = await getCurrentDir();
-    const savePath = await join(
-      currentDir,
+    const savePath = await joinTempWorkDir(
       "firmware",
       `read-${nowMs()}.bin`
     );

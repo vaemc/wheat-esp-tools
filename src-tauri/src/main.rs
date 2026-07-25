@@ -512,11 +512,44 @@ fn get_serial_port_details() -> Result<Vec<serial::port_info::SerialPortEntry>, 
     serial::port_info::list_ports_with_details()
 }
 
+/// 应用工作目录：可执行文件所在目录（便携）。
+/// 开发时若在 `target/debug|release`，回退到 `src-tauri`，避免把固件写进 target。
+///
+/// 不要用 `env::current_dir()`：Windows 下双击 / 部分启动方式 cwd 会是 `C:\Windows\System32`。
+fn app_workdir() -> std::path::PathBuf {
+    let fallback = || env::current_dir().unwrap_or_else(|_| std::path::PathBuf::from("."));
+    let Ok(exe) = env::current_exe() else {
+        return fallback();
+    };
+    let Some(mut dir) = exe.parent().map(|p| p.to_path_buf()) else {
+        return fallback();
+    };
+
+    let folder = dir
+        .file_name()
+        .and_then(|n| n.to_str())
+        .unwrap_or("")
+        .to_ascii_lowercase();
+    if folder == "debug" || folder == "release" {
+        if let Some(target) = dir.parent() {
+            let is_target = target
+                .file_name()
+                .and_then(|n| n.to_str())
+                .map(|n| n.eq_ignore_ascii_case("target"))
+                .unwrap_or(false);
+            if is_target {
+                if let Some(src_tauri) = target.parent() {
+                    dir = src_tauri.to_path_buf();
+                }
+            }
+        }
+    }
+    dir
+}
+
 #[tauri::command]
 fn get_current_dir() -> Result<String, String> {
-    env::current_dir()
-        .map(|p| p.display().to_string())
-        .map_err(|e| format!("获取当前目录失败: {e}"))
+    Ok(app_workdir().display().to_string())
 }
 
 #[tauri::command]
@@ -554,10 +587,22 @@ fn open_file_in_explorer(path: &str) -> Result<(), String> {
 
 #[tauri::command]
 fn open_directory_in_explorer(path: &str) -> Result<(), String> {
+    let dir = Path::new(path);
+    if !dir.exists() {
+        fs::create_dir_all(dir).map_err(|e| format!("创建目录失败: {e}"))?;
+    }
+    // 去掉 Windows canonicalize 的 \\?\ 前缀，避免资源管理器异常
+    let abs = fs::canonicalize(dir).unwrap_or_else(|_| dir.to_path_buf());
+    let abs_str = abs.to_string_lossy();
+    let clean = abs_str
+        .strip_prefix(r"\\?\")
+        .unwrap_or(abs_str.as_ref())
+        .to_string();
+
     #[cfg(target_os = "windows")]
     {
         Command::new("explorer")
-            .arg(path)
+            .arg(&clean)
             .spawn()
             .map_err(|e| format!("打开资源管理器失败: {e}"))?;
         Ok(())
@@ -565,7 +610,7 @@ fn open_directory_in_explorer(path: &str) -> Result<(), String> {
     #[cfg(target_os = "macos")]
     {
         Command::new("open")
-            .arg(path)
+            .arg(&clean)
             .status()
             .map_err(|e| format!("打开 Finder 失败: {e}"))?;
         Ok(())
@@ -573,7 +618,7 @@ fn open_directory_in_explorer(path: &str) -> Result<(), String> {
     #[cfg(all(unix, not(target_os = "macos")))]
     {
         Command::new("xdg-open")
-            .arg(path)
+            .arg(&clean)
             .spawn()
             .map_err(|e| format!("打开文件管理器失败: {e}"))?;
         Ok(())
@@ -750,12 +795,9 @@ async fn convert_lvgl_font(
 }
 
 fn main() {
-    for item in ["firmware"].iter() {
-        if !Path::new(item).exists() {
-            if let Err(e) = fs::create_dir(item) {
-                eprintln!("创建目录 {item} 失败: {e}");
-            }
-        }
+    let work = app_workdir();
+    if let Err(e) = env::set_current_dir(&work) {
+        eprintln!("设置工作目录失败 ({work:?}): {e}");
     }
 
     tauri::Builder::default()

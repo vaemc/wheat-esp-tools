@@ -389,9 +389,8 @@ const confirmMerge = async () => {
 
   merging.value = true;
   try {
-    const dir = await ensureCurrentDir();
-    const { join } = await import("@tauri-apps/api/path");
-    const filename = await join(dir, "firmware", name);
+    const { joinTempWorkDir } = await import("@/utils/tempWorkDir");
+    const filename = await joinTempWorkDir("firmware", name);
 
     await mergeBin(
       filename,

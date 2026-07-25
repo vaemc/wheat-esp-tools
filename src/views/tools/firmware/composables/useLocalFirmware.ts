@@ -1,11 +1,11 @@
 import { computed, ref } from "vue";
 import prettyBytes from "pretty-bytes";
 import {
-  getCurrentDir,
   getFirmwareList,
   getFileInfo,
   removeFile,
 } from "@/utils/common";
+import { getFirmwareDir } from "@/utils/tempWorkDir";
 import { basename } from "@/utils/path";
 
 export interface LocalFirmwareItem {
@@ -52,8 +52,7 @@ export function useLocalFirmware() {
   async function refresh() {
     loading.value = true;
     try {
-      const dir = await getCurrentDir();
-      firmwareDir.value = `${dir}\\firmware`;
+      firmwareDir.value = await getFirmwareDir();
       const paths = await getFirmwareList();
       items.value = await Promise.all(paths.map(toListItem));
     } finally {

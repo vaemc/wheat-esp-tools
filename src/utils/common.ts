@@ -56,7 +56,8 @@ export async function getChipTypeList(): Promise<string[]> {
 }
 
 export async function getFirmwareList() {
-  const dir = await join(await getCurrentDir(), "firmware");
+  const { getFirmwareDir } = await import("@/utils/tempWorkDir");
+  const dir = await getFirmwareDir();
   const fileList = await readDir(dir);
   return Promise.all(fileList.map((item) => join(dir, item.name)));
 }
