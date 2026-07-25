@@ -1,154 +1,123 @@
-import { Buffer } from "buffer";
-import {
-  buildOptsString,
-  parseUnicodeRange,
-  sanitizeFontName,
-} from "./range";
+import { invoke } from "@tauri-apps/api/core";
+import { listen, type UnlistenFn } from "@tauri-apps/api/event";
+import { parseUnicodeRange, sanitizeFontName } from "./range";
 import type {
   LvglFontConvertOptions,
   LvglFontConvertResult,
-  LvglFontFormat,
+  LvglFontProgressEvent,
 } from "./types";
 
-/** lv_font_conv convert() 返回的文件字典 */
-type ConvertFiles = Record<string, string | Buffer | Uint8Array>;
+export type { LvglFontProgressEvent };
 
-type ConvertFn = (args: Record<string, unknown>) => Promise<ConvertFiles>;
+export type ProgressHandler = (event: LvglFontProgressEvent) => void;
 
-let convertFn: ConvertFn | null = null;
+let progressUnlisten: UnlistenFn | null = null;
+const progressHandlers = new Set<ProgressHandler>();
 
-async function getConvert(): Promise<ConvertFn> {
-  if (convertFn) {
-    return convertFn;
+async function ensureProgressListener() {
+  if (progressUnlisten) {
+    return;
   }
-  // CommonJS 模块；Vite + nodePolyfills 下可动态导入
-  const mod = await import("lv_font_conv/lib/convert.js");
-  const fn =
-    (mod as { default?: ConvertFn }).default ??
-    (mod as unknown as ConvertFn);
-  convertFn = fn;
-  return fn;
+  progressUnlisten = await listen<LvglFontProgressEvent>(
+    "lvgl_font_progress",
+    (event) => {
+      for (const handler of progressHandlers) {
+        handler(event.payload);
+      }
+    }
+  );
 }
 
-function toUint8Array(data: string | Buffer | Uint8Array): Uint8Array {
-  if (typeof data === "string") {
-    return new TextEncoder().encode(data);
-  }
-  return Uint8Array.from(data);
-}
-
-function toString(data: string | Buffer | Uint8Array): string {
-  if (typeof data === "string") {
-    return data;
-  }
-  return new TextDecoder().decode(toUint8Array(data));
-}
-
-function buildFontArgs(
-  fontBytes: Uint8Array,
-  fontFileName: string,
-  options: LvglFontConvertOptions,
-  format: "bin" | "lvgl"
-) {
-  const fontName = sanitizeFontName(options.fontName);
-  const range = options.range.trim()
-    ? parseUnicodeRange(options.range)
-    : [];
-  const symbols = options.symbols ?? "";
-
-  if (!range.length && !symbols.length) {
-    throw new Error("EMPTY_GLYPHS");
-  }
-
-  if (options.bpp === 3 && !options.compress) {
-    throw new Error("BPP3_NEEDS_COMPRESS");
-  }
-
-  const sourceBin = Buffer.from(fontBytes);
-
-  return {
-    font: [
-      {
-        source_path: fontFileName,
-        source_bin: sourceBin,
-        ranges: [
-          {
-            range,
-            symbols,
-          },
-        ],
-      },
-    ],
-    size: Math.max(1, Math.round(options.size)),
-    bpp: options.bpp,
-    no_compress: !options.compress,
-    lcd: !!options.lcd,
-    lcd_v: !!options.lcdV,
-    use_color_info: !!options.useColorInfo,
-    no_kerning: !!options.noKerning,
-    format,
-    output: format === "bin" ? `${fontName}.bin` : fontName,
-    lv_font_name: fontName,
-    lv_fallback: options.fallback.trim() || undefined,
-    lv_include: options.lvInclude.trim() || undefined,
-    opts_string: buildOptsString({ ...options, fontName }, fontFileName),
+/** 订阅转换进度；返回取消订阅函数 */
+export async function onLvglFontProgress(
+  handler: ProgressHandler
+): Promise<() => void> {
+  await ensureProgressListener();
+  progressHandlers.add(handler);
+  return () => {
+    progressHandlers.delete(handler);
   };
 }
 
-async function convertOnce(
-  fontBytes: Uint8Array,
-  fontFileName: string,
-  options: LvglFontConvertOptions,
-  format: "bin" | "lvgl"
-): Promise<{ key: string; data: string | Buffer | Uint8Array }> {
-  const convert = await getConvert();
-  const args = buildFontArgs(fontBytes, fontFileName, options, format);
-  const files = await convert(args);
-  const key = Object.keys(files)[0];
-  if (!key || files[key] == null) {
-    throw new Error("CONVERT_EMPTY");
-  }
-  return { key, data: files[key]! };
+interface RustConvertResult {
+  fontName: string;
+  size: number;
+  bpp: number;
+  cSource?: string | null;
+  glyphCount: number;
+  elapsedMs: number;
 }
 
-function formatsToRun(format: LvglFontFormat): Array<"bin" | "lvgl"> {
-  if (format === "both") {
-    return ["lvgl", "bin"];
-  }
-  return [format];
+export interface ConvertLvglFontInput {
+  fontBytes: Uint8Array;
+  fontFileName: string;
+  options: LvglFontConvertOptions;
+  /** 有本地路径时优先走磁盘读取，避免大字体 IPC 拷贝 */
+  fontPath?: string | null;
+  jobId?: string;
 }
 
 /**
- * 将 TTF/OTF/WOFF 字节转换为 LVGL C 数组和/或二进制字体。
- * 基于官方 lv_font_conv（浏览器端 FreeType WASM）。
+ * 将 TTF/OTF 转换为 LVGL C 数组（纯 Rust + fontdue，后台线程，带进度事件）。
  */
 export async function convertLvglFont(
-  fontBytes: Uint8Array,
-  fontFileName: string,
-  options: LvglFontConvertOptions
+  input: ConvertLvglFontInput
 ): Promise<LvglFontConvertResult> {
+  const { fontBytes, fontFileName, options, fontPath, jobId } = input;
   const fontName = sanitizeFontName(options.fontName);
-  const result: LvglFontConvertResult = {
-    fontName,
-    size: options.size,
-    bpp: options.bpp,
-  };
 
-  for (const format of formatsToRun(options.format)) {
-    const { data } = await convertOnce(
-      fontBytes,
-      fontFileName,
-      { ...options, fontName },
-      format
-    );
-    if (format === "lvgl") {
-      result.cSource = toString(data);
-    } else {
-      result.binBytes = toUint8Array(data);
-    }
+  const range = options.range.trim();
+  const symbols = options.symbols ?? "";
+  if (range) {
+    parseUnicodeRange(range);
+  }
+  if (!range && !symbols.length) {
+    throw new Error("EMPTY_GLYPHS");
   }
 
-  return result;
+  await ensureProgressListener();
+
+  const id =
+    jobId ??
+    `lvgl-font-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+
+  const rustOptions = {
+    fontName,
+    size: Math.max(1, Math.min(512, Math.round(options.size) || 16)),
+    bpp: options.bpp,
+    format: "lvgl",
+    range,
+    symbols,
+    fallback: options.fallback.trim(),
+    lvInclude: options.lvInclude.trim(),
+  };
+
+  const payload: Record<string, unknown> = {
+    fontFileName,
+    options: rustOptions,
+    jobId: id,
+    fontPath: fontPath || null,
+    fontBytes: null as number[] | null,
+  };
+
+  // 无本地路径时才传字节（拖入的 File）；用普通数组以兼容 serde Vec<u8>
+  if (!fontPath) {
+    if (fontBytes.byteLength === 0) {
+      throw new Error("字体数据为空");
+    }
+    payload.fontBytes = Array.from(fontBytes);
+  }
+
+  const raw = await invoke<RustConvertResult>("convert_lvgl_font", payload);
+
+  return {
+    fontName: raw.fontName,
+    size: raw.size,
+    bpp: raw.bpp,
+    glyphCount: raw.glyphCount,
+    elapsedMs: raw.elapsedMs,
+    cSource: raw.cSource ?? undefined,
+  };
 }
 
 export { sanitizeFontName };

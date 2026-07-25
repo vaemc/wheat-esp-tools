@@ -68,21 +68,6 @@
                 />
               </label>
 
-              <label class="field">
-                <span class="field-label-with-tip">
-                  {{ $t("font.outputFormat") }}
-                  <a-tooltip :title="$t('font.outputFormatHint')">
-                    <span class="tip-icon">?</span>
-                  </a-tooltip>
-                </span>
-                <a-select
-                  v-model:value="font.format.value"
-                  :disabled="!font.hasFont.value"
-                  style="width: 100%"
-                  :options="formatOptions"
-                />
-              </label>
-
               <label class="field field--span2">
                 <span class="field-label-with-tip">
                   {{ $t("font.fallback") }}
@@ -167,78 +152,7 @@
 
           <div class="settings-block">
             <div class="block-title">{{ $t("font.advanced") }}</div>
-            <div class="check-grid">
-              <label class="field field--check">
-                <span class="field-label-with-tip">
-                  <a-checkbox
-                    v-model:checked="font.compress.value"
-                    :disabled="!font.hasFont.value"
-                  >
-                    {{ $t("font.compress") }}
-                  </a-checkbox>
-                  <a-tooltip :title="$t('font.compressHint')">
-                    <span class="tip-icon">?</span>
-                  </a-tooltip>
-                </span>
-              </label>
-
-              <label class="field field--check">
-                <span class="field-label-with-tip">
-                  <a-checkbox
-                    v-model:checked="font.lcd.value"
-                    :disabled="!font.hasFont.value"
-                  >
-                    {{ $t("font.lcd") }}
-                  </a-checkbox>
-                  <a-tooltip :title="$t('font.lcdHint')">
-                    <span class="tip-icon">?</span>
-                  </a-tooltip>
-                </span>
-              </label>
-
-              <label class="field field--check">
-                <span class="field-label-with-tip">
-                  <a-checkbox
-                    v-model:checked="font.lcdV.value"
-                    :disabled="!font.hasFont.value"
-                  >
-                    {{ $t("font.lcdV") }}
-                  </a-checkbox>
-                  <a-tooltip :title="$t('font.lcdVHint')">
-                    <span class="tip-icon">?</span>
-                  </a-tooltip>
-                </span>
-              </label>
-
-              <label class="field field--check">
-                <span class="field-label-with-tip">
-                  <a-checkbox
-                    v-model:checked="font.useColorInfo.value"
-                    :disabled="!font.hasFont.value"
-                  >
-                    {{ $t("font.useColorInfo") }}
-                  </a-checkbox>
-                  <a-tooltip :title="$t('font.useColorInfoHint')">
-                    <span class="tip-icon">?</span>
-                  </a-tooltip>
-                </span>
-              </label>
-
-              <label class="field field--check">
-                <span class="field-label-with-tip">
-                  <a-checkbox
-                    v-model:checked="font.noKerning.value"
-                    :disabled="!font.hasFont.value"
-                  >
-                    {{ $t("font.noKerning") }}
-                  </a-checkbox>
-                  <a-tooltip :title="$t('font.noKerningHint')">
-                    <span class="tip-icon">?</span>
-                  </a-tooltip>
-                </span>
-              </label>
-            </div>
-
+            <p class="block-hint">{{ $t("font.advancedFastHint") }}</p>
             <label class="field field--mt">
               <span class="field-label-with-tip">
                 {{ $t("font.lvInclude") }}
@@ -255,22 +169,28 @@
           </div>
         </div>
 
+        <div v-if="converting" class="convert-progress">
+          <div class="convert-progress-meta">
+            <span>{{ progressMessage || $t("font.converting") }}</span>
+            <span>{{ Math.round(progressPercent) }}%</span>
+          </div>
+          <a-progress
+            :percent="Math.round(progressPercent)"
+            :show-info="false"
+            size="small"
+            status="active"
+          />
+        </div>
+
         <div class="action-row">
           <a-button
             type="primary"
             size="large"
             :loading="converting"
-            :disabled="!font.hasFont.value"
+            :disabled="!font.hasFont.value || converting"
             @click="onConvert"
           >
             {{ $t("font.convert") }}
-          </a-button>
-          <a-button
-            size="large"
-            :disabled="!font.current.value?.result?.binBytes"
-            @click="downloadBin"
-          >
-            {{ $t("font.downloadBin") }}
           </a-button>
           <a-button
             size="large"
@@ -300,7 +220,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, ref, watch } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { message } from "ant-design-vue";
 import { useI18n } from "vue-i18n";
 import { storeToRefs } from "pinia";
@@ -311,9 +231,12 @@ import FontPreview from "./components/FontPreview.vue";
 import { useLvglFont } from "./composables/useLvglFont";
 import { useTauriDragDrop } from "@/composables/useTauriDragDrop";
 import { useFontHistoryStore } from "@/stores/fontHistory";
-import { convertLvglFont, RANGE_PRESETS } from "@/utils/font/lvgl";
 import {
-  saveBytesWithDialog,
+  convertLvglFont,
+  onLvglFontProgress,
+  RANGE_PRESETS,
+} from "@/utils/font/lvgl";
+import {
   saveTextWithDialog,
 } from "@/utils/image/shared/saveDialog";
 
@@ -330,6 +253,10 @@ const emit = defineEmits<{
 
 const { t } = useI18n();
 const converting = ref(false);
+const progressPercent = ref(0);
+const progressMessage = ref("");
+const activeJobId = ref<string | null>(null);
+let unlistenProgress: (() => void) | null = null;
 const font = useLvglFont();
 const historyStore = useFontHistoryStore();
 const { activatePath } = storeToRefs(historyStore);
@@ -337,15 +264,8 @@ const { activatePath } = storeToRefs(historyStore);
 const bppOptions = computed(() => [
   { value: 1, label: t("font.bpp1") },
   { value: 2, label: t("font.bpp2") },
-  { value: 3, label: t("font.bpp3") },
   { value: 4, label: t("font.bpp4") },
   { value: 8, label: t("font.bpp8") },
-]);
-
-const formatOptions = computed(() => [
-  { value: "both", label: t("font.formatBoth") },
-  { value: "lvgl", label: t("font.formatC") },
-  { value: "bin", label: t("font.formatBin") },
 ]);
 
 const rangePresetOptions = computed(() =>
@@ -354,6 +274,23 @@ const rangePresetOptions = computed(() =>
     label: t(`font.preset.${p.key}`),
   }))
 );
+
+onMounted(async () => {
+  unlistenProgress = await onLvglFontProgress((payload) => {
+    if (activeJobId.value && payload.jobId !== activeJobId.value) {
+      return;
+    }
+    progressPercent.value = payload.percent;
+    progressMessage.value = payload.message;
+  });
+});
+
+onBeforeUnmount(() => {
+  unlistenProgress?.();
+  unlistenProgress = null;
+  font.clearCurrent();
+});
+
 
 watch(
   [
@@ -370,16 +307,6 @@ watch(
       sourcePath: typeof sourcePath === "string" ? sourcePath : null,
     }),
   { immediate: true }
-);
-
-watch(
-  () => font.bpp.value,
-  (bpp) => {
-    if (bpp === 3 && !font.compress.value) {
-      font.compress.value = true;
-      message.info(t("font.bpp3AutoCompress"));
-    }
-  }
 );
 
 watch(activatePath, (path) => {
@@ -439,12 +366,14 @@ function reportConvertError(error: unknown) {
     message.warning(t("font.emptyGlyphs"));
     return;
   }
-  if (code === "BPP3_NEEDS_COMPRESS" || code.includes("BPP3_NEEDS_COMPRESS")) {
-    message.warning(t("font.bpp3NeedsCompress"));
+  if (code === "TOO_MANY_GLYPHS" || code.includes("TOO_MANY_GLYPHS")) {
+    message.warning(t("font.tooManyGlyphs"));
     return;
   }
-  if (code.startsWith("INVALID_RANGE:")) {
-    message.warning(t("font.invalidRange", { range: code.slice(14) }));
+  if (code.startsWith("INVALID_RANGE:") || code.includes("INVALID_RANGE:")) {
+    const idx = code.indexOf("INVALID_RANGE:");
+    const range = code.slice(idx + "INVALID_RANGE:".length);
+    message.warning(t("font.invalidRange", { range }));
     return;
   }
   const msg = error instanceof Error ? error.message : String(error);
@@ -458,7 +387,7 @@ async function pickFile() {
       filters: [
         {
           name: "Font",
-          extensions: ["ttf", "otf", "woff", "woff2"],
+          extensions: ["ttf", "otf"],
         },
       ],
     });
@@ -505,46 +434,40 @@ function onClear() {
 
 async function onConvert() {
   const item = font.current.value;
-  if (!item) {
+  if (!item || converting.value) {
     return;
   }
   converting.value = true;
+  progressPercent.value = 0;
+  progressMessage.value = t("font.converting");
   font.setStatus("converting");
+  const jobId = `lvgl-font-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  activeJobId.value = jobId;
   try {
-    const result = await convertLvglFont(
-      item.sourceBytes,
-      item.fileName,
-      font.currentOptions()
-    );
+    const result = await convertLvglFont({
+      fontBytes: item.sourceBytes,
+      fontFileName: item.fileName,
+      fontPath: item.sourcePath,
+      options: font.currentOptions(),
+      jobId,
+    });
     font.setResult(result);
     if (item.sourcePath) {
       historyStore.addPath(item.sourcePath);
     }
-    message.success(t("font.convertSuccess"));
+    const elapsed =
+      typeof result.elapsedMs === "number"
+        ? ` (${(result.elapsedMs / 1000).toFixed(1)}s, ${result.glyphCount ?? 0} glyphs)`
+        : "";
+    message.success(`${t("font.convertSuccess")}${elapsed}`);
   } catch (error) {
     font.setStatus("error");
     reportConvertError(error);
   } finally {
     converting.value = false;
-  }
-}
-
-async function downloadBin() {
-  const result = font.current.value?.result;
-  if (!result?.binBytes) {
-    return;
-  }
-  try {
-    const path = await saveBytesWithDialog(
-      result.binBytes,
-      `${result.fontName}.bin`,
-      [{ name: "BIN", extensions: ["bin"] }]
-    );
-    if (path) {
-      message.success(t("font.saveSuccess", { path }));
-    }
-  } catch {
-    message.error(t("font.saveFailed"));
+    activeJobId.value = null;
+    progressPercent.value = 0;
+    progressMessage.value = "";
   }
 }
 
@@ -569,9 +492,7 @@ async function downloadC() {
 
 useTauriDragDrop({
   onDrop(paths) {
-    const fontPaths = paths.filter((path) =>
-      /\.(ttf|otf|woff2?)$/i.test(path)
-    );
+    const fontPaths = paths.filter((path) => /\.(ttf|otf)$/i.test(path));
     if (!fontPaths.length) {
       message.warning(t("font.notFont"));
       return;
@@ -581,10 +502,6 @@ useTauriDragDrop({
     }
     void loadFromPath(fontPaths[0]!);
   },
-});
-
-onBeforeUnmount(() => {
-  font.clearCurrent();
 });
 </script>
 
@@ -742,12 +659,35 @@ onBeforeUnmount(() => {
 
 .action-row {
   display: grid;
-  grid-template-columns: 1.4fr 1fr 1fr;
+  grid-template-columns: 1.6fr 1fr;
   gap: 10px;
   margin-top: 14px;
   padding-top: 12px;
   border-top: 1px solid rgba(255, 255, 255, 0.08);
   flex-shrink: 0;
+}
+
+.convert-progress {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  flex-shrink: 0;
+}
+
+.convert-progress-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 6px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.convert-progress-meta span:first-child {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .preview-panel {

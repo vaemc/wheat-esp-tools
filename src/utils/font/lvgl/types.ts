@@ -1,10 +1,10 @@
-/** 输出格式：C 数组 / 二进制 / 两者都生成 */
-export type LvglFontFormat = "lvgl" | "bin" | "both";
+/** 输出格式：当前快速转换仅支持 C 数组 */
+export type LvglFontFormat = "lvgl";
 
-/** bpp：每像素位数（抗锯齿），3 需开启压缩 */
-export type LvglFontBpp = 1 | 2 | 3 | 4 | 8;
+/** bpp：每像素位数（抗锯齿） */
+export type LvglFontBpp = 1 | 2 | 4 | 8;
 
-/** LVGL 字体转换参数（对齐 lv_font_conv / 在线 Font Converter） */
+/** LVGL 字体转换参数（快速 Rust 转换器） */
 export interface LvglFontConvertOptions {
   /** 输出字体名，如 arial_16；用于 C 变量名与文件名 */
   fontName: string;
@@ -24,22 +24,9 @@ export interface LvglFontConvertOptions {
    * 例：`0123456789.,:℃`
    */
   symbols: string;
-  /** 启用内置 RLE 压缩（体积更小，渲染稍慢）；bpp=3 时必须开启 */
-  compress: boolean;
-  /** 水平子像素渲染（--lcd），画质更好但体积更大 */
-  lcd: boolean;
-  /** 垂直子像素渲染（--lcd-v） */
-  lcdV: boolean;
-  /**
-   * 尝试使用字体中的字形颜色信息生成灰度图标
-   *（灰度靠透明度模拟，适合对比鲜明的背景）
-   */
-  useColorInfo: boolean;
-  /** 丢弃字距调整信息以减小体积（一般不推荐） */
-  noKerning: boolean;
   /** 回退字体 C 符号名，如 `lv_font_montserrat_14`；空则不设置 */
   fallback: string;
-  /** `--format lvgl` 时 `lvgl.h` 的包含路径；空则用默认 */
+  /** `lvgl.h` 的包含路径；空则用默认 */
   lvInclude: string;
 }
 
@@ -47,24 +34,30 @@ export interface LvglFontConvertResult {
   fontName: string;
   size: number;
   bpp: number;
-  /** C 源文件内容（format 含 lvgl 时有值） */
+  /** C 源文件内容 */
   cSource?: string;
-  /** 二进制字体数据（format 含 bin 时有值） */
-  binBytes?: Uint8Array;
+  /** 实际转换的字形数 */
+  glyphCount?: number;
+  /** 耗时毫秒 */
+  elapsedMs?: number;
+}
+
+export interface LvglFontProgressEvent {
+  jobId: string;
+  stage: string;
+  current: number;
+  total: number;
+  percent: number;
+  message: string;
 }
 
 export const DEFAULT_LVGL_FONT_OPTIONS: LvglFontConvertOptions = {
   fontName: "font_16",
   size: 16,
-  bpp: 4,
-  format: "both",
+  bpp: 1,
+  format: "lvgl",
   range: "0x20-0x7F",
   symbols: "",
-  compress: true,
-  lcd: false,
-  lcdV: false,
-  useColorInfo: false,
-  noKerning: false,
   fallback: "",
   lvInclude: "",
 };

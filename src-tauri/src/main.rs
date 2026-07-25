@@ -29,6 +29,7 @@ mod app_tray;
 mod ble_gatt;
 mod classic_bluetooth;
 mod espflash_ops;
+mod font;
 mod image;
 mod mmap;
 mod serial;
@@ -712,6 +713,42 @@ async fn convert_gif_to_eaf(
     .map_err(|e| format!("转换任务失败: {e}"))?
 }
 
+#[tauri::command]
+async fn convert_lvgl_font(
+    window: WebviewWindow,
+    font_file_name: String,
+    options: font::lvgl::LvglFontConvertOptions,
+    job_id: String,
+    font_path: Option<String>,
+    font_bytes: Option<Vec<u8>>,
+) -> Result<font::lvgl::LvglFontConvertResult, String> {
+    let win = window.clone();
+    let jid = job_id.clone();
+
+    tokio::task::spawn_blocking(move || {
+        let bytes = if let Some(path) = font_path.as_ref() {
+            if path.trim().is_empty() {
+                return Err("字体路径为空".into());
+            }
+            std::fs::read(path).map_err(|e| format!("读取字体文件失败: {e}"))?
+        } else if let Some(b) = font_bytes {
+            if b.is_empty() {
+                return Err("字体数据为空".into());
+            }
+            b
+        } else {
+            return Err("未提供字体路径或字节数据".into());
+        };
+
+        let progress_cb: font::lvgl::ProgressCallback = std::sync::Arc::new(move |event| {
+            let _ = win.emit("lvgl_font_progress", &event);
+        });
+        font::lvgl::convert_lvgl_font(&bytes, &font_file_name, options, &jid, Some(progress_cb))
+    })
+    .await
+    .map_err(|e| format!("字体转换任务失败: {e}"))?
+}
+
 fn main() {
     for item in ["firmware"].iter() {
         if !Path::new(item).exists() {
@@ -757,6 +794,7 @@ fn main() {
             probe_gif_rich,
             compress_gif,
             convert_gif_to_eaf,
+            convert_lvgl_font,
             probe_mmap_assets_dir,
             pack_mmap_assets,
             preview_mmap_index_from_dir,

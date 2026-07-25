@@ -8,18 +8,11 @@ export default defineConfig(async () => ({
   resolve: {
     alias: {
       "@": fileURLToPath(new URL("./src", import.meta.url)),
-      // lv_font_conv 依赖；避免解析到损坏的 opentype.js@1.3.5
-      "opentype.js": fileURLToPath(
-        new URL(
-          "./node_modules/lv_font_conv/node_modules/opentype.js/dist/opentype.js",
-          import.meta.url
-        )
-      ),
     },
   },
   plugins: [
     vue(),
-    // lv_font_conv / libopus-wasm：Emscripten 胶水与 pngjs 会引用 Node 内置模块
+    // libopus-wasm：Emscripten 胶水会引用 Node 内置模块
     nodePolyfills({
       include: [
         "buffer",
@@ -42,12 +35,7 @@ export default defineConfig(async () => ({
   ],
 
   optimizeDeps: {
-    include: [
-      "lv_font_conv/lib/convert.js",
-      "lv_font_conv/lib/collect_font_data.js",
-      "buffer",
-      "zlib",
-    ],
+    include: ["buffer", "zlib"],
     esbuildOptions: {
       define: {
         global: "globalThis",
@@ -67,7 +55,7 @@ export default defineConfig(async () => ({
   envPrefix: ["VITE_", "TAURI_"],
   build: {
     commonjsOptions: {
-      include: [/lv_font_conv/, /node_modules/],
+      include: [/node_modules/],
       transformMixedEsModules: true,
     },
     rollupOptions: {
@@ -79,9 +67,6 @@ export default defineConfig(async () => ({
         manualChunks(id) {
           if (!id.includes("node_modules")) {
             return;
-          }
-          if (id.includes("lv_font_conv")) {
-            return "vendor-lvgl-font";
           }
           if (id.includes("ant-design-vue") || id.includes("@ant-design")) {
             return "vendor-antd";

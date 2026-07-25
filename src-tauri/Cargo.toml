@@ -35,6 +35,9 @@ color_quant = "2.0.0"
 gif = "0.13"
 rayon = "1.10"
 base64 = "0.22.1"
+# 纯 Rust 字体栅格化 + cmap表解析（无系统 FreeType 依赖）
+fontdue = "0.9"
+ttf-parser = "0.25"
 
 [target.'cfg(windows)'.dependencies]
 windows = { version = "0.62", features = [

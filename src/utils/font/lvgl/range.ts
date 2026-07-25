@@ -1,17 +1,12 @@
-import type { LvglFontConvertOptions } from "./types";
-
 /**
- * 将 UI 中的 range 字符串解析为 lv_font_conv 需要的三元组数组：
- * [start, end, remapStart, ...]
- *
+ * 校验 UI 中的 range 字符串语法。
  * 支持：`0x20-0x7F`、`65-90`、`0x1F450=>0xF005`、`0x20-0x7F=>0x20`、逗号分隔。
  */
-export function parseUnicodeRange(input: string): number[] {
+export function parseUnicodeRange(input: string): void {
   const raw = input.trim();
   if (!raw) {
-    return [];
+    return;
   }
-  const out: number[] = [];
   for (const part of raw.split(/[,;\s]+/).filter(Boolean)) {
     const mapped = part.split("=>");
     const span = mapped[0]!.trim();
@@ -29,9 +24,7 @@ export function parseUnicodeRange(input: string): number[] {
     ) {
       throw new Error(`INVALID_RANGE:${part}`);
     }
-    out.push(start, end, remap);
   }
-  return out;
 }
 
 function parseCodePoint(text: string): number {
@@ -40,44 +33,6 @@ function parseCodePoint(text: string): number {
     return Number.parseInt(t.slice(2), 16);
   }
   return Number.parseInt(t, 10);
-}
-
-/** 生成与官方在线工具类似的 opts 注释字符串 */
-export function buildOptsString(
-  options: LvglFontConvertOptions,
-  fontFileName: string
-): string {
-  const parts: string[] = [
-    "--bpp",
-    String(options.bpp),
-    "--size",
-    String(options.size),
-  ];
-  if (!options.compress) {
-    parts.push("--no-compress");
-  }
-  if (options.lcd) {
-    parts.push("--lcd");
-  }
-  if (options.lcdV) {
-    parts.push("--lcd-v");
-  }
-  if (options.useColorInfo) {
-    parts.push("--use-color-info");
-  }
-  if (options.noKerning) {
-    parts.push("--no-kerning");
-  }
-  parts.push("--font", fontFileName);
-  if (options.range.trim()) {
-    parts.push("--range", options.range.trim());
-  }
-  if (options.symbols) {
-    parts.push("--symbols", options.symbols);
-  }
-  parts.push("--format", options.format === "both" ? "lvgl" : options.format);
-  parts.push("-o", `${options.fontName}.c`);
-  return parts.join(" ");
 }
 
 /** 规范化 C/文件安全的字体名 */
