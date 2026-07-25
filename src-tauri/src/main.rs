@@ -25,11 +25,13 @@ impl Drop for BleScanFlagGuard {
     }
 }
 
+mod app_tray;
 mod classic_bluetooth;
 mod espflash_ops;
 mod image;
 mod mmap;
 mod serial;
+mod taskbar_com;
 mod window_state;
 
 // Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
@@ -724,6 +726,12 @@ fn main() {
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
+        .plugin(
+            tauri_plugin_autostart::Builder::new()
+                // 开机自启带此参数，启动时仅进托盘、不弹主窗口
+                .args(["--autostart"])
+                .build(),
+        )
         .invoke_handler(tauri::generate_handler![
             get_serial_port_list,
             get_serial_port_details,
@@ -748,6 +756,9 @@ fn main() {
             preview_index_json_from_bin,
             window_state::get_remember_window_state,
             window_state::set_remember_window_state,
+            taskbar_com::is_windows_platform,
+            taskbar_com::get_taskbar_com_ports_enabled,
+            taskbar_com::set_taskbar_com_ports_enabled,
             espflash_ops::espflash_list_chips,
             espflash_ops::espflash_write_flash,
             espflash_ops::espflash_read_flash,
@@ -757,12 +768,31 @@ fn main() {
             espflash_ops::espflash_merge_bin,
         ])
         .setup(|app| {
-            window_state::attach(&app.handle());
+            let handle = app.handle().clone();
+            window_state::attach(&handle);
+            if let Err(e) = app_tray::setup(&handle) {
+                eprintln!("创建系统托盘失败: {e}");
+            }
+            // 若已开启开机自启，刷新启动参数以带上 --autostart
+            {
+                use tauri_plugin_autostart::ManagerExt;
+                if handle.autolaunch().is_enabled().unwrap_or(false) {
+                    if let Err(e) = handle.autolaunch().enable() {
+                        eprintln!("刷新开机自启参数失败: {e}");
+                    }
+                }
+            }
+            if cfg!(windows) && window_state::get_show_taskbar_com_ports(&handle) {
+                taskbar_com::start();
+            }
             Ok(())
         })
         .build(tauri::generate_context!())
         .expect("error while building tauri application")
         .run(|app_handle, event| {
             window_state::on_run_event(app_handle, &event);
+            if matches!(event, tauri::RunEvent::Exit) {
+                taskbar_com::stop();
+            }
         });
 }

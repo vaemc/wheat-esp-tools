@@ -5,7 +5,13 @@
 import type { Component } from "vue";
 import { defineAsyncComponent } from "vue";
 
-export type SettingsItemId = "cache" | "update" | "opensource" | "window";
+export type SettingsItemId =
+  | "cache"
+  | "update"
+  | "opensource"
+  | "window"
+  | "autostart"
+  | "taskbarCom";
 
 export interface SettingsItemDef {
   id: SettingsItemId;
@@ -17,6 +23,18 @@ export const SETTINGS_ITEMS: SettingsItemDef[] = [
     id: "window",
     component: defineAsyncComponent(
       () => import("./items/window/RememberWindowItem.vue")
+    ),
+  },
+  {
+    id: "autostart",
+    component: defineAsyncComponent(
+      () => import("./items/autostart/AutostartItem.vue")
+    ),
+  },
+  {
+    id: "taskbarCom",
+    component: defineAsyncComponent(
+      () => import("./items/taskbarCom/TaskbarComItem.vue")
     ),
   },
   {

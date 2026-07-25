@@ -6,6 +6,8 @@
   "permissions": [
     "core:default",
     "core:event:default",
+    "core:tray:default",
+    "core:menu:default",
     "fs:allow-read-file",
     "fs:allow-read-text-file",
     "fs:allow-write-file",
@@ -20,6 +22,9 @@
     "dialog:allow-open",
     "dialog:allow-save",
     "updater:default",
-    "process:default"
+    "process:default",
+    "autostart:allow-enable",
+    "autostart:allow-disable",
+    "autostart:allow-is-enabled"
   ]
 }

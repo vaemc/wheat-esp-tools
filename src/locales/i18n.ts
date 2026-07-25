@@ -67,6 +67,12 @@ const messages = {
       rememberWindowTitle: "记住窗口位置和大小",
       rememberWindowDesc: "下次启动时恢复本次关闭时的窗口位置与尺寸",
       rememberWindowSaveFailed: "保存窗口偏好失败",
+      autostartTitle: "开机自启",
+      autostartDesc: "登录后自动启动并最小化到托盘（不弹出主窗口）",
+      autostartSaveFailed: "设置开机自启失败",
+      taskbarComTitle: "任务栏显示串口",
+      taskbarComDesc: "在 Windows 任务栏通知区左侧显示当前 COM 端口（仅 Windows）",
+      taskbarComSaveFailed: "保存任务栏串口显示设置失败",
       cacheTitle: "缓存清理",
       cacheDesc: "临时文件共占用 {size}",
       cacheScanning: "正在统计缓存大小…",
@@ -895,6 +901,14 @@ const messages = {
       rememberWindowDesc:
         "Restore this window’s position and size the next time the app opens",
       rememberWindowSaveFailed: "Failed to save window preference",
+      autostartTitle: "Launch at login",
+      autostartDesc:
+        "Start minimized to the tray after sign-in (main window stays hidden)",
+      autostartSaveFailed: "Failed to update launch-at-login setting",
+      taskbarComTitle: "Show serial ports on taskbar",
+      taskbarComDesc:
+        "Show current COM ports on the Windows taskbar near the tray (Windows only)",
+      taskbarComSaveFailed: "Failed to save taskbar serial-port setting",
       cacheTitle: "Clear cache",
       cacheDesc: "Temp files use {size}",
       cacheScanning: "Calculating cache size…",
