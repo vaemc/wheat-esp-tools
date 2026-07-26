@@ -103,19 +103,10 @@ const spiMode = defineModel<string>("spiMode", { required: true });
 const eraseBeforeFlash = defineModel<boolean>("eraseBeforeFlash", {
   required: true,
 });
-const useStub = defineModel<boolean>("useStub", { required: true });
 const verify = defineModel<boolean>("verify", { required: true });
-const skipIdentical = defineModel<boolean>("skipIdentical", { required: true });
 
 const { t } = useI18n();
-const flashOptions = {
-  baudRate,
-  spiMode,
-  eraseBeforeFlash,
-  useStub,
-  verify,
-  skipIdentical,
-};
+const flashOptions = { baudRate, spiMode, eraseBeforeFlash, verify };
 const { flashFirmware } = useQuickFlash(flashOptions);
 const { keyword, filteredItems, loading, firmwareDir, refresh, remove } =
   useLocalFirmware();

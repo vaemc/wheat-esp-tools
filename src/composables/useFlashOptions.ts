@@ -27,19 +27,13 @@ export function useFlashOptions() {
   const baudRate = ref("1152000");
   const spiMode = ref("keep");
   const eraseBeforeFlash = ref(false);
-  /** 加载 RAM stub */
-  const useStub = ref(false);
-  /** 写后校验 Flash */
+  /** 烧录后校验 Flash */
   const verify = ref(false);
-  /** 内容一致则跳过写入 */
-  const skipIdentical = ref(false);
 
   return {
     baudRate,
     spiMode,
     eraseBeforeFlash,
-    useStub,
     verify,
-    skipIdentical,
   };
 }

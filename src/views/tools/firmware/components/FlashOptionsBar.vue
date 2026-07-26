@@ -20,21 +20,9 @@
         </a-checkbox>
       </a-tooltip>
       <a-tooltip>
-        <template #title>{{ $t("firmware.useStubInfo") }}</template>
-        <a-checkbox v-model:checked="useStub" class="opt-check">
-          {{ $t("firmware.useStub") }}
-        </a-checkbox>
-      </a-tooltip>
-      <a-tooltip>
         <template #title>{{ $t("firmware.verifyInfo") }}</template>
         <a-checkbox v-model:checked="verify" class="opt-check">
           {{ $t("firmware.verify") }}
-        </a-checkbox>
-      </a-tooltip>
-      <a-tooltip>
-        <template #title>{{ $t("firmware.skipIdenticalInfo") }}</template>
-        <a-checkbox v-model:checked="skipIdentical" class="opt-check">
-          {{ $t("firmware.skipIdentical") }}
         </a-checkbox>
       </a-tooltip>
     </template>
@@ -58,17 +46,9 @@
             {{ $t("firmware.eraseFlash") }}
             <span class="flash-options-hint">{{ $t("firmware.eraseFlashInfo") }}</span>
           </a-checkbox>
-          <a-checkbox v-model:checked="useStub">
-            {{ $t("firmware.useStub") }}
-            <span class="flash-options-hint">{{ $t("firmware.useStubInfo") }}</span>
-          </a-checkbox>
           <a-checkbox v-model:checked="verify">
             {{ $t("firmware.verify") }}
             <span class="flash-options-hint">{{ $t("firmware.verifyInfo") }}</span>
-          </a-checkbox>
-          <a-checkbox v-model:checked="skipIdentical">
-            {{ $t("firmware.skipIdentical") }}
-            <span class="flash-options-hint">{{ $t("firmware.skipIdenticalInfo") }}</span>
           </a-checkbox>
         </div>
       </div>
@@ -88,9 +68,7 @@ const spiMode = defineModel<string>("spiMode", { required: true });
 const eraseBeforeFlash = defineModel<boolean>("eraseBeforeFlash", {
   required: true,
 });
-const useStub = defineModel<boolean>("useStub", { required: true });
 const verify = defineModel<boolean>("verify", { required: true });
-const skipIdentical = defineModel<boolean>("skipIdentical", { required: true });
 
 const baudRateOptions = toBaudSelectOptions();
 </script>

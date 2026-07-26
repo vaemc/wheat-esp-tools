@@ -106,21 +106,9 @@
           </a-checkbox>
         </a-tooltip>
         <a-tooltip>
-          <template #title>{{ $t("flash.useStubInfo") }}</template>
-          <a-checkbox v-model:checked="useStub">
-            {{ $t("flash.useStub") }}
-          </a-checkbox>
-        </a-tooltip>
-        <a-tooltip>
           <template #title>{{ $t("flash.verifyInfo") }}</template>
           <a-checkbox v-model:checked="verify">
             {{ $t("flash.verify") }}
-          </a-checkbox>
-        </a-tooltip>
-        <a-tooltip>
-          <template #title>{{ $t("flash.skipIdenticalInfo") }}</template>
-          <a-checkbox v-model:checked="skipIdentical">
-            {{ $t("flash.skipIdentical") }}
           </a-checkbox>
         </a-tooltip>
       </div>
@@ -201,9 +189,7 @@ const {
   baudRate: selectedBaud,
   spiMode: selectedMode,
   eraseBeforeFlash: eraseChecked,
-  useStub,
   verify,
-  skipIdentical,
 } = useFlashOptions();
 const { eraseFlash, readFlash } = useFlashQuickActions(selectedBaud);
 const { applyFlashConfig } = useImportToFlash();
@@ -338,9 +324,7 @@ const flash = async () => {
     await runEsptoolWriteFlash(port, selectedBaud.value, items, {
       flashMode: selectedMode.value,
       eraseAll: eraseChecked.value,
-      useStub: useStub.value,
       verify: verify.value,
-      skip: skipIdentical.value,
     });
   } catch (e) {
     if (e instanceof Error && e.message === "ESPFLASH_BUSY") {

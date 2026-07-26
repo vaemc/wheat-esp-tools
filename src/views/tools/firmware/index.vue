@@ -11,9 +11,7 @@
         v-model:baud-rate="baudRate"
         v-model:spi-mode="spiMode"
         v-model:erase-before-flash="eraseBeforeFlash"
-        v-model:use-stub="useStub"
         v-model:verify="verify"
-        v-model:skip-identical="skipIdentical"
       />
     </section>
 
@@ -22,9 +20,7 @@
         v-model:baud-rate="baudRate"
         v-model:spi-mode="spiMode"
         v-model:erase-before-flash="eraseBeforeFlash"
-        v-model:use-stub="useStub"
         v-model:verify="verify"
-        v-model:skip-identical="skipIdentical"
       />
       <HistoryPathsPanel />
     </div>
@@ -36,14 +32,7 @@ import HistoryPathsPanel from "./components/HistoryPathsPanel.vue";
 import LocalFirmwarePanel from "./components/LocalFirmwarePanel.vue";
 import { useFlashOptions } from "@/composables/useFlashOptions";
 
-const {
-  baudRate,
-  spiMode,
-  eraseBeforeFlash,
-  useStub,
-  verify,
-  skipIdentical,
-} = useFlashOptions();
+const { baudRate, spiMode, eraseBeforeFlash, verify } = useFlashOptions();
 </script>
 <style scoped>
 .firmware-page {
