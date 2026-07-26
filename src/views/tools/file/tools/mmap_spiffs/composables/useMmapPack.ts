@@ -9,6 +9,7 @@ import {
   openDirectoryInExplorer,
   openFileInExplorer,
 } from "@/utils/common";
+import { formatBytes } from "@/utils/formatBytes";
 
 export interface MmapAssetEntry {
   rel: string;
@@ -162,16 +163,6 @@ export function useMmapPack(emit: {
     openedBinName.value = "";
     binFiles.value = [];
     binMapPreview.value = null;
-  }
-
-  function formatBytes(n: number) {
-    if (n < 1024) {
-      return `${n} B`;
-    }
-    if (n < 1024 * 1024) {
-      return `${(n / 1024).toFixed(1)} KB`;
-    }
-    return `${(n / (1024 * 1024)).toFixed(2)} MB`;
   }
 
   async function setDir(path: string) {

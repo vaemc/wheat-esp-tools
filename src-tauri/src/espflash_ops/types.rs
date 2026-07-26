@@ -21,6 +21,15 @@ pub struct WriteFlashArgs {
     pub flash_mode: String,
     #[serde(default)]
     pub erase_all: bool,
+    /// 加载 RAM stub（更快、读 Flash / 校验更可靠）
+    #[serde(default)]
+    pub use_stub: bool,
+    /// 写入完成后再次校验 Flash 内容
+    #[serde(default)]
+    pub verify: bool,
+    /// 写入前与硬件比对，一致则跳过该段
+    #[serde(default)]
+    pub skip: bool,
     #[serde(default = "default_before")]
     pub before: String,
     #[serde(default = "default_after")]

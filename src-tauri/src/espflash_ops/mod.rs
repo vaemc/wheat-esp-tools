@@ -233,7 +233,16 @@ pub async fn espflash_write_flash(
 
             let before = parse_before(&args.before);
             let after = parse_after(&args.after);
-            let mut flasher = connect_flasher(&args.port, args.baud, before, after, &emitter)?;
+            let mut flasher = connect_flasher(
+                &args.port,
+                args.baud,
+                before,
+                after,
+                &emitter,
+                args.use_stub,
+                args.verify,
+                args.skip,
+            )?;
 
             let info = flasher.device_info().map_err(map_espflash_error)?;
             emitter.log_key(
@@ -321,8 +330,17 @@ pub async fn espflash_read_flash(
                     );
                 }
 
-                let mut flasher = match connect_flasher(&args.port, baud, before, after, &emitter)
-                {
+                // 读操作：stub 更稳；verify/skip 对读无效，保持默认
+                let mut flasher = match connect_flasher(
+                    &args.port,
+                    baud,
+                    before,
+                    after,
+                    &emitter,
+                    true,
+                    true,
+                    false,
+                ) {
                     Ok(f) => f,
                     Err(e) => {
                         last_err = e;
@@ -452,7 +470,8 @@ pub async fn espflash_erase_flash(
 
             let before = parse_before(&args.before);
             let after = parse_after(&args.after);
-            let mut flasher = connect_flasher(&args.port, args.baud, before, after, &emitter)?;
+            let mut flasher =
+                connect_flasher(&args.port, args.baud, before, after, &emitter, true, true, false)?;
 
             emitter.phase("erasing", 25.0, "eraseAllRunning");
             flasher.erase_flash().map_err(map_espflash_error)?;
@@ -484,7 +503,8 @@ pub async fn espflash_erase_region(
 
             let before = parse_before(&args.before);
             let after = parse_after(&args.after);
-            let mut flasher = connect_flasher(&args.port, args.baud, before, after, &emitter)?;
+            let mut flasher =
+                connect_flasher(&args.port, args.baud, before, after, &emitter, true, true, false)?;
 
             emitter.emit(
                 "erasing",
@@ -524,7 +544,8 @@ pub async fn espflash_device_info(
 
             let before = parse_before(&args.before);
             let after = parse_after(&args.after);
-            let mut flasher = connect_flasher(&args.port, args.baud, before, after, &emitter)?;
+            let mut flasher =
+                connect_flasher(&args.port, args.baud, before, after, &emitter, true, true, false)?;
 
             emitter.phase("reading", 40.0, "deviceInfoQuery");
             let info = flasher.device_info().map_err(map_espflash_error)?;

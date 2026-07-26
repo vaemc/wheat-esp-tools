@@ -128,7 +128,7 @@ import {
   PictureOutlined,
   PlusOutlined,
 } from "@ant-design/icons-vue";
-import prettyBytes from "pretty-bytes";
+import { formatBytes } from "@/utils/formatBytes";
 import { formatDurationSec } from "@/utils/image/shared/formatDuration";
 
 export interface ImageGridItem {
@@ -165,10 +165,6 @@ const emit = defineEmits<{
 
 const isDragging = ref(false);
 let dragDepth = 0;
-
-function formatBytes(size: number) {
-  return prettyBytes(size);
-}
 
 function onDragEnter() {
   dragDepth += 1;

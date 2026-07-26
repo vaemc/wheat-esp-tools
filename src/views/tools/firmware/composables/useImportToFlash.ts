@@ -1,5 +1,5 @@
 import { useRouter } from "vue-router";
-import prettyBytes from "pretty-bytes";
+import { formatBytes } from "@/utils/formatBytes";
 import { useToolsStore } from "@/stores/Tool";
 import {
   getFileInfo,
@@ -30,7 +30,7 @@ export function useImportToFlash() {
     await Promise.all(
       store.firmwareList.map(async (item) => {
         const fileInfo = await getFileInfo(item.path);
-        item.size = prettyBytes(fileInfo.len);
+        item.size = formatBytes(fileInfo.len);
       })
     );
 

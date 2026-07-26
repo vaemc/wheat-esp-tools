@@ -9,8 +9,7 @@
 </template>
 
 <script setup lang="ts">
-import { useVModel } from "@vueuse/core";
-import { reactive } from "vue";
+import { computed, reactive } from "vue";
 import { useI18n } from "vue-i18n";
 
 const { t } = useI18n();
@@ -22,7 +21,10 @@ const props = defineProps<{
 }>();
 const emit = defineEmits(["update:modelValue"]);
 
-const data = useVModel(props, "modelValue", emit);
+const data = computed({
+  get: () => props.modelValue,
+  set: (value: string) => emit("update:modelValue", value),
+});
 const options = reactive(["keep", "qio", "qout", "dio", "dout"]);
 </script>
 <style scoped>

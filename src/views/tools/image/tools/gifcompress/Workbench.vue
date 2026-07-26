@@ -298,7 +298,7 @@
 import { computed, onBeforeUnmount, ref, watch } from "vue";
 import { message } from "ant-design-vue";
 import { useI18n } from "vue-i18n";
-import prettyBytes from "pretty-bytes";
+import { formatBytes } from "@/utils/formatBytes";
 import { convertFileSrc, invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
 import ImageBatchGrid from "../../shared/components/ImageBatchGrid.vue";
@@ -444,10 +444,6 @@ watch(
   ([count, done]) => emit("summary", { count, done }),
   { immediate: true }
 );
-
-function formatBytes(n: number) {
-  return prettyBytes(n || 0);
-}
 
 async function onPick() {
   try {

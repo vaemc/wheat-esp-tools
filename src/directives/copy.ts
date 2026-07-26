@@ -1,31 +1,27 @@
 import type { App, Directive, DirectiveBinding } from "vue";
 import { message } from "ant-design-vue";
-import useClipboard from "vue-clipboard3";
 import i18n from "@/locales/i18n";
-
-const { toClipboard } = useClipboard();
 
 type CopyEl = HTMLElement & {
   _copyBinding?: DirectiveBinding;
   _copyHandler?: (e: Event) => void;
 };
 
-function copyText(el: CopyEl) {
+function resolveText(el: CopyEl) {
   const binding = el._copyBinding;
-  const text =
-    binding?.value != null && binding.value !== ""
-      ? String(binding.value)
-      : (el.textContent?.trim() ?? "");
-  return text;
+  if (binding?.value != null && binding.value !== "") {
+    return String(binding.value);
+  }
+  return el.textContent?.trim() ?? "";
 }
 
 async function doCopy(el: CopyEl) {
-  const text = copyText(el);
+  const text = resolveText(el);
   if (!text) {
     return;
   }
   try {
-    await toClipboard(text);
+    await navigator.clipboard.writeText(text);
     message.success(i18n.global.t("common.copied"));
   } catch {
     message.error(i18n.global.t("common.copyFailed"));

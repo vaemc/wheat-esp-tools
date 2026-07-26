@@ -1,5 +1,5 @@
 import { computed, ref } from "vue";
-import prettyBytes from "pretty-bytes";
+import { formatBytes } from "@/utils/formatBytes";
 import {
   getFirmwareList,
   getFileInfo,
@@ -20,7 +20,7 @@ async function toListItem(path: string): Promise<LocalFirmwareItem> {
   let sizeLabel = "";
   try {
     const info = await getFileInfo(path);
-    sizeLabel = prettyBytes(info.len);
+    sizeLabel = formatBytes(info.len);
   } catch {
     sizeLabel = "";
   }

@@ -15,8 +15,26 @@
       </div>
       <a-tooltip>
         <template #title>{{ $t("firmware.eraseFlashInfo") }}</template>
-        <a-checkbox v-model:checked="eraseBeforeFlash" class="erase-check">
+        <a-checkbox v-model:checked="eraseBeforeFlash" class="opt-check">
           {{ $t("firmware.eraseFlash") }}
+        </a-checkbox>
+      </a-tooltip>
+      <a-tooltip>
+        <template #title>{{ $t("firmware.useStubInfo") }}</template>
+        <a-checkbox v-model:checked="useStub" class="opt-check">
+          {{ $t("firmware.useStub") }}
+        </a-checkbox>
+      </a-tooltip>
+      <a-tooltip>
+        <template #title>{{ $t("firmware.verifyInfo") }}</template>
+        <a-checkbox v-model:checked="verify" class="opt-check">
+          {{ $t("firmware.verify") }}
+        </a-checkbox>
+      </a-tooltip>
+      <a-tooltip>
+        <template #title>{{ $t("firmware.skipIdenticalInfo") }}</template>
+        <a-checkbox v-model:checked="skipIdentical" class="opt-check">
+          {{ $t("firmware.skipIdentical") }}
         </a-checkbox>
       </a-tooltip>
     </template>
@@ -34,11 +52,23 @@
             :options="baudRateOptions"
           />
         </div>
-        <div class="flash-options-field flash-options-field--erase">
+        <div class="flash-options-field flash-options-field--opts">
           <span class="flash-options-label">{{ $t("firmware.eraseOption") }}</span>
           <a-checkbox v-model:checked="eraseBeforeFlash">
             {{ $t("firmware.eraseFlash") }}
             <span class="flash-options-hint">{{ $t("firmware.eraseFlashInfo") }}</span>
+          </a-checkbox>
+          <a-checkbox v-model:checked="useStub">
+            {{ $t("firmware.useStub") }}
+            <span class="flash-options-hint">{{ $t("firmware.useStubInfo") }}</span>
+          </a-checkbox>
+          <a-checkbox v-model:checked="verify">
+            {{ $t("firmware.verify") }}
+            <span class="flash-options-hint">{{ $t("firmware.verifyInfo") }}</span>
+          </a-checkbox>
+          <a-checkbox v-model:checked="skipIdentical">
+            {{ $t("firmware.skipIdentical") }}
+            <span class="flash-options-hint">{{ $t("firmware.skipIdenticalInfo") }}</span>
           </a-checkbox>
         </div>
       </div>
@@ -58,6 +88,9 @@ const spiMode = defineModel<string>("spiMode", { required: true });
 const eraseBeforeFlash = defineModel<boolean>("eraseBeforeFlash", {
   required: true,
 });
+const useStub = defineModel<boolean>("useStub", { required: true });
+const verify = defineModel<boolean>("verify", { required: true });
+const skipIdentical = defineModel<boolean>("skipIdentical", { required: true });
 
 const baudRateOptions = toBaudSelectOptions();
 </script>
@@ -82,7 +115,6 @@ const baudRateOptions = toBaudSelectOptions();
   min-width: 0;
 }
 
-/* 与固件烧录页一致：按内容撑开，避免 dout 被挤出 */
 .flash-options-field--spi {
   flex: 0 0 auto;
 }
@@ -99,8 +131,8 @@ const baudRateOptions = toBaudSelectOptions();
   width: 140px;
 }
 
-.flash-options-field--erase {
-  flex: 0 1 auto;
+.flash-options-field--opts {
+  flex: 1 1 280px;
 }
 
 .flash-options-label {
@@ -108,7 +140,7 @@ const baudRateOptions = toBaudSelectOptions();
   color: rgba(255, 255, 255, 0.45);
 }
 
-.erase-check {
+.opt-check {
   margin-left: 4px;
 }
 

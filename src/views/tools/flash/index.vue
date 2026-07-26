@@ -98,12 +98,32 @@
       </template>
     </a-table>
     <section class="flash-footer">
-      <a-tooltip>
-        <template #title>{{ $t("flash.eraseFlashInfo") }}</template>
-        <a-checkbox v-model:checked="eraseChecked">
-          {{ $t("flash.eraseFlash") }}
-        </a-checkbox>
-      </a-tooltip>
+      <div class="flash-footer__options">
+        <a-tooltip>
+          <template #title>{{ $t("flash.eraseFlashInfo") }}</template>
+          <a-checkbox v-model:checked="eraseChecked">
+            {{ $t("flash.eraseFlash") }}
+          </a-checkbox>
+        </a-tooltip>
+        <a-tooltip>
+          <template #title>{{ $t("flash.useStubInfo") }}</template>
+          <a-checkbox v-model:checked="useStub">
+            {{ $t("flash.useStub") }}
+          </a-checkbox>
+        </a-tooltip>
+        <a-tooltip>
+          <template #title>{{ $t("flash.verifyInfo") }}</template>
+          <a-checkbox v-model:checked="verify">
+            {{ $t("flash.verify") }}
+          </a-checkbox>
+        </a-tooltip>
+        <a-tooltip>
+          <template #title>{{ $t("flash.skipIdenticalInfo") }}</template>
+          <a-checkbox v-model:checked="skipIdentical">
+            {{ $t("flash.skipIdentical") }}
+          </a-checkbox>
+        </a-tooltip>
+      </div>
       <div class="flash-footer__actions">
         <a-button block :disabled="busy" :loading="exporting" @click="exportAll">
           {{ $t("flash.export") }}
@@ -163,7 +183,7 @@ import {
 } from "@/composables/useFlashOptions";
 import { message } from "ant-design-vue";
 import { formatCompactTimestamp } from "@/utils/datetime";
-import prettyBytes from "pretty-bytes";
+import { formatBytes } from "@/utils/formatBytes";
 import { storeToRefs } from "pinia";
 import { useToolsStore } from "@/stores/Tool";
 import { useHistoryStore } from "@/stores/history";
@@ -181,6 +201,9 @@ const {
   baudRate: selectedBaud,
   spiMode: selectedMode,
   eraseBeforeFlash: eraseChecked,
+  useStub,
+  verify,
+  skipIdentical,
 } = useFlashOptions();
 const { eraseFlash, readFlash } = useFlashQuickActions(selectedBaud);
 const { applyFlashConfig } = useImportToFlash();
@@ -315,6 +338,9 @@ const flash = async () => {
     await runEsptoolWriteFlash(port, selectedBaud.value, items, {
       flashMode: selectedMode.value,
       eraseAll: eraseChecked.value,
+      useStub: useStub.value,
+      verify: verify.value,
+      skip: skipIdentical.value,
     });
   } catch (e) {
     if (e instanceof Error && e.message === "ESPFLASH_BUSY") {
@@ -577,7 +603,7 @@ const uploadHandle = async (paths: string | string[]) => {
 
         const address = item.match(/0x[\da-f]+/gi);
         firmwareList.value.push({
-          size: prettyBytes(fileInfo.len),
+          size: formatBytes(fileInfo.len),
           check: true,
           path: item,
           address: address?.[0] ?? "",
@@ -685,6 +711,13 @@ const flashCheckAllChange = () => {
   background: rgba(0, 0, 0, 0.2);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 6px;
+}
+
+.flash-footer__options {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 20px;
 }
 
 .flash-footer__actions {

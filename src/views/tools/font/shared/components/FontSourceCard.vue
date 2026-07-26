@@ -104,7 +104,7 @@ import {
   HistoryOutlined,
   LoadingOutlined,
 } from "@ant-design/icons-vue";
-import prettyBytes from "pretty-bytes";
+import { formatBytes } from "@/utils/formatBytes";
 import { useFontHistoryStore } from "@/stores/fontHistory";
 import type { CurrentFont } from "../../tools/lvglfont/composables/useLvglFont";
 
@@ -131,10 +131,6 @@ const historyOptions = computed(() =>
 
 const isDragging = ref(false);
 let dragDepth = 0;
-
-function formatBytes(n: number) {
-  return prettyBytes(n);
-}
 
 function onMainClick() {
   if (!props.font) {

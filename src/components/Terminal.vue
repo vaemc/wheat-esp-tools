@@ -4,10 +4,9 @@
   </div>
 </template>
 <script setup lang="ts">
-import "xterm/css/xterm.css";
-import "xterm/lib/xterm.js";
-import { Terminal } from "xterm";
-import { FitAddon } from "xterm-addon-fit";
+import "@xterm/xterm/css/xterm.css";
+import { Terminal } from "@xterm/xterm";
+import { FitAddon } from "@xterm/addon-fit";
 import { onMounted, onUnmounted } from "vue";
 import bus from "@/bus/terminal";
 import {

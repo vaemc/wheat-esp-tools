@@ -125,6 +125,9 @@ pub fn connect_flasher(
     before: ResetBeforeOperation,
     after: ResetAfterOperation,
     emitter: &ProgressEmitter,
+    use_stub: bool,
+    verify: bool,
+    skip: bool,
 ) -> Result<Flasher, String> {
     emitter.phase_params(
         "connecting",
@@ -141,14 +144,22 @@ pub fn connect_flasher(
     let usb_info = resolve_usb_port_info(port_name);
     let connection = Connection::new(*Box::new(serial), usb_info, after, before, baud);
 
-    emitter.phase("connecting", 8.0, "connectingStub");
+    emitter.phase(
+        "connecting",
+        8.0,
+        if use_stub {
+            "connectingStub"
+        } else {
+            "connectingRom"
+        },
+    );
 
     Flasher::connect(
         connection,
-        true,  // use_stub
-        true,  // verify
-        true,  // skip identical
-        None,  // auto-detect chip
+        use_stub,
+        verify,
+        skip,
+        None, // auto-detect chip
         Some(baud.max(115_200)),
     )
     .map_err(map_espflash_error)

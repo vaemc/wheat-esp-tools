@@ -22,11 +22,24 @@ export function toBaudSelectOptions(
   return rates.map((value) => ({ label: value, value }));
 }
 
-/** 烧录共用的 SPI、波特率、擦除选项 */
+/** 烧录共用的 SPI、波特率与烧录选项 */
 export function useFlashOptions() {
   const baudRate = ref("1152000");
   const spiMode = ref("keep");
   const eraseBeforeFlash = ref(false);
+  /** 加载 RAM stub */
+  const useStub = ref(false);
+  /** 写后校验 Flash */
+  const verify = ref(false);
+  /** 内容一致则跳过写入 */
+  const skipIdentical = ref(false);
 
-  return { baudRate, spiMode, eraseBeforeFlash };
+  return {
+    baudRate,
+    spiMode,
+    eraseBeforeFlash,
+    useStub,
+    verify,
+    skipIdentical,
+  };
 }

@@ -1,8 +1,25 @@
-import kleur from "kleur";
 import { formatDateTime } from "@/utils/datetime";
 
-/** 强制启用 ANSI（浏览器 / xterm 环境） */
-kleur.enabled = true;
+/** xterm 可用的 ANSI 转义（不依赖第三方着色库） */
+const enum Ansi {
+  Reset = "\x1b[0m",
+  Bold = "\x1b[1m",
+  Dim = "\x1b[2m",
+  Red = "\x1b[31m",
+  Green = "\x1b[32m",
+  Yellow = "\x1b[33m",
+  Blue = "\x1b[34m",
+  Cyan = "\x1b[36m",
+  White = "\x1b[37m",
+}
+
+function paint(code: Ansi, text: string, bold = false): string {
+  return `${bold ? Ansi.Bold : ""}${code}${text}${Ansi.Reset}`;
+}
+
+function dim(text: string): string {
+  return paint(Ansi.Dim, text);
+}
 
 export type TerminalLogLevel =
   | "info"
@@ -30,36 +47,36 @@ function paintTag(level: TerminalLogLevel): string {
   const tag = LEVEL_TAG[level];
   switch (level) {
     case "success":
-      return kleur.bold().green(tag);
+      return paint(Ansi.Green, tag, true);
     case "warn":
-      return kleur.bold().yellow(tag);
+      return paint(Ansi.Yellow, tag, true);
     case "error":
-      return kleur.bold().red(tag);
+      return paint(Ansi.Red, tag, true);
     case "step":
-      return kleur.bold().cyan(tag);
+      return paint(Ansi.Cyan, tag, true);
     case "dim":
-      return kleur.dim(tag);
+      return dim(tag);
     case "info":
     default:
-      return kleur.bold().blue(tag);
+      return paint(Ansi.Blue, tag, true);
   }
 }
 
 function paintBody(text: string, level: TerminalLogLevel): string {
   switch (level) {
     case "success":
-      return kleur.green(text);
+      return paint(Ansi.Green, text);
     case "warn":
-      return kleur.yellow(text);
+      return paint(Ansi.Yellow, text);
     case "error":
-      return kleur.red(text);
+      return paint(Ansi.Red, text);
     case "step":
-      return kleur.cyan(text);
+      return paint(Ansi.Cyan, text);
     case "dim":
-      return kleur.dim(text);
+      return dim(text);
     case "info":
     default:
-      return kleur.white(text);
+      return paint(Ansi.White, text);
   }
 }
 
@@ -69,10 +86,10 @@ export function formatTerminalLine(input: string | TerminalLine): string {
   const level: TerminalLogLevel =
     typeof input === "string" ? "info" : (input.level ?? "info");
 
-  const time = kleur.dim(formatDateTime());
-  const bracketL = kleur.dim("[");
-  const bracketR = kleur.dim("]");
-  const sep = kleur.dim("│");
+  const time = dim(formatDateTime());
+  const bracketL = dim("[");
+  const bracketR = dim("]");
+  const sep = dim("│");
 
   return `${bracketL}${time}${bracketR} ${sep} ${paintTag(level)} ${paintBody(
     text,
@@ -108,6 +125,7 @@ export function espflashLogLevel(messageKey: string): TerminalLogLevel {
 
     case "openPort":
     case "connectingStub":
+    case "connectingRom":
     case "segmentInfo":
     case "chipInfo":
     case "writeInit":

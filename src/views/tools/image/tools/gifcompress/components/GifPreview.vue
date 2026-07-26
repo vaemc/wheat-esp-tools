@@ -17,7 +17,7 @@
 
 <script setup lang="ts">
 import { computed } from "vue";
-import prettyBytes from "pretty-bytes";
+import { formatBytes } from "@/utils/formatBytes";
 import { formatDurationSec } from "@/utils/image/shared/formatDuration";
 
 const props = withDefaults(
@@ -61,7 +61,7 @@ const metaParts = computed(() => {
     parts.push(`${props.fps.toFixed(1)} fps`);
   }
   if (props.byteLength) {
-    parts.push(prettyBytes(props.byteLength));
+    parts.push(formatBytes(props.byteLength));
   }
   if (props.sourceByteLength > 0 && props.byteLength > 0) {
     const ratio = (props.byteLength / props.sourceByteLength) * 100;

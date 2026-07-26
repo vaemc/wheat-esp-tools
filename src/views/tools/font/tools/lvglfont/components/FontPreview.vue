@@ -32,7 +32,7 @@
 </template>
 
 <script setup lang="ts">
-import prettyBytes from "pretty-bytes";
+import { formatBytes } from "@/utils/formatBytes";
 
 withDefaults(
   defineProps<{
@@ -47,10 +47,6 @@ withDefaults(
     previewSize: 28,
   }
 );
-
-function formatBytes(n: number) {
-  return prettyBytes(n);
-}
 </script>
 
 <style scoped>

@@ -87,7 +87,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
-import prettyBytes from "pretty-bytes";
+import { formatBytes } from "@/utils/formatBytes";
 import { formatDuration } from "@/utils/audio/formatDuration";
 import type { OggCodec } from "@/utils/audio/ogg/types";
 
@@ -175,10 +175,6 @@ const bitrateText = computed(() => {
   }
   return "";
 });
-
-function formatBytes(n: number) {
-  return prettyBytes(n);
-}
 
 function formatSeekTip(v?: number) {
   if (!duration.value || v == null) {

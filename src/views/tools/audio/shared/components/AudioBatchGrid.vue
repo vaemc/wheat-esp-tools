@@ -97,7 +97,7 @@ import {
   LoadingOutlined,
   PlusOutlined,
 } from "@ant-design/icons-vue";
-import prettyBytes from "pretty-bytes";
+import { formatBytes } from "@/utils/formatBytes";
 import { formatDuration } from "@/utils/audio/formatDuration";
 
 interface AudioGridItem {
@@ -127,10 +127,6 @@ const emit = defineEmits<{
 const isDragging = ref(false);
 let dragDepth = 0;
 const defaultWave = [35, 55, 40, 70, 50, 65, 45, 60, 38, 72, 48, 58];
-
-function formatBytes(size: number) {
-  return prettyBytes(size);
-}
 
 function onDragEnter() {
   dragDepth += 1;

@@ -15,6 +15,12 @@ export interface FlashItem {
 export interface WriteFlashOptions {
   flashMode?: string;
   eraseAll?: boolean;
+  /** 加载 RAM stub；默认关闭 */
+  useStub?: boolean;
+  /** 写后校验 Flash；默认关闭 */
+  verify?: boolean;
+  /** 内容一致则跳过该段；默认关闭 */
+  skip?: boolean;
   before?: string;
   after?: string;
 }
@@ -120,6 +126,9 @@ export async function writeFlash(
   const {
     flashMode = "dio",
     eraseAll = false,
+    useStub = false,
+    verify = false,
+    skip = false,
     before = "default-reset",
     after = "hard-reset",
   } = options;
@@ -132,6 +141,9 @@ export async function writeFlash(
         items,
         flashMode,
         eraseAll,
+        useStub,
+        verify,
+        skip,
         before,
         after,
         jobId,

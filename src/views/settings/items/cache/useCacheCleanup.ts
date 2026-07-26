@@ -1,7 +1,7 @@
 import { computed, onMounted, ref } from "vue";
 import { message, Modal } from "ant-design-vue";
 import { useI18n } from "vue-i18n";
-import prettyBytes from "pretty-bytes";
+import { formatBytes } from "@/utils/formatBytes";
 import { openDirectoryInExplorer } from "@/utils/common";
 import {
   calcCacheableSizeBytes,
@@ -17,7 +17,7 @@ export function useCacheCleanup() {
   const totalBytes = ref(0);
   const tempRoot = ref("");
 
-  const sizeLabel = computed(() => prettyBytes(totalBytes.value));
+  const sizeLabel = computed(() => formatBytes(totalBytes.value));
 
   async function refresh() {
     loading.value = true;
