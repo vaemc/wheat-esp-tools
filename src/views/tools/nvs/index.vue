@@ -198,6 +198,7 @@ import { useI18n } from "vue-i18n";
 import { Modal, message } from "ant-design-vue";
 import PlaceholderHint from "@/components/PlaceholderHint.vue";
 import { READ_BAUD_RATE_OPTIONS, toBaudSelectOptions } from "@/composables/useFlashOptions";
+import { reportEspflashError } from "@/utils/espflash";
 import { useNvsReader, type NvsEditableRow } from "./composables/useNvsReader";
 
 interface ChangeEvent {
@@ -342,10 +343,8 @@ function handleReadError(e: unknown) {
     message.warning(t("nvs.badTableOffset"));
   } else if (e instanceof Error && e.message === "NO_NVS") {
     message.warning(t("nvs.noNvsPartition"));
-  } else if (e instanceof Error && e.message === "READ_FAILED") {
-    message.error(t("nvs.readFailed"));
   } else {
-    message.error(t("nvs.readFailed"));
+    reportEspflashError(e, "nvs.readFailed");
   }
 }
 
@@ -503,19 +502,7 @@ async function onWriteBack() {
           return;
         }
         console.error("[NVS] write-back failed:", e);
-        const detail =
-          e instanceof Error
-            ? e.message
-            : typeof e === "string"
-              ? e
-              : (() => {
-                  try {
-                    return JSON.stringify(e);
-                  } catch {
-                    return String(e);
-                  }
-                })();
-        message.error(`${t("nvs.writeBackFailed")}: ${detail}`);
+        reportEspflashError(e, "nvs.writeBackFailed");
       } finally {
         writing.value = false;
       }

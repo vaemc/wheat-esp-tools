@@ -1,41 +1,21 @@
 <template>
   <div class="flash-page">
     <section class="flash-toolbar">
-      <div class="toolbar-options">
-        <div class="toolbar-field toolbar-field--spi">
-          <SPIMode v-model="selectedMode" />
-        </div>
-        <div class="toolbar-field">
-          <a-tooltip>
-            <template #title>{{ $t("flash.baudRate") }}</template>
-            <a-auto-complete
-              v-model:value="selectedBaud"
-              class="toolbar-input"
-              :placeholder="$t('flash.baudRate')"
-              :options="baudOptions"
-            />
-          </a-tooltip>
-        </div>
-        <div class="toolbar-field">
-          <a-tooltip>
-            <template #title>{{ $t("flash.mergeInfo") }}</template>
-            <a-select
-              v-model:value="selectedChipType"
-              class="toolbar-input"
-              :placeholder="$t('flash.chipType')"
-              :options="chipTypeList"
-            />
-          </a-tooltip>
-        </div>
-      </div>
-      <div class="toolbar-actions">
-        <a-button :disabled="busy" :loading="busy" @click="runEraseFlash">
-          {{ $t("flash.eraseAllFlash") }}
-        </a-button>
-        <a-button :disabled="busy" :loading="busy" @click="runReadFlash">
-          {{ $t("flash.readFlash") }}
-        </a-button>
-      </div>
+      <FlashOptionsBar
+        v-model:baud-rate="selectedBaud"
+        v-model:spi-mode="selectedMode"
+        v-model:erase-before-flash="eraseChecked"
+        v-model:verify="verify"
+      >
+        <template #actions>
+          <a-button :disabled="busy" :loading="busy" @click="runEraseFlash">
+            {{ $t("flash.eraseAllFlash") }}
+          </a-button>
+          <a-button :disabled="busy" :loading="busy" @click="runReadFlash">
+            {{ $t("flash.readFlash") }}
+          </a-button>
+        </template>
+      </FlashOptionsBar>
     </section>
 
     <Upload
@@ -98,37 +78,21 @@
       </template>
     </a-table>
     <section class="flash-footer">
-      <div class="flash-footer__options">
-        <a-tooltip>
-          <template #title>{{ $t("flash.eraseFlashInfo") }}</template>
-          <a-checkbox v-model:checked="eraseChecked">
-            {{ $t("flash.eraseFlash") }}
-          </a-checkbox>
-        </a-tooltip>
-        <a-tooltip>
-          <template #title>{{ $t("flash.verifyInfo") }}</template>
-          <a-checkbox v-model:checked="verify">
-            {{ $t("flash.verify") }}
-          </a-checkbox>
-        </a-tooltip>
-      </div>
-      <div class="flash-footer__actions">
-        <a-button block :disabled="busy" :loading="exporting" @click="exportAll">
-          {{ $t("flash.export") }}
-        </a-button>
-        <a-button block :disabled="busy" @click="handle(merge)">
-          {{ $t("flash.merge") }}
-        </a-button>
-        <a-button
-          block
-          type="primary"
-          :disabled="busy"
-          :loading="flashing"
-          @click="handle(flash)"
-        >
-          {{ $t("flash.flash") }}
-        </a-button>
-      </div>
+      <a-button block :disabled="busy" :loading="exporting" @click="exportAll">
+        {{ $t("flash.export") }}
+      </a-button>
+      <a-button block :disabled="busy" @click="handle(merge)">
+        {{ $t("flash.merge") }}
+      </a-button>
+      <a-button
+        block
+        type="primary"
+        :disabled="busy"
+        :loading="flashing"
+        @click="handle(flash)"
+      >
+        {{ $t("flash.flash") }}
+      </a-button>
     </section>
 
     <a-modal
@@ -152,23 +116,19 @@
 </template>
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from "vue";
-import SPIMode from "@/components/SPIMode.vue";
+import FlashOptionsBar from "@/components/FlashOptionsBar.vue";
 import Upload from "@/components/Upload.vue";
 import { Firmware } from "@/model/model";
 import i18n from "@/locales/i18n";
 import {
-  getChipTypeList,
   getCurrentDir,
   getFileInfo,
   openDirectoryInExplorer,
   openFileInExplorer,
 } from "@/utils/common";
-import { mergeBin } from "@/utils/espflash";
+import { mergeBin, reportEspflashError } from "@/utils/espflash";
 import { runEsptoolWriteFlash } from "@/utils/esptoolWrite";
-import {
-  toBaudSelectOptions,
-  useFlashOptions,
-} from "@/composables/useFlashOptions";
+import { useFlashOptions } from "@/composables/useFlashOptions";
 import { message } from "ant-design-vue";
 import { formatCompactTimestamp } from "@/utils/datetime";
 import { formatBytes } from "@/utils/formatBytes";
@@ -194,8 +154,7 @@ const {
 const { eraseFlash, readFlash } = useFlashQuickActions(selectedBaud);
 const { applyFlashConfig } = useImportToFlash();
 
-const baudOptions = toBaudSelectOptions();
-const { firmwareList, selectedChipType } = storeToRefs(store);
+const { firmwareList } = storeToRefs(store);
 const flashCheckOption = ref({ indeterminate: false, selectAll: false });
 const currentDir = ref("");
 const exporting = ref(false);
@@ -327,11 +286,7 @@ const flash = async () => {
       verify: verify.value,
     });
   } catch (e) {
-    if (e instanceof Error && e.message === "ESPFLASH_BUSY") {
-      message.warning(i18n.global.t("espflash.busy"));
-    } else {
-      message.error(i18n.global.t("flash.flashFailed"));
-    }
+    reportEspflashError(e, "flash.flashFailed");
   } finally {
     flashing.value = false;
   }
@@ -357,17 +312,8 @@ async function runReadFlash() {
   }
 }
 
-function hasChipType(): boolean {
-  return Boolean(selectedChipType.value?.trim());
-}
-
 const merge = async () => {
-  if (!hasChipType()) {
-    message.warning(i18n.global.t("flash.dialog.selectedChipType"));
-    return;
-  }
-
-  mergeFileName.value = `${selectedChipType.value}-merge-bin-${formatCompactTimestamp()}.bin`;
+  mergeFileName.value = `merge-bin-${formatCompactTimestamp()}.bin`;
   mergeModalOpen.value = true;
 };
 
@@ -392,10 +338,6 @@ const confirmMerge = async () => {
     message.warning(i18n.global.t("flash.dialog.inputMergeName"));
     return Promise.reject();
   }
-  if (!hasChipType()) {
-    message.warning(i18n.global.t("flash.dialog.selectedChipType"));
-    return Promise.reject();
-  }
 
   merging.value = true;
   try {
@@ -406,13 +348,12 @@ const confirmMerge = async () => {
       filename,
       firmwareList.value
         .filter((x) => x.check)
-        .map((x) => ({ offset: x.address, path: x.path })),
-      selectedChipType.value
+        .map((x) => ({ offset: x.address, path: x.path }))
     );
     await openFileInExplorer(filename);
     mergeModalOpen.value = false;
-  } catch {
-    message.error(i18n.global.t("flash.mergeFailed"));
+  } catch (e) {
+    reportEspflashError(e, "flash.mergeFailed");
     return Promise.reject();
   } finally {
     merging.value = false;
@@ -519,20 +460,18 @@ const flashFirmwareBtn = async (item: Firmware) => {
       port,
       selectedBaud.value,
       [{ offset: item.address, path: item.path }],
-      { flashMode: selectedMode.value }
+      {
+        flashMode: selectedMode.value,
+        eraseAll: eraseChecked.value,
+        verify: verify.value,
+      }
     );
   } catch (e) {
-    if (e instanceof Error && e.message === "ESPFLASH_BUSY") {
-      message.warning(i18n.global.t("espflash.busy"));
-    } else {
-      message.error(i18n.global.t("flash.flashFailed"));
-    }
+    reportEspflashError(e, "flash.flashFailed");
   } finally {
     flashing.value = false;
   }
 };
-
-const chipTypeList = ref<{ label: string; value: string }[]>([]);
 
 async function ensureCurrentDir() {
   if (!currentDir.value) {
@@ -543,14 +482,6 @@ async function ensureCurrentDir() {
 
 onMounted(async () => {
   await ensureCurrentDir();
-  try {
-    chipTypeList.value = (await getChipTypeList()).map((item: string) => ({
-      label: item,
-      value: item,
-    }));
-  } catch {
-    message.error(i18n.global.t("flash.chipListFailed"));
-  }
 });
 
 const uploadHandle = async (paths: string | string[]) => {
@@ -572,7 +503,7 @@ const uploadHandle = async (paths: string | string[]) => {
         flashCheckOption.value.selectAll = true;
       }
     } catch {
-      message.error(i18n.global.t("flash.chipListFailed"));
+      message.error(i18n.global.t("firmware.importFailed"));
     }
     return;
   }
@@ -618,54 +549,15 @@ const flashCheckAllChange = () => {
 </script>
 <style scoped>
 .flash-page {
-  padding: 10px;
+  padding: 12px 16px;
 }
 
 .flash-toolbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 12px 16px;
   margin-bottom: 12px;
   padding: 10px 12px;
   background: rgba(0, 0, 0, 0.2);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 6px;
-}
-
-.toolbar-options {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 12px 16px;
-  flex: 1;
-  min-width: 280px;
-}
-
-.toolbar-field {
-  min-width: 120px;
-}
-
-.toolbar-field--spi {
-  min-width: 0;
-  flex: 0 0 auto;
-}
-
-.toolbar-field--spi :deep(.ant-segmented) {
-  width: auto;
-}
-
-.toolbar-input {
-  width: 100%;
-  min-width: 120px;
-}
-
-.toolbar-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-shrink: 0;
 }
 
 .flash-row-actions {
@@ -688,8 +580,8 @@ const flashCheckAllChange = () => {
 
 .flash-footer {
   display: flex;
-  flex-direction: column;
-  gap: 12px;
+  align-items: center;
+  gap: 10px;
   margin-top: 12px;
   padding: 10px 12px;
   background: rgba(0, 0, 0, 0.2);
@@ -697,21 +589,7 @@ const flashCheckAllChange = () => {
   border-radius: 6px;
 }
 
-.flash-footer__options {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 12px 20px;
-}
-
-.flash-footer__actions {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  width: 100%;
-}
-
-.flash-footer__actions :deep(.ant-btn) {
+.flash-footer :deep(.ant-btn) {
   flex: 1;
   height: 36px;
   text-align: center;

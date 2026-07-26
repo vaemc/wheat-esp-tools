@@ -16,7 +16,7 @@ pub struct WriteFlashArgs {
     pub port: String,
     pub baud: u32,
     pub items: Vec<FlashItem>,
-    /// `keep` | `qio` | `qout` | `dio` | `dout`
+    /// `qio` | `qout` | `dio` | `dout`（与 espflash::FlashMode 一致；默认 dio）
     #[serde(default = "default_flash_mode")]
     pub flash_mode: String,
     #[serde(default)]
@@ -107,9 +107,6 @@ fn default_info_baud() -> u32 {
 pub struct MergeBinArgs {
     pub output_path: String,
     pub items: Vec<FlashItem>,
-    /// 保留参数（与旧 UI 兼容）；合并本身不依赖芯片型号
-    #[serde(default)]
-    pub chip: String,
     pub job_id: String,
 }
 
@@ -123,9 +120,6 @@ pub struct EspDeviceInfoDto {
     pub crystal: String,
     pub features: String,
     pub flash_size: String,
-    pub flash_type: String,
-    pub flash_manufacturer: String,
-    pub flash_device: String,
     pub psram: String,
     pub security: String,
 }

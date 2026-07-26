@@ -854,7 +854,6 @@ fn main() {
             taskbar_com::is_windows_platform,
             taskbar_com::get_taskbar_com_ports_enabled,
             taskbar_com::set_taskbar_com_ports_enabled,
-            espflash_ops::espflash_list_chips,
             espflash_ops::espflash_write_flash,
             espflash_ops::espflash_read_flash,
             espflash_ops::espflash_erase_flash,

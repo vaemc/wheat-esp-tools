@@ -25,7 +25,6 @@ export function useImportToFlash() {
     }
 
     store.firmwareList = config.flashFiles;
-    store.selectedChipType = config.chip;
 
     await Promise.all(
       store.firmwareList.map(async (item) => {

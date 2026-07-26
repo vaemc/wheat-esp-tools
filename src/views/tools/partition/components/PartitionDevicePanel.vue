@@ -129,6 +129,7 @@ import {
   toBaudSelectOptions,
 } from "@/composables/useFlashOptions";
 import { usePartitionTableStore } from "@/stores/partitionTable";
+import { reportEspflashError } from "@/utils/espflash";
 import type { FlashPartition } from "@/utils/partitionBin";
 
 const { t } = useI18n();
@@ -177,7 +178,7 @@ function handleOpsError(e: unknown, fallbackKey: string) {
       return;
     }
   }
-  message.error(t(fallbackKey));
+  reportEspflashError(e, fallbackKey);
 }
 
 async function onReadFromDevice() {
@@ -197,7 +198,7 @@ async function onReadFromDevice() {
     ) {
       message.warning(t("partition.opBusy"));
     } else {
-      message.error(t("partition.readDeviceFailed"));
+      reportEspflashError(e, "partition.readDeviceFailed");
     }
   }
 }

@@ -3,10 +3,6 @@ import { dirname, join } from "@tauri-apps/api/path";
 import { readTextFile, readDir, remove } from "@tauri-apps/plugin-fs";
 import { FileInfo, Firmware } from "@/model/model";
 import type { SerialPortDetail } from "@/types/serial";
-import {
-  isPlausibleChipList,
-  runEsptoolChipListProbe,
-} from "@/utils/esptoolChip";
 import { CONFIG_FILENAMES } from "@/utils/path";
 
 interface RustFileInfo {
@@ -32,27 +28,6 @@ export async function getSerialPortDetails() {
 
 export async function getCurrentDir() {
   return (await invoke("get_current_dir")) as string;
-}
-
-let cachedChipTypes: string[] | null = null;
-
-/** 从内置 espflash 获取支持的芯片列表（大写，如 ESP32S3） */
-export async function getChipTypeList(): Promise<string[]> {
-  if (cachedChipTypes && isPlausibleChipList(cachedChipTypes)) {
-    return cachedChipTypes;
-  }
-
-  const chips = await runEsptoolChipListProbe();
-
-  if (!isPlausibleChipList(chips)) {
-    cachedChipTypes = null;
-    throw new Error(
-      `Failed to load chip list from espflash (${chips.length} chips)`
-    );
-  }
-
-  cachedChipTypes = chips;
-  return chips;
 }
 
 export async function getFirmwareList() {

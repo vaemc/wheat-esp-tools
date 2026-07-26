@@ -183,6 +183,7 @@ import {
   toBaudSelectOptions,
 } from "@/composables/useFlashOptions";
 import { formatHexDisplay } from "@/utils/partitionBin";
+import { reportEspflashError } from "@/utils/espflash";
 import { useOtaTool } from "./composables/useOtaTool";
 
 const { t } = useI18n();
@@ -246,7 +247,7 @@ function handleError(e: unknown, fallbackKey: string) {
       return;
     }
   }
-  message.error(t(fallbackKey));
+  reportEspflashError(e, fallbackKey);
 }
 
 async function onLoad() {

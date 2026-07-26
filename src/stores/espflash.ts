@@ -32,9 +32,15 @@ export const useEspflashStore = defineStore("espflash", {
     },
 
     applyProgress(payload: EspflashProgressPayload) {
-      if (this.jobId && payload.jobId !== this.jobId && this.busy) {
+      // 始终过滤非当前任务；无活跃任务时忽略迟到事件
+      if (this.jobId) {
+        if (payload.jobId !== this.jobId) {
+          return;
+        }
+      } else if (!this.busy) {
         return;
       }
+
       this.jobId = payload.jobId;
       this.op = payload.op;
       this.phase = payload.phase;
@@ -43,14 +49,9 @@ export const useEspflashStore = defineStore("espflash", {
         payload.messageKey,
         payload.params ?? {}
       );
-      if (payload.phase === "done" || payload.phase === "error") {
-        this.busy = false;
-        window.setTimeout(() => {
-          if (this.jobId === payload.jobId && !this.busy) {
-            this.reset();
-          }
-        }, 1800);
-      } else {
+      // busy 只由 begin/end 管理，与 Rust FLASH_LOCK 对齐；
+      // progress 的 done/error 只更新展示，不提前释放 busy
+      if (payload.phase !== "done" && payload.phase !== "error") {
         this.busy = true;
       }
     },
@@ -75,6 +76,11 @@ export const useEspflashStore = defineStore("espflash", {
       if (message) {
         this.message = message;
       }
+      window.setTimeout(() => {
+        if (this.jobId === jobId && !this.busy) {
+          this.reset();
+        }
+      }, 1800);
     },
 
     reset() {

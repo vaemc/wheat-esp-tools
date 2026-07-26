@@ -25,7 +25,12 @@ const data = computed({
   get: () => props.modelValue,
   set: (value: string) => emit("update:modelValue", value),
 });
-const options = reactive(["keep", "qio", "qout", "dio", "dout"]);
+const options = reactive(["qio", "qout", "dio", "dout"]);
+
+// 旧值 keep / 未知值 → espflash 默认 dio
+if (!options.includes(props.modelValue)) {
+  emit("update:modelValue", "dio");
+}
 </script>
 <style scoped>
 .spi-mode :deep(.ant-segmented) {

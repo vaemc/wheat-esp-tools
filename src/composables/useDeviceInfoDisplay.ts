@@ -60,19 +60,6 @@ export function useDeviceInfoDisplay() {
             mono: true,
           }
         : null,
-      info.flashManufacturer || info.flashDevice
-        ? {
-            key: "flashId",
-            label: t("device.flashId"),
-            value: [info.flashManufacturer, info.flashDevice]
-              .filter(Boolean)
-              .join(" / "),
-            mono: true,
-          }
-        : null,
-      info.flashType
-        ? { key: "flashType", label: t("device.flashType"), value: info.flashType }
-        : null,
       info.features
         ? { key: "features", label: t("device.features"), value: info.features }
         : null,

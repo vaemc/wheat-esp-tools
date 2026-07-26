@@ -94,19 +94,14 @@ import { useI18n } from "vue-i18n";
 import { message } from "ant-design-vue";
 import PlaceholderHint from "@/components/PlaceholderHint.vue";
 import { openDirectoryInExplorer, openFileInExplorer } from "@/utils/common";
+import { reportEspflashError } from "@/utils/espflash";
+import { useFlashOptions } from "@/composables/useFlashOptions";
 import QuickFlashButton from "./QuickFlashButton.vue";
 import { useQuickFlash } from "../composables/useQuickFlash";
 import { useLocalFirmware } from "../composables/useLocalFirmware";
 
-const baudRate = defineModel<string>("baudRate", { required: true });
-const spiMode = defineModel<string>("spiMode", { required: true });
-const eraseBeforeFlash = defineModel<boolean>("eraseBeforeFlash", {
-  required: true,
-});
-const verify = defineModel<boolean>("verify", { required: true });
-
 const { t } = useI18n();
-const flashOptions = { baudRate, spiMode, eraseBeforeFlash, verify };
+const flashOptions = useFlashOptions();
 const { flashFirmware } = useQuickFlash(flashOptions);
 const { keyword, filteredItems, loading, firmwareDir, refresh, remove } =
   useLocalFirmware();
@@ -140,17 +135,15 @@ async function onQuickFlash(path: string) {
   } catch (e) {
     if (e instanceof Error && e.message === "NO_PORT") {
       message.warning(t("firmware.noPort"));
-    } else if (e instanceof Error && e.message === "ESPFLASH_BUSY") {
-      message.warning(t("espflash.busy"));
-    } else if (e instanceof Error && e.message === "ESPTOOL_BUSY") {
-      message.warning(t("espflash.busy"));
     } else {
-      message.error(t("firmware.flashFailed"));
+      reportEspflashError(e, "firmware.flashFailed");
     }
   } finally {
     flashingPath.value = null;
   }
 }
+
+
 </script>
 <style scoped>
 .item-scroll {

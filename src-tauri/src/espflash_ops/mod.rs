@@ -18,7 +18,6 @@ use std::fs;
 use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::sync::Mutex;
-use strum::IntoEnumIterator;
 use tauri::WebviewWindow;
 use types::{hex_addr, p};
 
@@ -79,6 +78,7 @@ fn chip_label(chip: espflash::target::Chip) -> String {
 }
 
 /// espflash `read_flash` 无进度回调；按块读取并拼文件，以便推送进度条。
+/// 失败时删除残缺的 `save_path` 与临时文件，避免留下半截 bin。
 fn read_flash_with_progress(
     flasher: &mut Flasher,
     offset: u32,
@@ -92,8 +92,15 @@ fn read_flash_with_progress(
     const CHUNK: u32 = 128 * 1024;
 
     let tmp_path = save_path.with_extension("espflash-read.tmp");
-    let mut out =
-        fs::File::create(save_path).map_err(|e| format!("create_failed:{e}"))?;
+    let cleanup_partial = || {
+        let _ = fs::remove_file(&tmp_path);
+        let _ = fs::remove_file(save_path);
+    };
+
+    let mut out = match fs::File::create(save_path) {
+        Ok(f) => f,
+        Err(e) => return Err(format!("create_failed:{e}")),
+    };
 
     let mut done: u32 = 0;
     let mut last_log_bucket: i32 = -1;
@@ -109,23 +116,23 @@ fn read_flash_with_progress(
             MAX_IN_FLIGHT,
             tmp_path.clone(),
         ) {
-            let _ = fs::remove_file(&tmp_path);
+            cleanup_partial();
             return Err(map_espflash_error(e));
         }
 
         let chunk = match fs::read(&tmp_path) {
             Ok(c) => c,
             Err(e) => {
-                let _ = fs::remove_file(&tmp_path);
+                cleanup_partial();
                 return Err(format!("read_tmp_failed:{e}"));
             }
         };
         if chunk.len() as u32 != this {
-            let _ = fs::remove_file(&tmp_path);
+            cleanup_partial();
             return Err(format!("read_chunk_len:{this}:{}", chunk.len()));
         }
         if let Err(e) = out.write_all(&chunk) {
-            let _ = fs::remove_file(&tmp_path);
+            cleanup_partial();
             return Err(format!("write_failed:{e}"));
         }
 
@@ -154,7 +161,10 @@ fn read_flash_with_progress(
         );
     }
 
-    out.flush().map_err(|e| format!("flush_failed:{e}"))?;
+    if let Err(e) = out.flush() {
+        cleanup_partial();
+        return Err(format!("flush_failed:{e}"));
+    }
     let _ = fs::remove_file(&tmp_path);
     Ok(())
 }
@@ -179,15 +189,6 @@ fn extract_psram(features: &[String]) -> String {
 }
 
 #[tauri::command]
-pub async fn espflash_list_chips() -> Result<Vec<String>, String> {
-    let mut chips: Vec<String> = espflash::target::Chip::iter()
-        .map(chip_label)
-        .collect();
-    chips.sort();
-    Ok(chips)
-}
-
-#[tauri::command]
 pub async fn espflash_write_flash(
     window: WebviewWindow,
     args: WriteFlashArgs,
@@ -202,7 +203,7 @@ pub async fn espflash_write_flash(
                 return Err("no_segments".into());
             }
 
-            let flash_mode = parse_flash_mode(&args.flash_mode);
+            let flash_mode = parse_flash_mode(&args.flash_mode)?;
             let mut segments_data: Vec<(u32, Vec<u8>)> = Vec::with_capacity(args.items.len());
 
             for item in &args.items {
@@ -212,9 +213,7 @@ pub async fn espflash_write_flash(
                 if data.is_empty() {
                     return Err(format!("empty_file:{}", item.path));
                 }
-                if let Some(mode) = flash_mode {
-                    patch_flash_mode(&mut data, mode);
-                }
+                patch_flash_mode(&mut data, flash_mode);
                 // 与 espflash write_bin_to_flash 对齐：长度补齐到 4 字节
                 let rem = data.len() % 4;
                 if rem != 0 {
@@ -421,6 +420,7 @@ pub async fn espflash_read_flash(
                             .map(|m| m.len())
                             .unwrap_or(0);
                         if written == 0 {
+                            let _ = fs::remove_file(&args.save_path);
                             return Err("empty_read_result".into());
                         }
 
@@ -587,9 +587,6 @@ pub async fn espflash_device_info(
                 crystal: info.crystal_frequency.to_string(),
                 features,
                 flash_size: format_flash_size(info.flash_size),
-                flash_type: String::new(),
-                flash_manufacturer: String::new(),
-                flash_device: String::new(),
                 psram,
                 security,
             };
@@ -619,12 +616,6 @@ pub async fn espflash_merge_bin(
     run_blocking(move || {
         let emitter = ProgressEmitter::new(window, args.job_id.clone(), "merge");
         run_job(&emitter, || {
-            if !args.chip.trim().is_empty() {
-                emitter.log_key(
-                    "targetChip",
-                    p(&[("chip", args.chip.trim().to_string())]),
-                );
-            }
             merge::merge_bins(&args.output_path, &args.items, &emitter)
         })
     })

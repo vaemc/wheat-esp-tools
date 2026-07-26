@@ -47,27 +47,56 @@ export function formatEspflashMessage(
   return String(translated);
 }
 
+const ESPFLASH_ERROR_KEYS: Record<string, string> = {
+  flash_size_unknown: "flashSizeUnknown",
+  no_segments: "noSegments",
+  empty_file: "emptyFile",
+  merge_too_large: "mergeTooLarge",
+  segment_overlap: "segmentOverlap",
+  offset_oob: "offsetOob",
+  segment_oob: "offsetOob",
+  empty_offset_or_size: "emptyOffsetOrSize",
+  zero_size: "zeroSize",
+  empty_read_result: "emptyReadResult",
+  read_corrupt: "readCorrupt",
+  create_failed: "createFailed",
+  mkdir_failed: "mkdirFailed",
+  write_failed: "writeFailed",
+  flush_failed: "writeFailed",
+  read_tmp_failed: "readFailed",
+  read_chunk_len: "readCorrupt",
+  read_failed: "readFailed",
+  invalid_flash_mode: "invalidFlashMode",
+  ESPFLASH_BUSY: "busy",
+};
+
 /** 将后端错误码（如 flash_size_unknown）转成可读文案 */
 export function formatEspflashErrorDetail(raw: string): string {
   const code = (raw.split(":")[0] || raw).trim();
-  const known: Record<string, string> = {
-    flash_size_unknown: "flashSizeUnknown",
-    no_segments: "noSegments",
-    empty_file: "emptyFile",
-    merge_too_large: "mergeTooLarge",
-    segment_overlap: "segmentOverlap",
-    offset_oob: "offsetOob",
-    empty_offset_or_size: "emptyOffsetOrSize",
-    read_corrupt: "readCorrupt",
-    ESPFLASH_BUSY: "busy",
-  };
-  const msgKey = known[code];
+  const msgKey = ESPFLASH_ERROR_KEYS[code];
   if (!msgKey) {
     return raw;
   }
   const path = `espflash.err.${msgKey}`;
   const translated = i18n.global.t(path);
   return translated === path ? raw : String(translated);
+}
+
+/** 从 invoke 包装错误中取出后端原始错误串 */
+export function getEspflashErrorDetail(err: unknown): string {
+  if (err && typeof err === "object" && "detail" in err) {
+    const detail = (err as { detail?: unknown }).detail;
+    if (typeof detail === "string" && detail.trim()) {
+      return detail.trim();
+    }
+  }
+  if (err instanceof Error && err.message && err.message !== "ESPFLASH_FAILED") {
+    return err.message;
+  }
+  if (typeof err === "string" && err.trim()) {
+    return err.trim();
+  }
+  return "";
 }
 
 /** 确保全局进度/日志事件只订阅一次 */

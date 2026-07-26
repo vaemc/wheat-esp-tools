@@ -1,6 +1,10 @@
 import type { Ref } from "vue";
 import { openFileInExplorer } from "@/utils/common";
-import { eraseFlash as eraseFlashOp, readFlash } from "@/utils/espflash";
+import {
+  eraseFlash as eraseFlashOp,
+  readFlash,
+  reportEspflashError,
+} from "@/utils/espflash";
 import { usePortStore } from "@/stores/port";
 import { nowMs } from "@/utils/datetime";
 import { joinTempWorkDir } from "@/utils/tempWorkDir";
@@ -20,14 +24,6 @@ export function useFlashQuickActions(baudRate: Ref<string>) {
     return port;
   }
 
-  function reportError(e: unknown) {
-    if (e instanceof Error && e.message === "ESPFLASH_BUSY") {
-      message.warning(t("espflash.busy"));
-      return;
-    }
-    message.error(t("flash.flashFailed"));
-  }
-
   async function eraseFlash() {
     const port = ensurePort();
     if (!port) {
@@ -36,7 +32,7 @@ export function useFlashQuickActions(baudRate: Ref<string>) {
     try {
       await eraseFlashOp(port, baudRate.value);
     } catch (e) {
-      reportError(e);
+      reportEspflashError(e, "flash.flashFailed");
     }
   }
 
@@ -55,7 +51,7 @@ export function useFlashQuickActions(baudRate: Ref<string>) {
       await readFlash(port, baudRate.value, "0", "ALL", savePath);
       await openFileInExplorer(savePath);
     } catch (e) {
-      reportError(e);
+      reportEspflashError(e, "flash.flashFailed");
     }
   }
 

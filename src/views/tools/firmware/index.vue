@@ -1,12 +1,6 @@
 <template>
   <div class="firmware-page">
     <section class="toolbar panel">
-      <header class="toolbar-head">
-        <div>
-          <div class="toolbar-title">{{ $t("firmware.flashOption") }}</div>
-          <p class="toolbar-hint">{{ $t("firmware.flashOptionHint") }}</p>
-        </div>
-      </header>
       <FlashOptionsBar
         v-model:baud-rate="baudRate"
         v-model:spi-mode="spiMode"
@@ -16,18 +10,13 @@
     </section>
 
     <div class="firmware-panels">
-      <LocalFirmwarePanel
-        v-model:baud-rate="baudRate"
-        v-model:spi-mode="spiMode"
-        v-model:erase-before-flash="eraseBeforeFlash"
-        v-model:verify="verify"
-      />
+      <LocalFirmwarePanel />
       <HistoryPathsPanel />
     </div>
   </div>
 </template>
 <script setup lang="ts">
-import FlashOptionsBar from "./components/FlashOptionsBar.vue";
+import FlashOptionsBar from "@/components/FlashOptionsBar.vue";
 import HistoryPathsPanel from "./components/HistoryPathsPanel.vue";
 import LocalFirmwarePanel from "./components/LocalFirmwarePanel.vue";
 import { useFlashOptions } from "@/composables/useFlashOptions";
@@ -54,23 +43,6 @@ const { baudRate, spiMode, eraseBeforeFlash, verify } = useFlashOptions();
 
 .toolbar {
   flex-shrink: 0;
-}
-
-.toolbar-head {
-  margin-bottom: 10px;
-}
-
-.toolbar-title {
-  font-size: 14px;
-  font-weight: 500;
-  color: rgba(255, 255, 255, 0.88);
-}
-
-.toolbar-hint {
-  margin: 4px 0 0;
-  font-size: 12px;
-  line-height: 1.4;
-  color: rgba(255, 255, 255, 0.45);
 }
 
 .firmware-panels {

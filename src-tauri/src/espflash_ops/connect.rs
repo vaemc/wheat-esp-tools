@@ -65,29 +65,24 @@ pub fn parse_after(raw: &str) -> ResetAfterOperation {
     }
 }
 
-pub fn parse_flash_mode(raw: &str) -> Option<FlashMode> {
+/// 解析为 espflash::FlashMode；取值与库枚举完全一致：qio / qout / dio / dout。
+pub fn parse_flash_mode(raw: &str) -> Result<FlashMode, String> {
     match raw.trim().to_ascii_lowercase().as_str() {
-        "keep" | "" => None,
-        "qio" => Some(FlashMode::Qio),
-        "qout" => Some(FlashMode::Qout),
-        "dio" => Some(FlashMode::Dio),
-        "dout" => Some(FlashMode::Dout),
-        _ => Some(FlashMode::Dio),
+        "qio" => Ok(FlashMode::Qio),
+        "qout" => Ok(FlashMode::Qout),
+        // 空串走库默认；keep 为旧 UI 兼容，等同 dio
+        "dio" | "" | "keep" => Ok(FlashMode::Dio),
+        "dout" => Ok(FlashMode::Dout),
+        other => Err(format!("invalid_flash_mode:{other}")),
     }
 }
 
-/// 若 bin 是 ESP 镜像（magic 0xE9），按 esptool 规则写入 flash_mode 字节。
+/// 若 bin 是 ESP 镜像（magic 0xE9），写入 flash_mode（与 espflash ImageHeader 一致：`mode as u8`）。
 pub fn patch_flash_mode(data: &mut [u8], mode: FlashMode) {
     if data.first() != Some(&0xE9) || data.len() < 3 {
         return;
     }
-    data[2] = match mode {
-        FlashMode::Qio => 0,
-        FlashMode::Qout => 1,
-        FlashMode::Dio => 2,
-        FlashMode::Dout => 3,
-        _ => 2,
-    };
+    data[2] = mode as u8;
 }
 
 fn resolve_usb_port_info(port_name: &str) -> UsbPortInfo {

@@ -130,7 +130,6 @@ export function espflashLogLevel(messageKey: string): TerminalLogLevel {
     case "chipInfo":
     case "writeInit":
     case "writeVerifying":
-    case "targetChip":
     case "mergeReading":
     case "mergeAlloc":
     case "mergeSegment":

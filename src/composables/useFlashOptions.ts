@@ -22,14 +22,15 @@ export function toBaudSelectOptions(
   return rates.map((value) => ({ label: value, value }));
 }
 
+/** 跨页面共享的烧录选项（模块级单例，避免各页各自一份默认值） */
+const baudRate = ref("1152000");
+const spiMode = ref("dio");
+const eraseBeforeFlash = ref(false);
+/** 烧录后校验 Flash */
+const verify = ref(false);
+
 /** 烧录共用的 SPI、波特率与烧录选项 */
 export function useFlashOptions() {
-  const baudRate = ref("1152000");
-  const spiMode = ref("keep");
-  const eraseBeforeFlash = ref(false);
-  /** 烧录后校验 Flash */
-  const verify = ref(false);
-
   return {
     baudRate,
     spiMode,

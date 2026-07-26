@@ -5,7 +5,6 @@ export const useToolsStore = defineStore("tools", {
   state: () => {
     return {
       firmwareList: [] as Firmware[],
-      selectedChipType: "",
     };
   },
   persist: true,

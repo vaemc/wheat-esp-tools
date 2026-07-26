@@ -1,10 +1,13 @@
 import { invoke } from "@tauri-apps/api/core";
+import { message } from "ant-design-vue";
 import {
   ensureEspflashListeners,
   formatEspflashErrorDetail,
   formatEspflashMessage,
+  getEspflashErrorDetail,
   newEspflashJobId,
 } from "@/utils/espflash/events";
+import i18n from "@/locales/i18n";
 import { useEspflashStore } from "@/stores/espflash";
 
 export interface FlashItem {
@@ -29,9 +32,6 @@ export interface EspDeviceInfo {
   crystal: string;
   features: string;
   flashSize: string;
-  flashType: string;
-  flashManufacturer: string;
-  flashDevice: string;
   psram: string;
   security: string;
 }
@@ -44,12 +44,29 @@ export const EMPTY_DEVICE_INFO: EspDeviceInfo = {
   crystal: "",
   features: "",
   flashSize: "",
-  flashType: "",
-  flashManufacturer: "",
-  flashDevice: "",
   psram: "",
   security: "",
 };
+
+/** 统一处理 espflash 调用失败的 toast */
+export function reportEspflashError(err: unknown, fallbackKey: string): void {
+  if (
+    err instanceof Error &&
+    (err.message === "ESPFLASH_BUSY" || err.message === "ESPTOOL_BUSY")
+  ) {
+    message.warning(i18n.global.t("espflash.busy"));
+    return;
+  }
+  const detail = getEspflashErrorDetail(err);
+  if (detail) {
+    const formatted = formatEspflashErrorDetail(detail);
+    if (formatted !== detail) {
+      message.error(formatted);
+      return;
+    }
+  }
+  message.error(i18n.global.t(fallbackKey));
+}
 
 function parseBaud(baud: string | number, fallback = 115200): number {
   if (typeof baud === "number" && Number.isFinite(baud) && baud > 0) {
@@ -231,8 +248,7 @@ export async function fetchDeviceInfo(
 
 export async function mergeBin(
   outputPath: string,
-  items: FlashItem[],
-  chip = ""
+  items: FlashItem[]
 ): Promise<void> {
   if (items.length === 0) {
     return;
@@ -242,13 +258,8 @@ export async function mergeBin(
       args: {
         outputPath,
         items,
-        chip,
         jobId,
       },
     })
   );
-}
-
-export async function listSupportedChips(): Promise<string[]> {
-  return invoke<string[]>("espflash_list_chips");
 }
