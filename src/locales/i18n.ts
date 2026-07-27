@@ -341,7 +341,7 @@ const messages = {
       lvglOptionsHint: "本地快速转换，输出无压缩、无字距的 LVGL C 字库",
       fontName: "字体名称",
       fontNameHint:
-        "输出 C 变量名与文件名。自动命名格式：font_{内建名拼音}_{字号}_{bpp}",
+        "输出 C 变量名与文件名。自动命名格式：font_{'{'}内建名拼音{'}'}_{'{'}字号{'}'}_{'{'}bpp{'}'}",
       autoName: "自动命名",
       autoNameHint: "基于内建名「{name}」生成，修改字号或 bpp 时同步更新",
       size: "字号",
@@ -1138,7 +1138,7 @@ const messages = {
       lvglOptionsHint: "Local fast conversion for uncompressed, kerning-free LVGL C fonts",
       fontName: "Font name",
       fontNameHint:
-        "C symbol and file name. Auto format: font_{internal_name_pinyin}_{size}_{bpp}",
+        "C symbol and file name. Auto format: font_{'{'}internal_name_pinyin{'}'}_{'{'}size{'}'}_{'{'}bpp{'}'}",
       autoName: "Auto name",
       autoNameHint:
         "From internal name \"{name}\"; updates when size or bpp changes",
