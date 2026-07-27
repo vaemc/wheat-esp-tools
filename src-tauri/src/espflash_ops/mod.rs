@@ -240,7 +240,7 @@ pub async fn espflash_write_flash(
                 &emitter,
                 true, // use_stub：固定启用
                 args.verify,
-                true, // skip：内容一致则跳过
+                false, // skip：不跳过，始终写入
             )?;
 
             let info = flasher.device_info().map_err(map_espflash_error)?;
