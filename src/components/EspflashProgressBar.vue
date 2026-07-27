@@ -12,6 +12,14 @@
           {{ store.message || "…" }}
         </span>
         <span class="espflash-progress__pct">{{ store.percent }}%</span>
+        <button
+          v-if="store.busy"
+          class="espflash-progress__stop"
+          :disabled="stopping"
+          @click="onStop"
+        >
+          {{ stopping ? "…" : t("espflash.stop") }}
+        </button>
       </div>
       <a-progress
         :percent="store.percent"
@@ -25,16 +33,34 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { useEspflashStore } from "@/stores/espflash";
+import { cancelEspflash } from "@/utils/espflash";
 
 const { t } = useI18n();
 const store = useEspflashStore();
+const stopping = ref(false);
 
 onMounted(() => {
   void store.bind();
 });
+
+// 新任务开始时重置停止状态
+watch(
+  () => store.jobId,
+  () => {
+    stopping.value = false;
+  }
+);
+
+async function onStop() {
+  stopping.value = true;
+  const ok = await cancelEspflash();
+  if (!ok) {
+    stopping.value = false;
+  }
+}
 
 const opLabel = computed(() => {
   switch (store.op) {
@@ -113,6 +139,32 @@ const progressStatus = computed(() => {
   font-variant-numeric: tabular-nums;
   color: #93c5fd;
   font-weight: 600;
+}
+
+.espflash-progress__stop {
+  flex-shrink: 0;
+  padding: 1px 10px;
+  border: 1px solid rgba(248, 113, 113, 0.45);
+  border-radius: 4px;
+  background: rgba(248, 113, 113, 0.12);
+  color: #fca5a5;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.4;
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.espflash-progress__stop:hover:not(:disabled) {
+  background: rgba(248, 113, 113, 0.25);
+  border-color: rgba(248, 113, 113, 0.7);
+}
+
+.espflash-progress__stop:disabled {
+  opacity: 0.5;
+  cursor: default;
 }
 
 .espflash-progress :deep(.ant-progress) {

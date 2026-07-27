@@ -1,0 +1,17 @@
+[package]
+name = "wheat-esptool"
+version = "0.1.0"
+description = "ESP 串口烧录协议库（从 espressif/esptool 移植，为 wheat-esp-tools 定制）"
+license = "MIT"
+edition = "2021"
+
+[dependencies]
+serialport = "4.7"
+flate2 = "1"
+md-5 = "0.10"
+base64 = "0.22"
+serde = { version = "1", features = ["derive"] }
+toml = "0.8"
+
+[target.'cfg(unix)'.dependencies]
+libc = "0.2"

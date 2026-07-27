@@ -58,6 +58,11 @@ export function reportEspflashError(err: unknown, fallbackKey: string): void {
     return;
   }
   const detail = getEspflashErrorDetail(err);
+  // 用户主动停止不算失败，提示后直接返回
+  if ((detail.split(":")[0] || detail) === "cancelled") {
+    message.info(i18n.global.t("espflash.err.cancelled"));
+    return;
+  }
   if (detail) {
     const formatted = formatEspflashErrorDetail(detail);
     if (formatted !== detail) {
@@ -118,9 +123,11 @@ async function withJob<T>(
     const detail =
       wrapped.message === "ESPFLASH_BUSY"
         ? formatEspflashMessage("busyShort")
-        : formatEspflashMessage("failed", {
-            error: formatEspflashErrorDetail(raw),
-          });
+        : (raw.split(":")[0] || raw) === "cancelled"
+          ? formatEspflashMessage("cancelled")
+          : formatEspflashMessage("failed", {
+              error: formatEspflashErrorDetail(raw),
+            });
     store.end(jobId, false, detail);
     throw wrapped;
   }
@@ -244,6 +251,22 @@ export async function fetchDeviceInfo(
       },
     })
   );
+}
+
+/**
+ * 请求停止当前 Flash 任务（烧录 / 读取在下一个数据包边界停止；
+ * 已下发的擦除无法中断）。返回是否有任务被标记停止。
+ */
+export async function cancelEspflash(): Promise<boolean> {
+  const store = useEspflashStore();
+  if (!store.busy || !store.jobId) {
+    return false;
+  }
+  try {
+    return await invoke<boolean>("espflash_cancel", { jobId: store.jobId });
+  } catch {
+    return false;
+  }
 }
 
 export async function mergeBin(

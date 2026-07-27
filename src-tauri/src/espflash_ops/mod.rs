@@ -1,3 +1,10 @@
+//! Flash / 分区相关的 Tauri 命令层。
+//!
+//! 底层协议由 `crates/wheat-esptool`（esptool 移植版）实现，
+//! 本模块负责：参数解析、串口互斥、进度事件适配、错误码转换。
+//! 事件契约（`espflash_progress` / `espflash_log` + messageKey）与前端
+//! `src/utils/espflash` 保持一致。
+
 mod connect;
 mod merge;
 mod progress;
@@ -6,23 +13,72 @@ mod types;
 pub use types::*;
 
 use connect::{
-    connect_flasher, finish_with_reset, format_flash_size, is_retryable_read_error,
-    map_espflash_error, parse_after, parse_before, parse_flash_mode, parse_u32, patch_flash_mode,
-    read_baud_candidates,
+    connect_flasher, is_retryable_read_error, map_esp_error, parse_after, parse_before,
+    parse_flash_mode, parse_u32, patch_flash_mode, read_baud_candidates,
 };
-use espflash::flasher::Flasher;
-use espflash::image_format::Segment;
-use progress::{ProgressEmitter, WriteProgress};
-use std::borrow::Cow;
+use progress::{fmt_bytes, OpsSink, ProgressEmitter};
 use std::fs;
-use std::io::Write;
-use std::path::{Path, PathBuf};
+use std::io::{BufWriter, Write};
+use std::path::PathBuf;
 use std::sync::Mutex;
 use tauri::WebviewWindow;
 use types::{hex_addr, p};
+use wheat_esptool::{flash_size_label, CancelToken, Flasher, Segment};
 
-/// 全局串口互斥：任意时刻只允许一个 espflash 任务。
+/// 全局串口互斥：任意时刻只允许一个 Flash 任务。
 static FLASH_LOCK: Mutex<()> = Mutex::new(());
+
+/// 当前活跃任务的取消令牌（FLASH_LOCK 保证同时只有一个任务）。
+static CANCEL_REGISTRY: Mutex<Option<(String, CancelToken)>> = Mutex::new(None);
+
+fn cancel_registry() -> std::sync::MutexGuard<'static, Option<(String, CancelToken)>> {
+    CANCEL_REGISTRY
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner())
+}
+
+/// 注册取消令牌；返回的 guard 在任务结束（drop）时自动注销。
+fn register_cancel(job_id: &str) -> (CancelToken, CancelGuard) {
+    let token = CancelToken::new();
+    *cancel_registry() = Some((job_id.to_string(), token.clone()));
+    (
+        token,
+        CancelGuard {
+            job_id: job_id.to_string(),
+        },
+    )
+}
+
+struct CancelGuard {
+    job_id: String,
+}
+
+impl Drop for CancelGuard {
+    fn drop(&mut self) {
+        let mut reg = cancel_registry();
+        if reg.as_ref().is_some_and(|(id, _)| id == &self.job_id) {
+            *reg = None;
+        }
+    }
+}
+
+/// 请求停止当前 Flash 任务。`job_id` 为空时取消任意活跃任务。
+/// 返回是否有任务被标记取消（实际停止发生在下一个数据包边界）。
+#[tauri::command]
+pub async fn espflash_cancel(job_id: Option<String>) -> Result<bool, String> {
+    let reg = cancel_registry();
+    match reg.as_ref() {
+        Some((id, token))
+            if job_id
+                .as_deref()
+                .is_none_or(|j| j.is_empty() || j == id) =>
+        {
+            token.cancel();
+            Ok(true)
+        }
+        _ => Ok(false),
+    }
+}
 
 struct FlashLockGuard {
     _guard: std::sync::MutexGuard<'static, ()>,
@@ -52,13 +108,11 @@ where
 }
 
 fn map_job_err(emitter: &ProgressEmitter, err: String) -> String {
-    if err != "ESPFLASH_BUSY" {
-        emitter.phase_params(
-            "error",
-            100.0,
-            "failed",
-            p(&[("error", err.clone())]),
-        );
+    if err == "cancelled" {
+        // 用户主动停止：单独的 messageKey，前端展示「已停止」而非「失败」
+        emitter.phase("error", 100.0, "cancelled");
+    } else if err != "ESPFLASH_BUSY" {
+        emitter.phase_params("error", 100.0, "failed", p(&[("error", err.clone())]));
     }
     err
 }
@@ -73,100 +127,19 @@ fn run_job<T>(
     }
 }
 
-fn chip_label(chip: espflash::target::Chip) -> String {
-    chip.to_string().to_ascii_uppercase()
-}
-
-/// espflash `read_flash` 无进度回调；按块读取并拼文件，以便推送进度条。
-/// 失败时删除残缺的 `save_path` 与临时文件，避免留下半截 bin。
-fn read_flash_with_progress(
-    flasher: &mut Flasher,
-    offset: u32,
-    size: u32,
-    save_path: &Path,
-    emitter: &ProgressEmitter,
-) -> Result<(), String> {
-    const PACKET: u32 = 0x1000;
-    const MAX_IN_FLIGHT: u32 = 1;
-    // 每块 128KiB：进度够细，又不会因每块 MD5 过慢
-    const CHUNK: u32 = 128 * 1024;
-
-    let tmp_path = save_path.with_extension("espflash-read.tmp");
-    let cleanup_partial = || {
-        let _ = fs::remove_file(&tmp_path);
-        let _ = fs::remove_file(save_path);
-    };
-
-    let mut out = match fs::File::create(save_path) {
-        Ok(f) => f,
-        Err(e) => return Err(format!("create_failed:{e}")),
-    };
-
-    let mut done: u32 = 0;
-    let mut last_log_bucket: i32 = -1;
-
-    while done < size {
-        let this = (size - done).min(CHUNK);
-        let addr = offset.saturating_add(done);
-
-        if let Err(e) = flasher.read_flash(
-            addr,
-            this,
-            PACKET,
-            MAX_IN_FLIGHT,
-            tmp_path.clone(),
-        ) {
-            cleanup_partial();
-            return Err(map_espflash_error(e));
-        }
-
-        let chunk = match fs::read(&tmp_path) {
-            Ok(c) => c,
-            Err(e) => {
-                cleanup_partial();
-                return Err(format!("read_tmp_failed:{e}"));
-            }
-        };
-        if chunk.len() as u32 != this {
-            cleanup_partial();
-            return Err(format!("read_chunk_len:{this}:{}", chunk.len()));
-        }
-        if let Err(e) = out.write_all(&chunk) {
-            cleanup_partial();
-            return Err(format!("write_failed:{e}"));
-        }
-
-        done += this;
-        let percent = 20.0 + 75.0 * (done as f64 / size as f64);
-        let bucket = (percent / 5.0).floor() as i32;
-        // 进度条每块更新；终端约每 5% 打一条
-        let to_terminal = done >= size || bucket > last_log_bucket;
-        if to_terminal {
-            last_log_bucket = bucket;
-        }
-
-        emitter.emit(
-            "reading",
-            percent,
-            "readProgress",
-            p(&[
-                ("addr", hex_addr(offset)),
-                ("current", done.to_string()),
-                ("total", size.to_string()),
-            ]),
-            Some(addr),
-            Some(done as u64),
-            Some(size as u64),
-            to_terminal,
-        );
-    }
-
-    if let Err(e) = out.flush() {
-        cleanup_partial();
-        return Err(format!("flush_failed:{e}"));
-    }
-    let _ = fs::remove_file(&tmp_path);
-    Ok(())
+/// 连接完成后打一条「芯片 + Flash 容量」的终端日志。
+fn log_chip_info(emitter: &ProgressEmitter, flasher: &Flasher) {
+    let flash = flasher
+        .flash_size_bytes()
+        .map(flash_size_label)
+        .unwrap_or_else(|| "?".into());
+    emitter.log_key(
+        "chipInfo",
+        p(&[
+            ("chip", flasher.chip_name().to_string()),
+            ("flash", flash),
+        ]),
+    );
 }
 
 fn extract_psram(features: &[String]) -> String {
@@ -204,84 +177,70 @@ pub async fn espflash_write_flash(
             }
 
             let flash_mode = parse_flash_mode(&args.flash_mode)?;
-            let mut segments_data: Vec<(u32, Vec<u8>)> = Vec::with_capacity(args.items.len());
+            let mut segments: Vec<Segment> = Vec::with_capacity(args.items.len());
+            let mut total_bytes: u64 = 0;
 
             for item in &args.items {
                 let offset = parse_u32(&item.offset)?;
-                let mut data =
-                    fs::read(&item.path).map_err(|e| format!("read_failed:{}:{e}", item.path))?;
+                let mut data = fs::read(&item.path)
+                    .map_err(|e| format!("read_file_failed:{}:{e}", item.path))?;
                 if data.is_empty() {
                     return Err(format!("empty_file:{}", item.path));
                 }
                 patch_flash_mode(&mut data, flash_mode);
-                // 与 espflash write_bin_to_flash 对齐：长度补齐到 4 字节
+                // 与 esptool 对齐：长度补齐到 4 字节
                 let rem = data.len() % 4;
                 if rem != 0 {
-                    data.extend(std::iter::repeat(0xFFu8).take(4 - rem));
+                    data.extend(std::iter::repeat_n(0xFFu8, 4 - rem));
                 }
                 emitter.log_key(
                     "segmentInfo",
                     p(&[
                         ("addr", hex_addr(offset)),
                         ("path", item.path.clone()),
-                        ("bytes", data.len().to_string()),
+                        ("bytes", fmt_bytes(data.len() as u64)),
                     ]),
                 );
-                segments_data.push((offset, data));
+                total_bytes += data.len() as u64;
+                segments.push(Segment { addr: offset, data });
             }
 
             let before = parse_before(&args.before);
             let after = parse_after(&args.after);
-            let mut flasher = connect_flasher(
-                &args.port,
-                args.baud,
-                before,
-                after,
-                &emitter,
-                true, // use_stub：固定启用
-                args.verify,
-                false, // skip：不跳过，始终写入
-            )?;
-
-            let info = flasher.device_info().map_err(map_espflash_error)?;
-            emitter.log_key(
-                "chipInfo",
-                p(&[
-                    ("chip", chip_label(info.chip)),
-                    ("flash", format_flash_size(info.flash_size)),
-                ]),
-            );
 
             let write_base = if args.erase_all { 35.0 } else { 15.0 };
             let write_span = if args.erase_all { 60.0 } else { 80.0 };
 
-            if args.erase_all {
-                emitter.phase("erasing", 15.0, "eraseAllRunning");
-                flasher.erase_flash().map_err(map_espflash_error)?;
-                emitter.phase("erasing", 30.0, "eraseAllDone");
+            let (cancel, _cancel_guard) = register_cancel(&args.job_id);
+
+            let mut sink = OpsSink::new(&emitter);
+            sink.set_write_profile(write_base, write_span, total_bytes, 15.0, 30.0);
+
+            let mut flasher = connect_flasher(&args.port, args.baud, before, after, &mut sink)?;
+            flasher.set_cancel_token(cancel.clone());
+            log_chip_info(&emitter, &flasher);
+
+            let write_result = (|| -> Result<(), String> {
+                if cancel.is_cancelled() {
+                    return Err("cancelled".into());
+                }
+                if args.erase_all {
+                    // OpsSink 会推 eraseAllRunning(15%) / eraseAllDone(30%)
+                    flasher.erase_flash(&mut sink).map_err(map_esp_error)?;
+                }
+                flasher
+                    .write_flash(&segments, args.verify, &mut sink)
+                    .map_err(map_esp_error)
+            })();
+
+            if let Err(e) = write_result {
+                // 停止/失败后尽力复位，避免设备停留在 bootloader
+                let _ = flasher.abort();
+                return Err(e);
             }
 
-            let segment_sizes: Vec<u64> = segments_data
-                .iter()
-                .map(|(_, data)| data.len() as u64)
-                .collect();
-
-            let segments: Vec<Segment<'_>> = segments_data
-                .iter()
-                .map(|(addr, data)| Segment {
-                    addr: *addr,
-                    data: Cow::Borrowed(data.as_slice()),
-                })
-                .collect();
-
-            let mut progress =
-                WriteProgress::new(&emitter, segment_sizes, write_base, write_span);
-            flasher
-                .write_bins_to_flash(&segments, &mut progress)
-                .map_err(map_espflash_error)?;
-
-            // write_bins_to_flash 内部 finish(..., reboot=true) 已按 after 复位，
-            // 再调 reset_after 易在端口抖动时把已成功烧录误报为失败。
+            // 按 after 参数复位（默认硬复位运行用户程序）
+            flasher.finish().map_err(map_esp_error)?;
             emitter.phase("done", 100.0, "writeDone");
             Ok(())
         })
@@ -305,19 +264,21 @@ pub async fn espflash_read_flash(
             let before = parse_before(&args.before);
             let after = parse_after(&args.after);
 
-            // 读 Flash 对串口更敏感；具体参数见 read_flash_with_progress。
+            let (cancel, _cancel_guard) = register_cancel(&args.job_id);
+
+            // 读 Flash 对串口更敏感：波特率超限自动封顶，失败按阶梯降速重试
             let baud_list = read_baud_candidates(args.baud);
             let mut last_err = String::from("read_failed");
             let mut size: Option<u32> = None;
 
             for (attempt, baud) in baud_list.iter().copied().enumerate() {
+                if cancel.is_cancelled() {
+                    return Err("cancelled".into());
+                }
                 if attempt > 0 {
                     emitter.log_key(
                         "readRetryBaud",
-                        p(&[
-                            ("baud", baud.to_string()),
-                            ("error", last_err.clone()),
-                        ]),
+                        p(&[("baud", baud.to_string()), ("error", last_err.clone())]),
                     );
                 } else if args.baud > baud {
                     emitter.log_key(
@@ -329,49 +290,34 @@ pub async fn espflash_read_flash(
                     );
                 }
 
-                // 读操作：stub 更稳；verify/skip 对读无效，保持默认
-                let mut flasher = match connect_flasher(
-                    &args.port,
-                    baud,
-                    before,
-                    after,
-                    &emitter,
-                    true,
-                    true,
-                    false,
-                ) {
-                    Ok(f) => f,
-                    Err(e) => {
-                        last_err = e;
-                        if is_retryable_read_error(&last_err) {
-                            continue;
-                        }
-                        return Err(last_err);
-                    }
-                };
-
-                let read_size = if let Some(s) = size {
-                    s
-                } else if size_raw.eq_ignore_ascii_case("ALL") {
-                    emitter.phase("reading", 12.0, "detectFlashSize");
-                    let detected = match flasher.flash_detect().map_err(map_espflash_error) {
-                        Ok(Some(d)) => d,
-                        Ok(None) => return Err("flash_size_unknown".into()),
+                let mut sink = OpsSink::new(&emitter);
+                let mut flasher =
+                    match connect_flasher(&args.port, baud, before, after, &mut sink) {
+                        Ok(f) => f,
                         Err(e) => {
                             last_err = e;
-                            let _ = finish_with_reset(&mut flasher);
                             if is_retryable_read_error(&last_err) {
                                 continue;
                             }
                             return Err(last_err);
                         }
                     };
-                    let bytes = detected.size();
+                flasher.set_cancel_token(cancel.clone());
+
+                // 解析读取长度（"ALL" = 从 offset 读到片尾；容量在连接时已探测）
+                let read_size = if let Some(s) = size {
+                    s
+                } else if size_raw.eq_ignore_ascii_case("ALL") {
+                    emitter.phase("reading", 12.0, "detectFlashSize");
+                    let bytes = match flasher.flash_size_bytes() {
+                        Some(b) => b,
+                        None => return Err("flash_size_unknown".into()),
+                    };
                     if offset >= bytes {
                         return Err(format!(
                             "offset_oob:{}:{}",
                             hex_addr(offset),
-                            format_flash_size(detected)
+                            flash_size_label(bytes)
                         ));
                     }
                     let s = bytes - offset;
@@ -399,7 +345,7 @@ pub async fn espflash_read_flash(
                     "readRunning",
                     p(&[
                         ("addr", hex_addr(offset)),
-                        ("bytes", read_size.to_string()),
+                        ("bytes", fmt_bytes(read_size as u64)),
                         ("baud", baud.to_string()),
                     ]),
                     Some(offset),
@@ -408,30 +354,33 @@ pub async fn espflash_read_flash(
                     true,
                 );
 
-                match read_flash_with_progress(
-                    &mut flasher,
-                    offset,
-                    read_size,
-                    Path::new(&args.save_path),
-                    &emitter,
-                ) {
+                // 流式写入目标文件；失败时删除半截文件
+                let file = fs::File::create(&args.save_path)
+                    .map_err(|e| format!("create_failed:{e}"))?;
+                let mut writer = BufWriter::new(file);
+
+                let read_result = flasher
+                    .read_flash(offset, read_size, &mut writer, &mut sink)
+                    .map_err(map_esp_error)
+                    .and_then(|()| writer.flush().map_err(|e| format!("write_failed:{e}")));
+
+                match read_result {
                     Ok(()) => {
-                        let written = fs::metadata(&args.save_path)
-                            .map(|m| m.len())
-                            .unwrap_or(0);
+                        drop(writer);
+                        let written = fs::metadata(&args.save_path).map(|m| m.len()).unwrap_or(0);
                         if written == 0 {
                             let _ = fs::remove_file(&args.save_path);
                             return Err("empty_read_result".into());
                         }
 
-                        finish_with_reset(&mut flasher)?;
+                        flasher.finish().map_err(map_esp_error)?;
                         emitter.emit(
                             "done",
                             100.0,
                             "readDone",
                             p(&[
                                 ("path", args.save_path.clone()),
-                                ("bytes", written.to_string()),
+                                ("bytes", fmt_bytes(written)),
                             ]),
                             Some(offset),
                             Some(written),
@@ -441,8 +390,10 @@ pub async fn espflash_read_flash(
                         return Ok(());
                     }
                     Err(e) => {
+                        drop(writer);
+                        let _ = fs::remove_file(&args.save_path);
                         last_err = e;
-                        let _ = finish_with_reset(&mut flasher);
+                        let _ = flasher.finish();
                         if is_retryable_read_error(&last_err) {
                             continue;
                         }
@@ -470,14 +421,23 @@ pub async fn espflash_erase_flash(
 
             let before = parse_before(&args.before);
             let after = parse_after(&args.after);
-            let mut flasher =
-                connect_flasher(&args.port, args.baud, before, after, &emitter, true, true, false)?;
+            let (cancel, _cancel_guard) = register_cancel(&args.job_id);
 
-            emitter.phase("erasing", 25.0, "eraseAllRunning");
-            flasher.erase_flash().map_err(map_espflash_error)?;
+            let mut sink = OpsSink::new(&emitter);
+            // 独立擦除命令：EraseAllStart/Done 落在 25% → 95%，避免长时间停在小百分比
+            sink.set_erase_points(25.0, 95.0);
+            let mut flasher = connect_flasher(&args.port, args.baud, before, after, &mut sink)?;
 
-            finish_with_reset(&mut flasher)?;
-            emitter.phase("done", 100.0, "eraseAllDone");
+            // 擦除一旦下发就无法中断（芯片自行完成），只在开始前响应停止
+            if cancel.is_cancelled() {
+                let _ = flasher.abort();
+                return Err("cancelled".into());
+            }
+            flasher.erase_flash(&mut sink).map_err(map_esp_error)?;
+
+            flasher.finish().map_err(map_esp_error)?;
+            // 终端成功日志已由 sink 的 EraseAllDone 打过，这里只收尾进度条
+            emitter.emit("done", 100.0, "eraseAllDone", p(&[]), None, None, None, false);
             Ok(())
         })
     })
@@ -503,27 +463,29 @@ pub async fn espflash_erase_region(
 
             let before = parse_before(&args.before);
             let after = parse_after(&args.after);
-            let mut flasher =
-                connect_flasher(&args.port, args.baud, before, after, &emitter, true, true, false)?;
+            let (cancel, _cancel_guard) = register_cancel(&args.job_id);
 
+            let mut sink = OpsSink::new(&emitter);
+            let mut flasher = connect_flasher(&args.port, args.baud, before, after, &mut sink)?;
+
+            // 区域擦除同样只在开始前响应停止
+            if cancel.is_cancelled() {
+                let _ = flasher.abort();
+                return Err("cancelled".into());
+            }
             emitter.emit(
                 "erasing",
                 30.0,
                 "eraseRegionRunning",
-                p(&[
-                    ("addr", hex_addr(offset)),
-                    ("size", hex_addr(size)),
-                ]),
+                p(&[("addr", hex_addr(offset)), ("size", hex_addr(size))]),
                 Some(offset),
                 None,
                 Some(size as u64),
                 true,
             );
-            flasher
-                .erase_region(offset, size)
-                .map_err(map_espflash_error)?;
+            flasher.erase_region(offset, size).map_err(map_esp_error)?;
 
-            finish_with_reset(&mut flasher)?;
+            flasher.finish().map_err(map_esp_error)?;
             emitter.phase("done", 100.0, "eraseRegionDone");
             Ok(())
         })
@@ -544,37 +506,36 @@ pub async fn espflash_device_info(
 
             let before = parse_before(&args.before);
             let after = parse_after(&args.after);
-            let mut flasher =
-                connect_flasher(&args.port, args.baud, before, after, &emitter, true, true, false)?;
+            let mut sink = OpsSink::new(&emitter);
+            let mut flasher = connect_flasher(&args.port, args.baud, before, after, &mut sink)?;
 
             emitter.phase("reading", 40.0, "deviceInfoQuery");
-            let info = flasher.device_info().map_err(map_espflash_error)?;
+            let info = flasher.device_info().map_err(map_esp_error)?;
 
             let revision = info
                 .revision
                 .map(|(major, minor)| format!("v{major}.{minor}"))
                 .unwrap_or_default();
 
-            let chip_type = chip_label(info.chip);
+            let chip_type = info.chip.clone();
             let chip_detail = if revision.is_empty() {
                 chip_type.clone()
             } else {
                 format!("{chip_type} (revision {revision})")
             };
 
-            let mut security = String::new();
-            if info.chip != espflash::target::Chip::Esp32 {
-                emitter.phase("reading", 70.0, "deviceInfoSecurity");
-                match flasher.security_info() {
-                    Ok(sec) => security = sec.to_string(),
-                    Err(e) => {
-                        emitter.log_key(
-                            "securityUnavailable",
-                            p(&[("error", map_espflash_error(e))]),
-                        );
-                    }
+            emitter.phase("reading", 70.0, "deviceInfoSecurity");
+            let security = match flasher.security_info() {
+                Ok(Some(sec)) => sec.to_string(),
+                Ok(None) => String::new(),
+                Err(e) => {
+                    emitter.log_key(
+                        "securityUnavailable",
+                        p(&[("error", map_esp_error(e))]),
+                    );
+                    String::new()
                 }
-            }
+            };
 
             let features = info.features.join(", ");
             let psram = extract_psram(&info.features);
@@ -583,15 +544,18 @@ pub async fn espflash_device_info(
                 chip_type,
                 chip_detail,
                 revision,
-                mac: info.mac_address.unwrap_or_default().to_ascii_uppercase(),
-                crystal: info.crystal_frequency.to_string(),
+                mac: info.mac.unwrap_or_default().to_ascii_uppercase(),
+                crystal: format!("{} MHz", info.crystal_mhz),
                 features,
-                flash_size: format_flash_size(info.flash_size),
+                flash_size: info
+                    .flash_size_bytes
+                    .map(flash_size_label)
+                    .unwrap_or_default(),
                 psram,
                 security,
             };
 
-            finish_with_reset(&mut flasher)?;
+            flasher.finish().map_err(map_esp_error)?;
             emitter.phase_params(
                 "done",
                 100.0,

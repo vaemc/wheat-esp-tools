@@ -1,22 +1,15 @@
-use espflash::{
-    connection::{Connection, ResetAfterOperation, ResetBeforeOperation},
-    flasher::{FlashMode, Flasher},
-    Error,
-};
-use serialport::{FlowControl, SerialPortType, UsbPortInfo};
+//! 参数解析与 wheat-esptool 连接封装。
 
-use super::progress::ProgressEmitter;
-use super::types::p;
+use wheat_esptool::{ConnectConfig, Error as EspError, Flasher, ResetAfter, ResetBefore};
+
+use super::progress::OpsSink;
 
 pub fn parse_u32(raw: &str) -> Result<u32, String> {
     let s = raw.trim();
     if s.is_empty() {
         return Err("empty_offset_or_size".into());
     }
-    if let Some(hex) = s
-        .strip_prefix("0x")
-        .or_else(|| s.strip_prefix("0X"))
-    {
+    if let Some(hex) = s.strip_prefix("0x").or_else(|| s.strip_prefix("0X")) {
         return u32::from_str_radix(hex, 16).map_err(|e| format!("invalid_hex:{s}:{e}"));
     }
 
@@ -43,150 +36,74 @@ pub fn parse_u32(raw: &str) -> Result<u32, String> {
     u32::try_from(value).map_err(|_| format!("size_overflow:{s}"))
 }
 
-pub fn parse_before(raw: &str) -> ResetBeforeOperation {
+pub fn parse_before(raw: &str) -> ResetBefore {
     let key = raw.trim().to_ascii_lowercase().replace('_', "-");
     match key.as_str() {
-        "default-reset" | "defaultreset" => ResetBeforeOperation::DefaultReset,
-        "no-reset" | "noreset" => ResetBeforeOperation::NoReset,
-        "no-reset-no-sync" | "noresetnosync" => ResetBeforeOperation::NoResetNoSync,
-        "usb-reset" | "usbreset" => ResetBeforeOperation::UsbReset,
-        _ => ResetBeforeOperation::DefaultReset,
+        "no-reset" | "noreset" => ResetBefore::NoReset,
+        "no-reset-no-sync" | "noresetnosync" => ResetBefore::NoResetNoSync,
+        "usb-reset" | "usbreset" => ResetBefore::UsbReset,
+        _ => ResetBefore::DefaultReset,
     }
 }
 
-pub fn parse_after(raw: &str) -> ResetAfterOperation {
+pub fn parse_after(raw: &str) -> ResetAfter {
     let key = raw.trim().to_ascii_lowercase().replace('_', "-");
     match key.as_str() {
-        "hard-reset" | "hardreset" => ResetAfterOperation::HardReset,
-        "no-reset" | "noreset" => ResetAfterOperation::NoReset,
-        "no-reset-no-stub" | "noresetnostub" => ResetAfterOperation::NoResetNoStub,
-        "watchdog-reset" | "watchdogreset" => ResetAfterOperation::WatchdogReset,
-        _ => ResetAfterOperation::HardReset,
+        "no-reset" | "noreset" => ResetAfter::NoReset,
+        "no-reset-no-stub" | "noresetnostub" => ResetAfter::NoResetNoStub,
+        // watchdog-reset 未实现专用时序，回落到硬复位
+        _ => ResetAfter::HardReset,
     }
 }
 
-/// 解析为 espflash::FlashMode；取值与库枚举完全一致：qio / qout / dio / dout。
-pub fn parse_flash_mode(raw: &str) -> Result<FlashMode, String> {
+/// flash mode 字符串 → 镜像头字节值（qio=0 / qout=1 / dio=2 / dout=3）。
+pub fn parse_flash_mode(raw: &str) -> Result<u8, String> {
     match raw.trim().to_ascii_lowercase().as_str() {
-        "qio" => Ok(FlashMode::Qio),
-        "qout" => Ok(FlashMode::Qout),
-        // 空串走库默认；keep 为旧 UI 兼容，等同 dio
-        "dio" | "" | "keep" => Ok(FlashMode::Dio),
-        "dout" => Ok(FlashMode::Dout),
+        "qio" => Ok(0),
+        "qout" => Ok(1),
+        // 空串走默认；keep 为旧 UI 兼容，等同 dio
+        "dio" | "" | "keep" => Ok(2),
+        "dout" => Ok(3),
         other => Err(format!("invalid_flash_mode:{other}")),
     }
 }
 
-/// 若 bin 是 ESP 镜像（magic 0xE9），写入 flash_mode（与 espflash ImageHeader 一致：`mode as u8`）。
-pub fn patch_flash_mode(data: &mut [u8], mode: FlashMode) {
+/// 若 bin 是 ESP 镜像（magic 0xE9），改写头部第 3 字节的 flash_mode。
+pub fn patch_flash_mode(data: &mut [u8], mode: u8) {
     if data.first() != Some(&0xE9) || data.len() < 3 {
         return;
     }
-    data[2] = mode as u8;
+    data[2] = mode;
 }
 
-fn resolve_usb_port_info(port_name: &str) -> UsbPortInfo {
-    if let Ok(ports) = serialport::available_ports() {
-        for info in ports {
-            if info.port_name == port_name {
-                match info.port_type {
-                    SerialPortType::UsbPort(usb) => return usb,
-                    SerialPortType::PciPort | SerialPortType::Unknown => {
-                        return UsbPortInfo {
-                            vid: 0,
-                            pid: 0,
-                            serial_number: None,
-                            manufacturer: None,
-                            product: None,
-                        };
-                    }
-                    _ => {}
-                }
-            }
-        }
-    }
-    UsbPortInfo {
-        vid: 0,
-        pid: 0,
-        serial_number: None,
-        manufacturer: None,
-        product: None,
-    }
-}
-
+/// 连接设备；错误统一转为前端可解析的字符串码。
 pub fn connect_flasher(
     port_name: &str,
     baud: u32,
-    before: ResetBeforeOperation,
-    after: ResetAfterOperation,
-    emitter: &ProgressEmitter,
-    use_stub: bool,
-    verify: bool,
-    skip: bool,
+    before: ResetBefore,
+    after: ResetAfter,
+    sink: &mut OpsSink<'_>,
 ) -> Result<Flasher, String> {
-    emitter.phase_params(
-        "connecting",
-        2.0,
-        "openPort",
-        p(&[("port", port_name.to_string())]),
-    );
-
-    let serial = serialport::new(port_name, 115_200)
-        .flow_control(FlowControl::None)
-        .open_native()
-        .map_err(|e| format!("open_port_failed:{port_name}:{e}"))?;
-
-    let usb_info = resolve_usb_port_info(port_name);
-    let connection = Connection::new(*Box::new(serial), usb_info, after, before, baud);
-
-    emitter.phase(
-        "connecting",
-        8.0,
-        if use_stub {
-            "connectingStub"
-        } else {
-            "connectingRom"
-        },
-    );
-
-    Flasher::connect(
-        connection,
-        use_stub,
-        verify,
-        skip,
-        None, // auto-detect chip
-        Some(baud.max(115_200)),
-    )
-    .map_err(map_espflash_error)
+    let cfg = ConnectConfig {
+        port: port_name.to_string(),
+        baud,
+        before,
+        after,
+        use_stub: true, // 固定启用 stub：压缩烧录 / 流式读取 / 整片擦除都依赖它
+    };
+    Flasher::connect(&cfg, sink).map_err(|e| match e {
+        EspError::Serial(se) => format!("open_port_failed:{port_name}:{se}"),
+        other => other.to_string(),
+    })
 }
 
-pub fn finish_with_reset(flasher: &mut Flasher) -> Result<(), String> {
-    let chip = flasher.chip();
-    flasher
-        .connection()
-        .reset_after(true, chip)
-        .map_err(map_espflash_error)
-}
-
-pub fn map_espflash_error(err: Error) -> String {
-    match &err {
-        Error::CorruptData(expected, got) => {
-            format!("read_corrupt:{expected:x}:{got:x}")
-        }
-        _ => {
-            let msg = err.to_string();
-            if msg.trim().is_empty() {
-                format!("{err:?}")
-            } else {
-                msg
-            }
-        }
-    }
+pub fn map_esp_error(err: EspError) -> String {
+    err.to_string()
 }
 
 /// 读 Flash 用的波特率阶梯：先试请求值（上限 460800），失败再降速。
 pub fn read_baud_candidates(requested: u32) -> Vec<u32> {
-    let start = requested.min(460_800).max(115_200);
+    let start = requested.clamp(115_200, 460_800);
     let mut out = vec![start];
     for b in [230_400u32, 115_200] {
         if b < start && !out.contains(&b) {
@@ -198,20 +115,8 @@ pub fn read_baud_candidates(requested: u32) -> Vec<u32> {
 
 pub fn is_retryable_read_error(err: &str) -> bool {
     err.starts_with("read_corrupt:")
-        || err.contains("Corrupt data")
-        || err.contains("IncorrectResponse")
         || err.contains("timeout")
         || err.contains("Timeout")
         || err.contains("TimedOut")
-}
-
-pub fn format_flash_size(size: espflash::flasher::FlashSize) -> String {
-    let bytes = size.size() as u64;
-    if bytes >= 1024 * 1024 {
-        format!("{}MB", bytes / (1024 * 1024))
-    } else if bytes >= 1024 {
-        format!("{}KB", bytes / 1024)
-    } else {
-        format!("{bytes}B")
-    }
+        || err.starts_with("io_error:")
 }

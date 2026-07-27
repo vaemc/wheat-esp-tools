@@ -48,6 +48,7 @@ export function formatEspflashMessage(
 }
 
 const ESPFLASH_ERROR_KEYS: Record<string, string> = {
+  // —— 参数 / 文件类 ——
   flash_size_unknown: "flashSizeUnknown",
   no_segments: "noSegments",
   empty_file: "emptyFile",
@@ -55,31 +56,72 @@ const ESPFLASH_ERROR_KEYS: Record<string, string> = {
   segment_overlap: "segmentOverlap",
   offset_oob: "offsetOob",
   segment_oob: "offsetOob",
+  offset_overflow: "offsetOob",
+  write_offset_overflow: "offsetOob",
   empty_offset_or_size: "emptyOffsetOrSize",
   zero_size: "zeroSize",
-  empty_read_result: "emptyReadResult",
-  read_corrupt: "readCorrupt",
+  invalid_hex: "invalidNumber",
+  invalid_int: "invalidNumber",
+  size_overflow: "invalidNumber",
+  invalid_flash_mode: "invalidFlashMode",
+  read_file_failed: "readFileFailed",
   create_failed: "createFailed",
   mkdir_failed: "mkdirFailed",
   write_failed: "writeFailed",
   flush_failed: "writeFailed",
   read_tmp_failed: "readFailed",
+  // —— 串口 / 连接类（wheat-esptool）——
+  open_port_failed: "openPortFailed",
+  serial_error: "serialError",
+  io_error: "serialError",
+  serial_timeout: "timeout",
+  command_timeout: "timeout",
+  connect_failed: "connectFailed",
+  stub_handshake_failed: "connectFailed",
+  chip_detect_failed: "chipDetectFailed",
+  flash_connect_failed: "flashConnectFailed",
+  invalid_response: "invalidResponse",
+  rom_error: "romError",
+  unsupported: "unsupported",
+  // —— 读写数据类 ——
+  read_corrupt: "readCorrupt",
   read_chunk_len: "readCorrupt",
   read_failed: "readFailed",
-  invalid_flash_mode: "invalidFlashMode",
+  empty_read_result: "emptyReadResult",
+  verify_failed: "verifyFailed",
+  // —— 其他 ——
+  cancelled: "cancelled",
+  task_join_failed: "internal",
   ESPFLASH_BUSY: "busy",
 };
 
-/** 将后端错误码（如 flash_size_unknown）转成可读文案 */
+const ERROR_DETAIL_MAX = 120;
+
+/**
+ * 将后端错误串（`code:detail`）转成可读文案。
+ * 映射成功时保留 detail 便于排查（如串口名、地址、系统错误信息）。
+ */
 export function formatEspflashErrorDetail(raw: string): string {
-  const code = (raw.split(":")[0] || raw).trim();
+  const sep = raw.indexOf(":");
+  const code = (sep >= 0 ? raw.slice(0, sep) : raw).trim();
+  const detail = sep >= 0 ? raw.slice(sep + 1).trim() : "";
   const msgKey = ESPFLASH_ERROR_KEYS[code];
   if (!msgKey) {
     return raw;
   }
   const path = `espflash.err.${msgKey}`;
   const translated = i18n.global.t(path);
-  return translated === path ? raw : String(translated);
+  if (translated === path) {
+    return raw;
+  }
+  if (!detail) {
+    return String(translated);
+  }
+  const short =
+    detail.length > ERROR_DETAIL_MAX
+      ? `${detail.slice(0, ERROR_DETAIL_MAX)}…`
+      : detail;
+  return `${translated} (${short})`;
 }
 
 /** 从 invoke 包装错误中取出后端原始错误串 */

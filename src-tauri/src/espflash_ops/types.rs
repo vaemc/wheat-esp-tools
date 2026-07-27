@@ -16,7 +16,7 @@ pub struct WriteFlashArgs {
     pub port: String,
     pub baud: u32,
     pub items: Vec<FlashItem>,
-    /// `qio` | `qout` | `dio` | `dout`（与 espflash::FlashMode 一致；默认 dio）
+    /// `qio` | `qout` | `dio` | `dout`（烧录时 patch 进镜像头；默认 dio）
     #[serde(default = "default_flash_mode")]
     pub flash_mode: String,
     #[serde(default)]

@@ -3,7 +3,7 @@ use std::io::Write;
 use std::path::Path;
 
 use super::connect::parse_u32;
-use super::progress::ProgressEmitter;
+use super::progress::{fmt_bytes, ProgressEmitter};
 use super::types::{hex_addr, p, FlashItem};
 
 /// 合并输出上限，避免超大稀疏地址把内存打爆（约 256 MiB）。
@@ -26,7 +26,8 @@ pub fn merge_bins(
 
     for item in items {
         let offset = parse_u32(&item.offset)?;
-        let data = fs::read(&item.path).map_err(|e| format!("read_failed:{}:{e}", item.path))?;
+        let data =
+            fs::read(&item.path).map_err(|e| format!("read_file_failed:{}:{e}", item.path))?;
         if data.is_empty() {
             return Err(format!("empty_file:{}", item.path));
         }
@@ -67,7 +68,7 @@ pub fn merge_bins(
         "merging",
         15.0,
         "mergeAlloc",
-        p(&[("bytes", out_len.to_string())]),
+        p(&[("bytes", fmt_bytes(out_len as u64))]),
     );
 
     let mut out = vec![0xFFu8; out_len];
@@ -90,7 +91,7 @@ pub fn merge_bins(
             "mergeSegment",
             p(&[
                 ("addr", hex_addr(*offset)),
-                ("bytes", data.len().to_string()),
+                ("bytes", fmt_bytes(data.len() as u64)),
             ]),
             Some(*offset),
             Some(written),
@@ -124,7 +125,7 @@ pub fn merge_bins(
         "mergeDone",
         p(&[
             ("path", output_path.to_string()),
-            ("bytes", out_len.to_string()),
+            ("bytes", fmt_bytes(out_len as u64)),
         ]),
     );
     Ok(())

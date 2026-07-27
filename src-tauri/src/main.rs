@@ -880,6 +880,7 @@ fn main() {
             espflash_ops::espflash_erase_region,
             espflash_ops::espflash_device_info,
             espflash_ops::espflash_merge_bin,
+            espflash_ops::espflash_cancel,
         ])
         .setup(|app| {
             let handle = app.handle().clone();
