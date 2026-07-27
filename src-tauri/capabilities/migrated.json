@@ -8,6 +8,7 @@
     "core:event:default",
     "core:tray:default",
     "core:menu:default",
+    "core:window:allow-set-progress-bar",
     "fs:allow-read-file",
     "fs:allow-read-text-file",
     "fs:allow-write-file",

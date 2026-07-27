@@ -5,6 +5,19 @@ import {
   onEspflashProgress,
   type EspflashProgressPayload,
 } from "@/utils/espflash/events";
+import { syncTaskbarProgress } from "@/utils/taskbarProgress";
+
+function pushTaskbar(store: {
+  busy: boolean;
+  percent: number;
+  phase: string;
+}) {
+  syncTaskbarProgress({
+    busy: store.busy,
+    percent: store.percent,
+    phase: store.phase,
+  });
+}
 
 export const useEspflashStore = defineStore("espflash", {
   state: () => ({
@@ -54,6 +67,7 @@ export const useEspflashStore = defineStore("espflash", {
       if (payload.phase !== "done" && payload.phase !== "error") {
         this.busy = true;
       }
+      pushTaskbar(this);
     },
 
     begin(jobId: string, op: string, messageKey = "preparing") {
@@ -63,6 +77,7 @@ export const useEspflashStore = defineStore("espflash", {
       this.phase = "starting";
       this.percent = 0;
       this.message = formatEspflashMessage(messageKey);
+      pushTaskbar(this);
     },
 
     end(jobId: string, ok: boolean, message?: string) {
@@ -76,6 +91,7 @@ export const useEspflashStore = defineStore("espflash", {
       if (message) {
         this.message = message;
       }
+      pushTaskbar(this);
       window.setTimeout(() => {
         if (this.jobId === jobId && !this.busy) {
           this.reset();
@@ -90,6 +106,7 @@ export const useEspflashStore = defineStore("espflash", {
       this.phase = "";
       this.percent = 0;
       this.message = "";
+      pushTaskbar(this);
     },
   },
 });
