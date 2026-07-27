@@ -4,7 +4,10 @@
 
 mod bitmap;
 mod cmap;
+mod extract_chars;
 mod writer;
+
+pub use extract_chars::{extract_from_path, extract_from_source, ExtractLvglFontCharsResult};
 
 use std::collections::{BTreeMap, HashSet};
 use std::sync::Arc;
@@ -434,7 +437,6 @@ pub fn convert_lvgl_font(
         size,
         bpp,
         range: options.range.trim(),
-        symbols: options.symbols.as_str(),
         lv_include: &lv_include,
         fallback: &fallback,
         glyph_count,

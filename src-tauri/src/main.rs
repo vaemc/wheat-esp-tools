@@ -799,6 +799,25 @@ async fn convert_lvgl_font(
     .map_err(|e| format!("字体转换任务失败: {e}"))?
 }
 
+/// 从已有 LVGL 字体 `.c` 提取全部字符（填入符号编辑框）。
+#[tauri::command]
+async fn extract_lvgl_font_chars(
+    path: Option<String>,
+    content: Option<String>,
+) -> Result<font::lvgl::ExtractLvglFontCharsResult, String> {
+    tokio::task::spawn_blocking(move || {
+        if let Some(p) = path.as_ref().map(|s| s.trim()).filter(|s| !s.is_empty()) {
+            font::lvgl::extract_from_path(p)
+        } else if let Some(c) = content {
+            font::lvgl::extract_from_source(&c, "inline.c".into())
+        } else {
+            Err("未提供 LVGL 字体 C 文件路径或内容".into())
+        }
+    })
+    .await
+    .map_err(|e| format!("提取字符任务失败: {e}"))?
+}
+
 fn main() {
     let work = app_workdir();
     if let Err(e) = env::set_current_dir(&work) {
@@ -842,6 +861,7 @@ fn main() {
             compress_gif,
             convert_gif_to_eaf,
             convert_lvgl_font,
+            extract_lvgl_font_chars,
             to_ident_pinyin,
             probe_mmap_assets_dir,
             pack_mmap_assets,

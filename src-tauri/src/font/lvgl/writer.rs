@@ -33,7 +33,6 @@ pub struct LvglHeaderInfo<'a> {
     pub size: u32,
     pub bpp: u8,
     pub range: &'a str,
-    pub symbols: &'a str,
     pub lv_include: &'a str,
     pub fallback: &'a str,
     pub glyph_count: u32,
@@ -44,7 +43,6 @@ fn write_file_header(w: &mut String, info: &LvglHeaderInfo<'_>) {
     let name = sanitize_comment_text(info.font_name);
     let include = sanitize_comment_text(info.lv_include);
     let range = sanitize_comment_text(info.range.trim());
-    let symbols = sanitize_comment_text(info.symbols);
     let fallback = sanitize_comment_text(info.fallback.trim());
     let generated_at = local_now_string();
 
@@ -61,14 +59,10 @@ fn write_file_header(w: &mut String, info: &LvglHeaderInfo<'_>) {
     if !range.is_empty() {
         w.push_str(&format!(" *   Unicode     : {range}\n"));
     }
-    if !symbols.is_empty() {
-        w.push_str(&format!(" *   Symbols     : {symbols}\n"));
-    }
     w.push_str(&format!(" *   Include     : {include}\n"));
     if !fallback.is_empty() {
         w.push_str(&format!(" *   Fallback    : {fallback}\n"));
     }
-    w.push_str(" *\n");
     w.push_str(" *   Style        : uncompressed bitmap, no kerning, no subpixel\n");
     w.push_str(" ******************************************************************************/\n\n");
 }

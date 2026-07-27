@@ -63,7 +63,7 @@ export const DEFAULT_LVGL_FONT_OPTIONS: LvglFontConvertOptions = {
   size: 16,
   bpp: 4,
   format: "lvgl",
-  range: "0x20-0x7F",
+  range: "",
   symbols: "",
   fallback: "",
   lvInclude: "",

@@ -21,3 +21,7 @@ export { parseUnicodeRange, sanitizeIdentFragment } from "./range";
 export { buildAutoLvglFontName } from "./autoFontName";
 export { readFontInternalName } from "./fontInternalName";
 export { toIdentPinyin } from "./toIdentPinyin";
+export {
+  extractLvglFontChars,
+  type ExtractLvglFontCharsResult,
+} from "./extractChars";

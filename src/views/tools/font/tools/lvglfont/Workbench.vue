@@ -154,13 +154,33 @@
                   <a-tooltip :title="$t('font.symbolsHint')">
                     <span class="tip-icon">?</span>
                   </a-tooltip>
+                  <span v-if="symbolsCount > 0" class="symbols-count">
+                    {{ $t("font.symbolsCount", { n: symbolsCount }) }}
+                  </span>
                 </span>
+                <div class="symbols-actions">
+                  <a-button
+                    size="small"
+                    :loading="extractingChars"
+                    @click="importSymbolsFromC"
+                  >
+                    {{ $t("font.importFromLvglC") }}
+                  </a-button>
+                  <a-button
+                    size="small"
+                    :disabled="!font.symbols.value"
+                    @click="clearSymbols"
+                  >
+                    {{ $t("font.clearSymbols") }}
+                  </a-button>
+                </div>
                 <a-textarea
                   v-model:value="font.symbols.value"
-                  :disabled="!font.hasFont.value"
-                  :rows="2"
+                  :disabled="!font.hasFont.value && !font.symbols.value"
+                  :rows="4"
                   :placeholder="$t('font.symbolsPlaceholder')"
                 />
+                <p class="field-hint">{{ $t("font.importFromLvglCHint") }}</p>
               </label>
             </div>
           </div>
@@ -248,6 +268,7 @@ import { useTauriDragDrop } from "@/composables/useTauriDragDrop";
 import { useFontHistoryStore } from "@/stores/fontHistory";
 import {
   convertLvglFont,
+  extractLvglFontChars,
   onLvglFontProgress,
   RANGE_PRESETS,
 } from "@/utils/font/lvgl";
@@ -257,6 +278,7 @@ import {
 
 const { t } = useI18n();
 const converting = ref(false);
+const extractingChars = ref(false);
 const progressPercent = ref(0);
 const progressMessage = ref("");
 const activeJobId = ref<string | null>(null);
@@ -264,6 +286,11 @@ let unlistenProgress: (() => void) | null = null;
 const font = useLvglFont();
 const historyStore = useFontHistoryStore();
 const { activatePath } = storeToRefs(historyStore);
+
+const symbolsCount = computed(() => {
+  const s = font.symbols.value ?? "";
+  return s.length ? [...s].length : 0;
+});
 
 const bppOptions = computed(() => [
   { value: 1, label: t("font.bpp1") },
@@ -353,6 +380,45 @@ function onRangePreset(key: unknown) {
   const preset = RANGE_PRESETS.find((p) => p.key === key);
   if (preset) {
     font.range.value = preset.range;
+  }
+}
+
+function clearSymbols() {
+  font.symbols.value = "";
+}
+
+async function importSymbolsFromC() {
+  if (extractingChars.value) {
+    return;
+  }
+  try {
+    const selected = await open({
+      multiple: false,
+      filters: [
+        {
+          name: "LVGL Font C",
+          extensions: ["c"],
+        },
+      ],
+    });
+    if (selected == null || Array.isArray(selected)) {
+      return;
+    }
+    extractingChars.value = true;
+    const result = await extractLvglFontChars({ path: selected });
+    font.symbols.value = result.characters;
+    message.success(
+      t("font.importFromLvglCSuccess", {
+        name: result.sourceName,
+        n: result.count,
+      })
+    );
+  } catch (error) {
+    console.error("[font/lvglfont] extract chars failed:", error);
+    const msg = error instanceof Error ? error.message : String(error);
+    message.error(msg || t("font.importFromLvglCFailed"));
+  } finally {
+    extractingChars.value = false;
   }
 }
 
@@ -677,6 +743,20 @@ useTauriDragDrop({
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  width: 100%;
+}
+
+.symbols-count {
+  margin-left: auto;
+  font-size: 12px;
+  color: #faad14;
+  font-variant-numeric: tabular-nums;
+}
+
+.symbols-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .tip-icon {
