@@ -4,7 +4,7 @@ import type { useFlashOptions } from "@/composables/useFlashOptions";
 
 type FlashOptions = Pick<
   ReturnType<typeof useFlashOptions>,
-  "baudRate" | "spiMode" | "eraseBeforeFlash" | "verify"
+  "baudRate" | "spiMode" | "eraseBeforeFlash"
 >;
 
 export function useQuickFlash(options: FlashOptions) {
@@ -21,7 +21,6 @@ export function useQuickFlash(options: FlashOptions) {
       {
         flashMode: options.spiMode.value,
         eraseAll: options.eraseBeforeFlash.value,
-        verify: options.verify.value,
       }
     );
   }

@@ -5,7 +5,6 @@
         v-model:baud-rate="selectedBaud"
         v-model:spi-mode="selectedMode"
         v-model:erase-before-flash="eraseChecked"
-        v-model:verify="verify"
       >
         <template #actions>
           <a-button :disabled="busy" :loading="busy" @click="runEraseFlash">
@@ -149,7 +148,6 @@ const {
   baudRate: selectedBaud,
   spiMode: selectedMode,
   eraseBeforeFlash: eraseChecked,
-  verify,
 } = useFlashOptions();
 const { eraseFlash, readFlash } = useFlashQuickActions(selectedBaud);
 const { applyFlashConfig } = useImportToFlash();
@@ -283,7 +281,6 @@ const flash = async () => {
     await runEsptoolWriteFlash(port, selectedBaud.value, items, {
       flashMode: selectedMode.value,
       eraseAll: eraseChecked.value,
-      verify: verify.value,
     });
   } catch (e) {
     reportEspflashError(e, "flash.flashFailed");
@@ -463,7 +460,6 @@ const flashFirmwareBtn = async (item: Firmware) => {
       {
         flashMode: selectedMode.value,
         eraseAll: eraseChecked.value,
-        verify: verify.value,
       }
     );
   } catch (e) {

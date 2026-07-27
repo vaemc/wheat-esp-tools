@@ -26,15 +26,12 @@ export function toBaudSelectOptions(
 const baudRate = ref("1152000");
 const spiMode = ref("dio");
 const eraseBeforeFlash = ref(false);
-/** 烧录后校验 Flash */
-const verify = ref(false);
 
-/** 烧录共用的 SPI、波特率与烧录选项 */
+/** 烧录共用的 SPI、波特率与烧录选项（烧录后校验固定开启，无需选项） */
 export function useFlashOptions() {
   return {
     baudRate,
     spiMode,
     eraseBeforeFlash,
-    verify,
   };
 }

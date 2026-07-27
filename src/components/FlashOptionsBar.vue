@@ -22,12 +22,6 @@
             {{ $t("firmware.eraseFlash") }}
           </a-checkbox>
         </a-tooltip>
-        <a-tooltip>
-          <template #title>{{ $t("firmware.verifyInfo") }}</template>
-          <a-checkbox v-model:checked="verify">
-            {{ $t("firmware.verify") }}
-          </a-checkbox>
-        </a-tooltip>
       </div>
     </div>
     <div v-if="$slots.actions" class="flash-options-bar__actions">
@@ -44,7 +38,6 @@ const spiMode = defineModel<string>("spiMode", { required: true });
 const eraseBeforeFlash = defineModel<boolean>("eraseBeforeFlash", {
   required: true,
 });
-const verify = defineModel<boolean>("verify", { required: true });
 
 const baudRateOptions = toBaudSelectOptions();
 </script>

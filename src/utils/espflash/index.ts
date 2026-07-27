@@ -18,8 +18,6 @@ export interface FlashItem {
 export interface WriteFlashOptions {
   flashMode?: string;
   eraseAll?: boolean;
-  /** 烧录后校验 Flash；默认关闭 */
-  verify?: boolean;
   before?: string;
   after?: string;
 }
@@ -146,7 +144,6 @@ export async function writeFlash(
   const {
     flashMode = "dio",
     eraseAll = false,
-    verify = false,
     before = "default-reset",
     after = "hard-reset",
   } = options;
@@ -159,7 +156,8 @@ export async function writeFlash(
         items,
         flashMode,
         eraseAll,
-        verify,
+        // 烧录后 MD5 校验固定开启
+        verify: true,
         before,
         after,
         jobId,
