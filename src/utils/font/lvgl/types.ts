@@ -1,5 +1,5 @@
-/** 输出格式：当前快速转换仅支持 C 数组 */
-export type LvglFontFormat = "lvgl";
+/** 输出格式：C 数组 / lv_font_conv bin / 两者 */
+export type LvglFontFormat = "lvgl" | "bin" | "both";
 
 /** bpp：每像素位数（抗锯齿） */
 export type LvglFontBpp = 1 | 2 | 4 | 8;
@@ -43,6 +43,8 @@ export interface LvglFontConvertResult {
   bpp: number;
   /** C 源文件内容 */
   cSource?: string;
+  /** lv_font_conv 兼容 `.bin`（原始字节） */
+  binData?: Uint8Array;
   /** 实际转换的字形数 */
   glyphCount?: number;
   /** 耗时毫秒 */
@@ -62,7 +64,7 @@ export const DEFAULT_LVGL_FONT_OPTIONS: LvglFontConvertOptions = {
   fontName: "font_16_4",
   size: 16,
   bpp: 4,
-  format: "lvgl",
+  format: "both",
   range: "",
   symbols: "",
   fallback: "",

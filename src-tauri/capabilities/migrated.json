@@ -6,8 +6,6 @@
   "permissions": [
     "core:default",
     "core:event:default",
-    "core:tray:default",
-    "core:menu:default",
     "core:window:allow-set-progress-bar",
     "fs:allow-read-file",
     "fs:allow-read-text-file",
@@ -23,9 +21,6 @@
     "dialog:allow-open",
     "dialog:allow-save",
     "updater:default",
-    "process:default",
-    "autostart:allow-enable",
-    "autostart:allow-disable",
-    "autostart:allow-is-enabled"
+    "process:default"
   ]
 }

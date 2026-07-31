@@ -10,8 +10,6 @@ export type SettingsItemId =
   | "update"
   | "opensource"
   | "window"
-  | "autostart"
-  | "taskbarCom"
   | "language";
 
 export interface SettingsItemDef {
@@ -30,18 +28,6 @@ export const SETTINGS_ITEMS: SettingsItemDef[] = [
     id: "window",
     component: defineAsyncComponent(
       () => import("./items/window/RememberWindowItem.vue")
-    ),
-  },
-  {
-    id: "autostart",
-    component: defineAsyncComponent(
-      () => import("./items/autostart/AutostartItem.vue")
-    ),
-  },
-  {
-    id: "taskbarCom",
-    component: defineAsyncComponent(
-      () => import("./items/taskbarCom/TaskbarComItem.vue")
     ),
   },
   {

@@ -18,9 +18,6 @@ static REMEMBER: AtomicBool = AtomicBool::new(true);
 struct UiPrefs {
     #[serde(default = "default_remember")]
     remember_window_state: bool,
-    /// Windows：是否在任务栏显示 COM 口列表
-    #[serde(default)]
-    show_taskbar_com_ports: bool,
 }
 
 fn default_remember() -> bool {
@@ -31,7 +28,6 @@ impl Default for UiPrefs {
     fn default() -> Self {
         Self {
             remember_window_state: default_remember(),
-            show_taskbar_com_ports: false,
         }
     }
 }
@@ -40,14 +36,6 @@ fn update_prefs(app: &AppHandle, f: impl FnOnce(&mut UiPrefs)) -> Result<(), Str
     let mut prefs = load_prefs(app);
     f(&mut prefs);
     save_prefs(app, &prefs)
-}
-
-pub fn get_show_taskbar_com_ports(app: &AppHandle) -> bool {
-    load_prefs(app).show_taskbar_com_ports
-}
-
-pub fn set_show_taskbar_com_ports(app: &AppHandle, enabled: bool) -> Result<(), String> {
-    update_prefs(app, |p| p.show_taskbar_com_ports = enabled)
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -192,16 +180,10 @@ fn restore_geometry(window: &WebviewWindow, geometry: &WindowGeometry) {
     }
 }
 
-/// 是否由开机自启拉起（命令行含 `--autostart`）。
-pub fn launched_from_autostart() -> bool {
-    std::env::args().any(|a| a == "--autostart")
-}
-
 /// 启动时加载偏好、按需恢复几何，并在关闭时保存。
 ///
 /// 主窗口在 `tauri.conf.json` 中以 `visible: false` 创建，先恢复几何再 `show`，
 /// 避免先闪默认位置再跳到上次位置。
-/// 若带 `--autostart`（开机自启），则保持隐藏，仅托盘驻留。
 pub fn attach(app: &AppHandle) {
     let prefs = load_prefs(app);
     REMEMBER.store(prefs.remember_window_state, Ordering::SeqCst);
@@ -216,22 +198,15 @@ pub fn attach(app: &AppHandle) {
         }
     }
 
-    if launched_from_autostart() {
-        let _ = window.hide();
-    } else {
-        let _ = window.show();
-        let _ = window.set_focus();
-    }
+    let _ = window.show();
+    let _ = window.set_focus();
 
     let window_for_event = window.clone();
     window.on_window_event(move |event| {
-        if let WindowEvent::CloseRequested { api, .. } = event {
-            // 点标题栏 X：隐藏到托盘，不退出进程
-            api.prevent_close();
+        if let WindowEvent::CloseRequested { .. } = event {
             if REMEMBER.load(Ordering::SeqCst) {
                 let _ = save_geometry(&window_for_event);
             }
-            let _ = window_for_event.hide();
         }
     });
 }

@@ -234,6 +234,13 @@
           >
             {{ $t("font.downloadC") }}
           </a-button>
+          <a-button
+            size="large"
+            :disabled="!font.current.value?.result?.binData"
+            @click="downloadBin"
+          >
+            {{ $t("font.downloadBin") }}
+          </a-button>
         </div>
       </aside>
 
@@ -273,6 +280,7 @@ import {
   RANGE_PRESETS,
 } from "@/utils/font/lvgl";
 import {
+  saveBytesWithDialog,
   saveTextWithDialog,
 } from "@/utils/image/shared/saveDialog";
 
@@ -455,6 +463,13 @@ function reportConvertError(error: unknown) {
     message.warning(t("font.rangeTooWide"));
     return;
   }
+  if (
+    code === "BPP8_BIN_UNSUPPORTED" ||
+    code.includes("BPP8_BIN_UNSUPPORTED")
+  ) {
+    message.warning(t("font.bpp8BinUnsupported"));
+    return;
+  }
   if (code.startsWith("INVALID_RANGE:") || code.includes("INVALID_RANGE:")) {
     const idx = code.indexOf("INVALID_RANGE:");
     const range = code.slice(idx + "INVALID_RANGE:".length);
@@ -566,6 +581,25 @@ async function downloadC() {
       result.cSource,
       `${result.fontName}.c`,
       [{ name: "C", extensions: ["c"] }]
+    );
+    if (path) {
+      message.success(t("font.saveSuccess", { path }));
+    }
+  } catch {
+    message.error(t("font.saveFailed"));
+  }
+}
+
+async function downloadBin() {
+  const result = font.current.value?.result;
+  if (!result?.binData) {
+    return;
+  }
+  try {
+    const path = await saveBytesWithDialog(
+      result.binData,
+      `${result.fontName}.bin`,
+      [{ name: "LVGL Font Bin", extensions: ["bin"] }]
     );
     if (path) {
       message.success(t("font.saveSuccess", { path }));
@@ -775,13 +809,21 @@ useTauriDragDrop({
 }
 
 .action-row {
-  display: grid;
-  grid-template-columns: 1.6fr 1fr;
+  display: flex;
+  flex-wrap: wrap;
   gap: 10px;
   margin-top: 14px;
   padding-top: 12px;
   border-top: 1px solid rgba(255, 255, 255, 0.08);
   flex-shrink: 0;
+}
+
+.action-row > :first-child {
+  flex: 1.6 1 140px;
+}
+
+.action-row > :not(:first-child) {
+  flex: 1 1 100px;
 }
 
 .convert-progress {
@@ -827,8 +869,8 @@ useTauriDragDrop({
     grid-template-columns: 1fr;
   }
 
-  .action-row {
-    grid-template-columns: 1fr;
+  .action-row > * {
+    flex: 1 1 100%;
   }
 }
 </style>

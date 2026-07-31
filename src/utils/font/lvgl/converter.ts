@@ -1,5 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
+import { base64ToBytesAsync } from "@/utils/image/shared/base64";
 import { parseUnicodeRange, sanitizeFontName } from "./range";
 import type {
   LvglFontConvertOptions,
@@ -44,6 +45,7 @@ interface RustConvertResult {
   size: number;
   bpp: number;
   cSource?: string | null;
+  binBase64?: string | null;
   glyphCount: number;
   elapsedMs: number;
 }
@@ -58,7 +60,7 @@ export interface ConvertLvglFontInput {
 }
 
 /**
- * 将 TTF/OTF 转换为 LVGL C 数组（纯 Rust + fontdue，后台线程，带进度事件）。
+ * 将 TTF/OTF 转换为 LVGL C / bin（纯 Rust + fontdue，后台线程，带进度事件）。
  */
 export async function convertLvglFont(
   input: ConvertLvglFontInput
@@ -75,6 +77,11 @@ export async function convertLvglFont(
     throw new Error("EMPTY_GLYPHS");
   }
 
+  const format = options.format || "lvgl";
+  if ((format === "bin" || format === "both") && options.bpp === 8) {
+    throw new Error("BPP8_BIN_UNSUPPORTED");
+  }
+
   await ensureProgressListener();
 
   const id =
@@ -83,12 +90,9 @@ export async function convertLvglFont(
 
   const rustOptions = {
     fontName,
-    size: Math.max(
-      4,
-      Math.min(256, Math.round(options.size) || 16)
-    ),
+    size: Math.max(4, Math.min(256, Math.round(options.size) || 16)),
     bpp: options.bpp,
-    format: "lvgl",
+    format,
     range,
     symbols,
     fallback: options.fallback.trim(),
@@ -113,6 +117,11 @@ export async function convertLvglFont(
 
   const raw = await invoke<RustConvertResult>("convert_lvgl_font", payload);
 
+  let binData: Uint8Array | undefined;
+  if (raw.binBase64) {
+    binData = await base64ToBytesAsync(raw.binBase64);
+  }
+
   return {
     fontName: raw.fontName,
     size: raw.size,
@@ -120,6 +129,7 @@ export async function convertLvglFont(
     glyphCount: raw.glyphCount,
     elapsedMs: raw.elapsedMs,
     cSource: raw.cSource ?? undefined,
+    binData,
   };
 }
 

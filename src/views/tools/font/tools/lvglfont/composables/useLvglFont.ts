@@ -7,6 +7,7 @@ import {
   type LvglFontBpp,
   type LvglFontConvertOptions,
   type LvglFontConvertResult,
+  type LvglFontFormat,
 } from "@/utils/font/lvgl";
 import { buildAutoLvglFontName } from "@/utils/font/lvgl/autoFontName";
 import { readFontInternalName } from "@/utils/font/lvgl/fontInternalName";
@@ -115,11 +116,13 @@ export function useLvglFont() {
   });
 
   function currentOptions(): LvglFontConvertOptions {
+    // 一次转换同时产出 C 与 bin；bpp8 时 bin 规范不支持，仅出 C
+    const format: LvglFontFormat = bpp.value === 8 ? "lvgl" : "both";
     return {
       fontName: sanitizeFontName(fontName.value),
       size: clampSize(size.value),
       bpp: bpp.value,
-      format: "lvgl",
+      format,
       range: range.value,
       symbols: symbols.value,
       fallback: fallback.value,

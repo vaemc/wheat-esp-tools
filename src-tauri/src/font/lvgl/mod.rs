@@ -1,7 +1,11 @@
 //! 纯 Rust LVGL 字库转换（fontdue + ttf-parser）。
 //!
-//! 输出：无压缩、无 kern、无子像素的 LVGL C 位图字库（FORMAT0_TINY / SPARSE_TINY）。
+//! 输出：无压缩、无 kern、无子像素的位图字库。
+//! - `lvgl`：C 源（FORMAT0_TINY / SPARSE_TINY）
+//! - `bin`：与 [lv_font_conv](https://github.com/lvgl/lv_font_conv) 兼容的二进制格式
+//! - `both`：同时输出
 
+mod bin_writer;
 mod bitmap;
 mod cmap;
 mod extract_chars;
@@ -12,10 +16,12 @@ pub use extract_chars::{extract_from_path, extract_from_source, ExtractLvglFontC
 use std::collections::{BTreeMap, HashSet};
 use std::sync::Arc;
 
+use base64::{engine::general_purpose::STANDARD as B64, Engine};
 use fontdue::{Font, FontSettings};
 use serde::{Deserialize, Serialize};
 use ttf_parser::Face;
 
+use bin_writer::{write_lvgl_bin, BinFontMetrics};
 use bitmap::{pack_gray_pixels, pack_mono_from_gray};
 use cmap::build_cmaps;
 use writer::{write_lvgl_c, LvglHeaderInfo};
@@ -31,7 +37,7 @@ pub struct LvglFontConvertOptions {
     pub font_name: String,
     pub size: u32,
     pub bpp: u8,
-    /// 当前仅支持 "lvgl"
+    /// `lvgl` | `bin` | `both`
     #[serde(default = "default_format")]
     pub format: String,
     pub range: String,
@@ -53,6 +59,8 @@ pub struct LvglFontConvertResult {
     pub size: u32,
     pub bpp: u8,
     pub c_source: Option<String>,
+    /// lv_font_conv 兼容 `.bin`（base64）
+    pub bin_base64: Option<String>,
     pub glyph_count: u32,
     pub elapsed_ms: u64,
 }
@@ -238,6 +246,58 @@ fn collect_font_codepoints(font_bytes: &[u8]) -> Result<HashSet<u32>, String> {
     Ok(set)
 }
 
+/// 从 TTF 取 OS/2 / post 度量，缩放到目标字号（对齐 lv_font_conv）。
+fn bin_metrics_from_face(face: &Face<'_>, size: u32, bpp: u8) -> BinFontMetrics {
+    let upem = face.units_per_em().max(1) as f32;
+    let scale = size as f32 / upem;
+
+    let (typo_ascent, typo_descent, typo_line_gap) = if let Some(os2) = face.tables().os2 {
+        (
+            (f32::from(os2.typographic_ascender()) * scale)
+                .round()
+                .clamp(0.0, u16::MAX as f32) as u16,
+            (f32::from(os2.typographic_descender()) * scale)
+                .round()
+                .clamp(i16::MIN as f32, i16::MAX as f32) as i16,
+            (f32::from(os2.typographic_line_gap()) * scale)
+                .round()
+                .clamp(0.0, u16::MAX as f32) as u16,
+        )
+    } else {
+        let asc = (f32::from(face.ascender()) * scale)
+            .round()
+            .clamp(0.0, u16::MAX as f32) as u16;
+        let desc = (f32::from(face.descender()) * scale)
+            .round()
+            .clamp(i16::MIN as f32, i16::MAX as f32) as i16;
+        (asc, desc, 0)
+    };
+
+    let (underline_position, underline_thickness) =
+        if let Some(m) = face.underline_metrics() {
+            (
+                (f32::from(m.position) * scale)
+                    .round()
+                    .clamp(i16::MIN as f32, i16::MAX as f32) as i16,
+                (f32::from(m.thickness) * scale)
+                    .round()
+                    .clamp(0.0, u16::MAX as f32) as u16,
+            )
+        } else {
+            (-1, 1)
+        };
+
+    BinFontMetrics {
+        size,
+        bpp,
+        typo_ascent,
+        typo_descent,
+        typo_line_gap,
+        underline_position,
+        underline_thickness,
+    }
+}
+
 /// 收集 (输出 unicode, 源 unicode) 有序列表
 fn collect_glyph_pairs(
     available: &HashSet<u32>,
@@ -378,11 +438,13 @@ pub fn convert_lvgl_font(
     };
 
     let format = options.format.to_ascii_lowercase();
-    if !format.is_empty() && format != "lvgl" {
-        if format == "bin" || format == "both" {
-            return Err("BIN_UNSUPPORTED".into());
-        }
+    let want_c = format.is_empty() || format == "lvgl" || format == "both";
+    let want_bin = format == "bin" || format == "both";
+    if !want_c && !want_bin {
         return Err(format!("不支持的输出格式: {}", options.format));
+    }
+    if want_bin && bpp == 8 {
+        return Err("BPP8_BIN_UNSUPPORTED".into());
     }
 
     let ranges = parse_unicode_ranges(&options.range)?;
@@ -399,6 +461,9 @@ pub fn convert_lvgl_font(
     };
     let font = Font::from_bytes(font_bytes, settings)
         .map_err(|e| format!("打开字体失败（请使用 TTF/OTF）: {e}"))?;
+
+    let face = Face::parse(font_bytes, 0).map_err(|e| format!("解析字体失败: {e}"))?;
+    let bin_metrics = bin_metrics_from_face(&face, size, bpp);
 
     emit_progress(&progress, job_id, "cmap", 0, 1, 8.0, "读取字符映射…");
 
@@ -427,29 +492,59 @@ pub fn convert_lvgl_font(
     let out_cps: Vec<u32> = glyphs.iter().map(|g| g.cp).collect();
     let cmaps = build_cmaps(&out_cps, 1)?;
 
-    emit_progress(&progress, job_id, "write", 0, 1, 88.0, "生成 C 源文件…");
+    let mut c_source: Option<String> = None;
+    let mut bin_base64: Option<String> = None;
 
-    let lv_include = sanitize_include_path(&options.lv_include);
-    let fallback = sanitize_c_ident(&options.fallback).unwrap_or_default();
-    let header = LvglHeaderInfo {
-        source_font: font_file_name,
-        font_name: &font_name,
-        size,
-        bpp,
-        range: options.range.trim(),
-        lv_include: &lv_include,
-        fallback: &fallback,
-        glyph_count,
-    };
+    if want_c {
+        emit_progress(&progress, job_id, "write", 0, 1, 88.0, "生成 C 源文件…");
 
-    let c_source = write_lvgl_c(
-        &header,
-        &glyphs,
-        &cmaps,
-        line_height,
-        base_line,
-        |written, total| {
-            let pct = 88.0 + (written as f32 / total.max(1) as f32) * 10.0;
+        let lv_include = sanitize_include_path(&options.lv_include);
+        let fallback = sanitize_c_ident(&options.fallback).unwrap_or_default();
+        let header = LvglHeaderInfo {
+            source_font: font_file_name,
+            font_name: &font_name,
+            size,
+            bpp,
+            range: options.range.trim(),
+            lv_include: &lv_include,
+            fallback: &fallback,
+            glyph_count,
+        };
+
+        c_source = Some(write_lvgl_c(
+            &header,
+            &glyphs,
+            &cmaps,
+            line_height,
+            base_line,
+            |written, total| {
+                let pct = 88.0 + (written as f32 / total.max(1) as f32) * 5.0;
+                emit_progress(
+                    &progress,
+                    job_id,
+                    "write",
+                    written,
+                    total,
+                    pct,
+                    &format!("写入 C 字形数据 {written}/{total}"),
+                );
+            },
+        )?);
+    }
+
+    if want_bin {
+        emit_progress(
+            &progress,
+            job_id,
+            "write",
+            0,
+            1,
+            if want_c { 93.0 } else { 88.0 },
+            "生成 bin 字库…",
+        );
+        let bin = write_lvgl_bin(&bin_metrics, &glyphs, &cmaps, |written, total| {
+            let base = if want_c { 93.0 } else { 88.0 };
+            let pct = base + (written as f32 / total.max(1) as f32) * (99.0 - base);
             emit_progress(
                 &progress,
                 job_id,
@@ -457,10 +552,11 @@ pub fn convert_lvgl_font(
                 written,
                 total,
                 pct,
-                &format!("写入字形数据 {written}/{total}"),
+                &format!("写入 bin 字形数据 {written}/{total}"),
             );
-        },
-    )?;
+        })?;
+        bin_base64 = Some(B64.encode(&bin));
+    }
 
     emit_progress(
         &progress,
@@ -476,7 +572,8 @@ pub fn convert_lvgl_font(
         font_name,
         size,
         bpp,
-        c_source: Some(c_source),
+        c_source,
+        bin_base64,
         glyph_count,
         elapsed_ms: t0.elapsed().as_millis() as u64,
     })
@@ -515,6 +612,48 @@ mod tests {
         assert!(src.contains("uncompressed bitmap, no kerning"));
         assert!(!src.contains("--no-compress"));
         assert!(!src.contains("Opts:"));
+    }
+
+    #[test]
+    fn convert_arial_ascii_bin() {
+        let path = r"C:\Windows\Fonts\arial.ttf";
+        let bytes = std::fs::read(path).expect("arial.ttf");
+        let opts = LvglFontConvertOptions {
+            font_name: "font_arial_16".into(),
+            size: 16,
+            bpp: 4,
+            format: "bin".into(),
+            range: "0x20-0x7F".into(),
+            symbols: String::new(),
+            fallback: String::new(),
+            lv_include: String::new(),
+        };
+        let result = convert_lvgl_font(&bytes, "arial.ttf", opts, "test", None).expect("convert");
+        assert!(result.glyph_count > 50);
+        assert!(result.c_source.is_none());
+        let b64 = result.bin_base64.expect("bin");
+        let bin = B64.decode(b64.as_bytes()).expect("b64");
+        assert!(bin.len() > 64);
+        assert_eq!(&bin[4..8], b"head");
+        // tables follow head
+        let head_size = u32::from_le_bytes(bin[0..4].try_into().unwrap()) as usize;
+        assert_eq!(&bin[head_size + 4..head_size + 8], b"cmap");
+    }
+
+    #[test]
+    fn reject_bpp8_for_bin() {
+        let opts = LvglFontConvertOptions {
+            font_name: "f".into(),
+            size: 16,
+            bpp: 8,
+            format: "bin".into(),
+            range: "0x20-0x7F".into(),
+            symbols: String::new(),
+            fallback: String::new(),
+            lv_include: String::new(),
+        };
+        let err = convert_lvgl_font(&[0u8; 16], "x.ttf", opts, "t", None).unwrap_err();
+        assert!(err.contains("BPP8_BIN_UNSUPPORTED"));
     }
 
     #[test]

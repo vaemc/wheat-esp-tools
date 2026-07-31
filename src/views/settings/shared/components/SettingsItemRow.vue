@@ -27,8 +27,6 @@ withDefaults(
       | "opensource"
       | "version"
       | "window"
-      | "autostart"
-      | "taskbar"
       | "language";
   }>(),
   {
@@ -94,16 +92,6 @@ withDefaults(
 .item-icon[data-tone="window"] {
   --tone: rgba(114, 190, 255, 0.14);
   color: #72beff;
-}
-
-.item-icon[data-tone="autostart"] {
-  --tone: rgba(255, 169, 64, 0.14);
-  color: #ffa940;
-}
-
-.item-icon[data-tone="taskbar"] {
-  --tone: rgba(82, 196, 26, 0.14);
-  color: #52c41a;
 }
 
 .item-icon[data-tone="language"] {
