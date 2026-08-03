@@ -19,6 +19,14 @@ export {
 } from "./converter";
 export { parseUnicodeRange, sanitizeIdentFragment } from "./range";
 export { buildAutoLvglFontName } from "./autoFontName";
+export {
+  LVGL_FONT_SIZES_MAX_COUNT,
+  buildDisplayAutoFontName,
+  clampFontSize,
+  normalizeFontSizes,
+  parseFontSizesInput,
+  resolveFontNameForSize,
+} from "./fontSizes";
 export { readFontInternalName } from "./fontInternalName";
 export { toIdentPinyin } from "./toIdentPinyin";
 export {

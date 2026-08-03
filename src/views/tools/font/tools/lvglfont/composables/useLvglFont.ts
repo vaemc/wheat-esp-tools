@@ -1,16 +1,19 @@
 import { computed, ref, watch } from "vue";
 import {
   DEFAULT_LVGL_FONT_OPTIONS,
-  LVGL_FONT_SIZE_MAX,
-  LVGL_FONT_SIZE_MIN,
-  sanitizeFontName,
   type LvglFontBpp,
   type LvglFontConvertOptions,
   type LvglFontConvertResult,
   type LvglFontFormat,
 } from "@/utils/font/lvgl";
-import { buildAutoLvglFontName } from "@/utils/font/lvgl/autoFontName";
+import {
+  buildDisplayAutoFontName,
+  normalizeFontSizes,
+  parseFontSizesInput,
+  resolveFontNameForSize,
+} from "@/utils/font/lvgl/fontSizes";
 import { readFontInternalName } from "@/utils/font/lvgl/fontInternalName";
+import { sanitizeFontName } from "@/utils/font/lvgl/range";
 import { toIdentPinyin } from "@/utils/font/lvgl/toIdentPinyin";
 
 export type FontStatus = "idle" | "converting" | "done" | "error";
@@ -29,7 +32,8 @@ export interface CurrentFont {
   sourceBytes: Uint8Array;
   byteLength: number;
   status: FontStatus;
-  result?: LvglFontConvertResult;
+  /** 多字号转换结果（按字号升序） */
+  results?: LvglFontConvertResult[];
 }
 
 let faceSeq = 1;
@@ -65,17 +69,6 @@ function baseNameFrom(fileName: string) {
   return dot > 0 ? fileName.slice(0, dot) : fileName;
 }
 
-function clampSize(value: unknown): number {
-  const n = typeof value === "number" ? value : Number(value);
-  if (!Number.isFinite(n)) {
-    return DEFAULT_LVGL_FONT_OPTIONS.size;
-  }
-  return Math.min(
-    LVGL_FONT_SIZE_MAX,
-    Math.max(LVGL_FONT_SIZE_MIN, Math.round(n))
-  );
-}
-
 export function useLvglFont() {
   const current = ref<CurrentFont | null>(null);
   const loading = ref(false);
@@ -83,7 +76,8 @@ export function useLvglFont() {
   /** 默认开启：按内建名 + 字号 + bpp 自动生成 C 符号名 */
   const autoName = ref(true);
   const fontName = ref(DEFAULT_LVGL_FONT_OPTIONS.fontName);
-  const size = ref(DEFAULT_LVGL_FONT_OPTIONS.size);
+  /** 多字号列表（UI 可增减）；内部始终经 normalize */
+  const sizes = ref<number[]>([DEFAULT_LVGL_FONT_OPTIONS.size]);
   const bpp = ref<LvglFontBpp>(DEFAULT_LVGL_FONT_OPTIONS.bpp);
   const range = ref(DEFAULT_LVGL_FONT_OPTIONS.range);
   const symbols = ref(DEFAULT_LVGL_FONT_OPTIONS.symbols);
@@ -93,34 +87,87 @@ export function useLvglFont() {
 
   const hasFont = computed(() => current.value != null);
 
+  const normalizedSizes = computed(() => normalizeFontSizes(sizes.value));
+
+  /** 预览用主字号：取列表中最大的，更接近最终观感 */
+  const primarySize = computed(() => {
+    const list = normalizedSizes.value;
+    return list[list.length - 1] ?? DEFAULT_LVGL_FONT_OPTIONS.size;
+  });
+
+  const hasAnyC = computed(
+    () => current.value?.results?.some((r) => !!r.cSource) ?? false
+  );
+  const hasAnyBin = computed(
+    () => current.value?.results?.some((r) => !!r.binData?.byteLength) ?? false
+  );
+
   function applyAutoName() {
     if (!autoName.value || !current.value) {
       return;
     }
-    fontName.value = buildAutoLvglFontName(
+    fontName.value = buildDisplayAutoFontName(
       current.value.nameSlug,
-      size.value,
+      normalizedSizes.value,
       bpp.value
     );
   }
 
-  watch(size, (v) => {
-    const next = clampSize(v);
-    if (v !== next) {
-      size.value = next;
-    }
-  });
+  watch(
+    sizes,
+    (v) => {
+      const next = normalizeFontSizes(v);
+      const same =
+        next.length === v.length && next.every((n, i) => n === v[i]);
+      if (!same) {
+        sizes.value = next;
+      }
+    },
+    { deep: true }
+  );
 
-  watch([autoName, size, bpp], () => {
+  watch([autoName, sizes, bpp], () => {
     applyAutoName();
   });
 
-  function currentOptions(): LvglFontConvertOptions {
-    // 一次转换同时产出 C 与 bin；bpp8 时 bin 规范不支持，仅出 C
-    const format: LvglFontFormat = bpp.value === 8 ? "lvgl" : "both";
+  /** 影响输出的参数变更后作废旧结果，避免保存过期文件 */
+  watch([sizes, bpp, range, symbols, fallback, lvInclude, fontName, autoName], () => {
+    if (!current.value?.results?.length) {
+      return;
+    }
+    current.value = {
+      ...current.value,
+      status: "idle",
+      results: undefined,
+    };
+  });
+
+  function setSizesFromInput(input: unknown): {
+    truncated: boolean;
+    invalidCount: number;
+  } {
+    const parsed = parseFontSizesInput(input);
+    sizes.value = parsed.sizes;
     return {
-      fontName: sanitizeFontName(fontName.value),
-      size: clampSize(size.value),
+      truncated: parsed.truncated,
+      invalidCount: parsed.invalidCount,
+    };
+  }
+
+  function optionsForSize(size: number): LvglFontConvertOptions {
+    const list = normalizedSizes.value;
+    const format: LvglFontFormat = bpp.value === 8 ? "lvgl" : "both";
+    const nameSlug = current.value?.nameSlug ?? "font";
+    return {
+      fontName: resolveFontNameForSize({
+        autoName: autoName.value,
+        nameSlug,
+        baseFontName: fontName.value,
+        size,
+        bpp: bpp.value,
+        sizeCount: list.length,
+      }),
+      size,
       bpp: bpp.value,
       format,
       range: range.value,
@@ -128,6 +175,11 @@ export function useLvglFont() {
       fallback: fallback.value,
       lvInclude: lvInclude.value,
     };
+  }
+
+  /** @deprecated 单字号兼容；多字号请用 optionsForSize */
+  function currentOptions(): LvglFontConvertOptions {
+    return optionsForSize(primarySize.value);
   }
 
   function clearCurrent() {
@@ -189,7 +241,7 @@ export function useLvglFont() {
       applyAutoName();
     } else {
       fontName.value = sanitizeFontName(
-        `${baseNameFrom(name)}_${clampSize(size.value)}`
+        `${baseNameFrom(name)}_${primarySize.value}`
       );
     }
   }
@@ -232,14 +284,14 @@ export function useLvglFont() {
     current.value = { ...current.value, status };
   }
 
-  function setResult(result: LvglFontConvertResult) {
+  function setResults(results: LvglFontConvertResult[]) {
     if (!current.value) {
       return;
     }
     current.value = {
       ...current.value,
       status: "done",
-      result,
+      results,
     };
   }
 
@@ -248,7 +300,7 @@ export function useLvglFont() {
     loading,
     autoName,
     fontName,
-    size,
+    sizes,
     bpp,
     range,
     symbols,
@@ -256,11 +308,17 @@ export function useLvglFont() {
     lvInclude,
     previewText,
     hasFont,
+    hasAnyC,
+    hasAnyBin,
+    normalizedSizes,
+    primarySize,
     currentOptions,
+    optionsForSize,
+    setSizesFromInput,
     loadFile,
     loadPath,
     clearCurrent,
     setStatus,
-    setResult,
+    setResults,
   };
 }

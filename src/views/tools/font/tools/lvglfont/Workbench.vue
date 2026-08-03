@@ -48,20 +48,33 @@
                 </p>
               </label>
 
-              <label class="field">
+              <label class="field field--span2">
                 <span class="field-label-with-tip">
                   {{ $t("font.size") }} (px)
                   <a-tooltip :title="$t('font.sizeHint')">
                     <span class="tip-icon">?</span>
                   </a-tooltip>
+                  <span
+                    v-if="font.normalizedSizes.value.length > 1"
+                    class="symbols-count"
+                  >
+                    {{
+                      $t("font.sizesCount", {
+                        n: font.normalizedSizes.value.length,
+                      })
+                    }}
+                  </span>
                 </span>
-                <a-input-number
-                  v-model:value="font.size.value"
-                  :min="4"
-                  :max="256"
-                  :disabled="!font.hasFont.value"
+                <a-select
+                  :value="sizeTags"
+                  mode="tags"
+                  :token-separators="[',', ' ', ';', '；', '，', '、']"
+                  :disabled="!font.hasFont.value || converting"
                   style="width: 100%"
+                  :placeholder="$t('font.sizesPlaceholder')"
+                  @change="onSizesChange"
                 />
+                <p class="field-hint">{{ $t("font.sizesHint") }}</p>
               </label>
 
               <label class="field">
@@ -229,17 +242,17 @@
           </a-button>
           <a-button
             size="large"
-            :disabled="!font.current.value?.result?.cSource"
+            :disabled="!font.hasAnyC.value"
             @click="downloadC"
           >
-            {{ $t("font.downloadC") }}
+            {{ downloadCLabel }}
           </a-button>
           <a-button
             size="large"
-            :disabled="!font.current.value?.result?.binData"
+            :disabled="!font.hasAnyBin.value"
             @click="downloadBin"
           >
-            {{ $t("font.downloadBin") }}
+            {{ downloadBinLabel }}
           </a-button>
         </div>
       </aside>
@@ -253,7 +266,7 @@
           :file-name="font.current.value?.fileName"
           :byte-length="font.current.value?.byteLength"
           :sample-text="font.previewText.value"
-          :preview-size="Math.min(56, Math.max(18, Number(font.size.value) || 16))"
+          :preview-size="Math.min(56, Math.max(18, font.primarySize.value))"
           :empty-text="$t('font.previewEmpty')"
         />
       </section>
@@ -276,11 +289,13 @@ import { useFontHistoryStore } from "@/stores/fontHistory";
 import {
   convertLvglFont,
   extractLvglFontChars,
+  LVGL_FONT_SIZES_MAX_COUNT,
   onLvglFontProgress,
   RANGE_PRESETS,
 } from "@/utils/font/lvgl";
 import {
   saveBytesWithDialog,
+  saveFilesToPickedDir,
   saveTextWithDialog,
 } from "@/utils/image/shared/saveDialog";
 
@@ -289,16 +304,51 @@ const converting = ref(false);
 const extractingChars = ref(false);
 const progressPercent = ref(0);
 const progressMessage = ref("");
-const activeJobId = ref<string | null>(null);
+/** 当前批量任务前缀，用于过滤进度事件；子任务为 `${prefix}-${size}` */
+const activeJobPrefix = ref<string | null>(null);
+const activeSizeIndex = ref(0);
+const activeSizeTotal = ref(1);
 let unlistenProgress: (() => void) | null = null;
 const font = useLvglFont();
 const historyStore = useFontHistoryStore();
 const { activatePath } = storeToRefs(historyStore);
 
+const sizeTags = computed(() =>
+  font.normalizedSizes.value.map((n) => String(n))
+);
+
+/** 已有多结果，或尚未转换但已设多字号 → 按批量保存文案提示 */
+const isMultiExport = computed(() => {
+  const n = font.current.value?.results?.length ?? 0;
+  if (n > 0) {
+    return n > 1;
+  }
+  return font.normalizedSizes.value.length > 1;
+});
+
+const downloadCLabel = computed(() =>
+  isMultiExport.value ? t("font.downloadAllC") : t("font.downloadC")
+);
+const downloadBinLabel = computed(() =>
+  isMultiExport.value ? t("font.downloadAllBin") : t("font.downloadBin")
+);
+
 const symbolsCount = computed(() => {
   const s = font.symbols.value ?? "";
   return s.length ? [...s].length : 0;
 });
+
+function onSizesChange(value: unknown) {
+  const { truncated, invalidCount } = font.setSizesFromInput(value);
+  if (invalidCount > 0) {
+    message.warning(t("font.sizesInvalid"));
+  }
+  if (truncated) {
+    message.warning(
+      t("font.sizesTruncated", { max: LVGL_FONT_SIZES_MAX_COUNT })
+    );
+  }
+}
 
 const bppOptions = computed(() => [
   { value: 1, label: t("font.bpp1") },
@@ -316,18 +366,35 @@ const rangePresetOptions = computed(() =>
 
 onMounted(async () => {
   unlistenProgress = await onLvglFontProgress((payload) => {
-    if (!activeJobId.value || payload.jobId !== activeJobId.value) {
+    const prefix = activeJobPrefix.value;
+    if (!prefix || !payload.jobId.startsWith(`${prefix}-`)) {
       return;
     }
-    progressPercent.value = payload.percent;
-    progressMessage.value = formatProgressMessage(payload);
+    const total = Math.max(1, activeSizeTotal.value);
+    const index = Math.min(
+      Math.max(0, activeSizeIndex.value),
+      total - 1
+    );
+    const stageRatio = Math.min(100, Math.max(0, payload.percent)) / 100;
+    progressPercent.value = ((index + stageRatio) / total) * 100;
+    const sizeLabel = payload.jobId.slice(prefix.length + 1);
+    const stageMsg = formatProgressMessage(payload);
+    progressMessage.value =
+      total > 1
+        ? t("font.progress.multiSize", {
+            index: index + 1,
+            total,
+            size: sizeLabel,
+            message: stageMsg,
+          })
+        : stageMsg;
   });
 });
 
 onBeforeUnmount(() => {
   unlistenProgress?.();
   unlistenProgress = null;
-  activeJobId.value = null;
+  activeJobPrefix.value = null;
   font.clearCurrent();
 });
 
@@ -537,53 +604,145 @@ async function onConvert() {
   if (!item || converting.value) {
     return;
   }
+  const sizeList = font.normalizedSizes.value;
+  if (!sizeList.length) {
+    message.warning(t("font.sizesEmpty"));
+    return;
+  }
+
   converting.value = true;
   progressPercent.value = 0;
   progressMessage.value = t("font.converting");
   font.setStatus("converting");
-  const jobId = `lvgl-font-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-  activeJobId.value = jobId;
+  const jobPrefix = `lvgl-font-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  activeJobPrefix.value = jobPrefix;
+  activeSizeTotal.value = sizeList.length;
+  activeSizeIndex.value = 0;
+
+  const results: Awaited<ReturnType<typeof convertLvglFont>>[] = [];
+  let failedSize: number | null = null;
+  let lastError: unknown = null;
+
   try {
-    const result = await convertLvglFont({
-      fontBytes: item.sourceBytes,
-      fontFileName: item.fileName,
-      fontPath: item.sourcePath,
-      options: font.currentOptions(),
-      jobId,
-    });
-    font.setResult(result);
-    if (item.sourcePath) {
-      historyStore.addPath(item.sourcePath);
+    for (let i = 0; i < sizeList.length; i++) {
+      const size = sizeList[i]!;
+      activeSizeIndex.value = i;
+      progressMessage.value =
+        sizeList.length > 1
+          ? t("font.progress.multiSize", {
+              index: i + 1,
+              total: sizeList.length,
+              size,
+              message: t("font.converting"),
+            })
+          : t("font.converting");
+      try {
+        const result = await convertLvglFont({
+          fontBytes: item.sourceBytes,
+          fontFileName: item.fileName,
+          fontPath: item.sourcePath,
+          options: font.optionsForSize(size),
+          jobId: `${jobPrefix}-${size}`,
+        });
+        results.push(result);
+      } catch (error) {
+        failedSize = size;
+        lastError = error;
+        break;
+      }
     }
+
+    if (results.length) {
+      font.setResults(results);
+      if (item.sourcePath) {
+        historyStore.addPath(item.sourcePath);
+      }
+    }
+
+    if (failedSize != null) {
+      if (!results.length) {
+        font.setStatus("error");
+      }
+      reportConvertError(lastError);
+      if (results.length) {
+        message.warning(
+          t("font.convertPartial", {
+            ok: results.length,
+            total: sizeList.length,
+            size: failedSize,
+          })
+        );
+      }
+      return;
+    }
+
+    const totalGlyphs = results.reduce((n, r) => n + (r.glyphCount ?? 0), 0);
+    const totalMs = results.reduce((n, r) => n + (r.elapsedMs ?? 0), 0);
     const elapsed =
-      typeof result.elapsedMs === "number"
-        ? ` (${(result.elapsedMs / 1000).toFixed(1)}s, ${result.glyphCount ?? 0} glyphs)`
+      totalMs > 0
+        ? ` (${(totalMs / 1000).toFixed(1)}s, ${totalGlyphs} glyphs, ${results.length} size${results.length > 1 ? "s" : ""})`
         : "";
     message.success(`${t("font.convertSuccess")}${elapsed}`);
-  } catch (error) {
-    font.setStatus("error");
-    reportConvertError(error);
   } finally {
     converting.value = false;
-    activeJobId.value = null;
+    activeJobPrefix.value = null;
+    activeSizeIndex.value = 0;
+    activeSizeTotal.value = 1;
     progressPercent.value = 0;
     progressMessage.value = "";
   }
 }
 
+function uniqueFileName(
+  name: string,
+  used: Set<string>
+): string {
+  if (!used.has(name)) {
+    used.add(name);
+    return name;
+  }
+  const dot = name.lastIndexOf(".");
+  const stem = dot > 0 ? name.slice(0, dot) : name;
+  const ext = dot > 0 ? name.slice(dot) : "";
+  let i = 2;
+  let candidate = `${stem}_${i}${ext}`;
+  while (used.has(candidate)) {
+    i += 1;
+    candidate = `${stem}_${i}${ext}`;
+  }
+  used.add(candidate);
+  return candidate;
+}
+
 async function downloadC() {
-  const result = font.current.value?.result;
-  if (!result?.cSource) {
+  const results = font.current.value?.results?.filter((r) => r.cSource) ?? [];
+  if (!results.length) {
     return;
   }
+  const encoder = new TextEncoder();
   try {
-    const path = await saveTextWithDialog(
-      result.cSource,
-      `${result.fontName}.c`,
-      [{ name: "C", extensions: ["c"] }]
-    );
-    if (path) {
-      message.success(t("font.saveSuccess", { path }));
+    if (results.length === 1) {
+      const result = results[0]!;
+      const path = await saveTextWithDialog(
+        result.cSource!,
+        `${result.fontName}.c`,
+        [{ name: "C", extensions: ["c"] }]
+      );
+      if (path) {
+        message.success(t("font.saveSuccess", { path }));
+      }
+      return;
+    }
+    const used = new Set<string>();
+    const files = results.map((r) => ({
+      name: uniqueFileName(`${r.fontName}.c`, used),
+      data: encoder.encode(r.cSource!),
+    }));
+    const dir = await saveFilesToPickedDir(files);
+    if (dir) {
+      message.success(
+        t("font.saveAllSuccess", { n: files.length, path: dir })
+      );
     }
   } catch {
     message.error(t("font.saveFailed"));
@@ -591,18 +750,34 @@ async function downloadC() {
 }
 
 async function downloadBin() {
-  const result = font.current.value?.result;
-  if (!result?.binData) {
+  const results =
+    font.current.value?.results?.filter((r) => r.binData?.byteLength) ?? [];
+  if (!results.length) {
     return;
   }
   try {
-    const path = await saveBytesWithDialog(
-      result.binData,
-      `${result.fontName}.bin`,
-      [{ name: "LVGL Font Bin", extensions: ["bin"] }]
-    );
-    if (path) {
-      message.success(t("font.saveSuccess", { path }));
+    if (results.length === 1) {
+      const result = results[0]!;
+      const path = await saveBytesWithDialog(
+        result.binData!,
+        `${result.fontName}.bin`,
+        [{ name: "LVGL Font Bin", extensions: ["bin"] }]
+      );
+      if (path) {
+        message.success(t("font.saveSuccess", { path }));
+      }
+      return;
+    }
+    const used = new Set<string>();
+    const files = results.map((r) => ({
+      name: uniqueFileName(`${r.fontName}.bin`, used),
+      data: r.binData!,
+    }));
+    const dir = await saveFilesToPickedDir(files);
+    if (dir) {
+      message.success(
+        t("font.saveAllSuccess", { n: files.length, path: dir })
+      );
     }
   } catch {
     message.error(t("font.saveFailed"));
