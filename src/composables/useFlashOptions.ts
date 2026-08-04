@@ -23,7 +23,7 @@ export function toBaudSelectOptions(
 }
 
 /** 跨页面共享的烧录选项（模块级单例，避免各页各自一份默认值） */
-const baudRate = ref("1152000");
+const baudRate = ref("921600");
 const spiMode = ref("dio");
 const eraseBeforeFlash = ref(false);
 
