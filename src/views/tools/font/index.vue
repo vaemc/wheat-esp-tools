@@ -22,7 +22,9 @@
       </div>
     </aside>
 
-    <component :is="activeToolDef?.component" :key="activeTool" />
+    <KeepAlive :max="FONT_CONVERTER_TOOLS.length">
+      <component :is="activeToolDef?.component" :key="activeTool" />
+    </KeepAlive>
   </div>
 </template>
 

@@ -34,11 +34,13 @@
       </div>
     </aside>
 
-    <component
-      :is="activeToolDef?.component"
-      :key="activeTool"
-      @summary="onSummary"
-    />
+    <KeepAlive :max="AUDIO_CONVERTER_TOOLS.length">
+      <component
+        :is="activeToolDef?.component"
+        :key="activeTool"
+        @summary="onSummaryFor(activeTool)"
+      />
+    </KeepAlive>
   </div>
 </template>
 
@@ -51,18 +53,24 @@ import {
   type AudioConverterId,
 } from "./registry";
 
+type BatchSummary = { count: number; done: number };
+
 const activeTool = ref<AudioConverterId>("wav2ogg");
-const summary = ref({ count: 0, done: 0 });
+const summaries = ref<Partial<Record<AudioConverterId, BatchSummary>>>({});
 
 const activeToolDef = computed(() => getAudioConverterTool(activeTool.value));
+const summary = computed(
+  () => summaries.value[activeTool.value] ?? { count: 0, done: 0 }
+);
 
 function onSwitchTool(id: AudioConverterId) {
   activeTool.value = id;
-  summary.value = { count: 0, done: 0 };
 }
 
-function onSummary(payload: { count: number; done: number }) {
-  summary.value = payload;
+function onSummaryFor(id: AudioConverterId) {
+  return (payload: BatchSummary) => {
+    summaries.value = { ...summaries.value, [id]: payload };
+  };
 }
 </script>
 

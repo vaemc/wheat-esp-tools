@@ -37,11 +37,13 @@
       </div>
     </aside>
 
-    <component
-      :is="activeToolDef?.component"
-      :key="activeTool"
-      @summary="onSummary"
-    />
+    <KeepAlive :max="FILE_CONVERTER_TOOLS.length">
+      <component
+        :is="activeToolDef?.component"
+        :key="activeTool"
+        @summary="onSummaryFor(activeTool)"
+      />
+    </KeepAlive>
   </div>
 </template>
 
@@ -54,32 +56,48 @@ import {
   type FileConverterId,
 } from "./registry";
 
-const activeTool = ref<FileConverterId>("mmap_spiffs");
-const summary = ref({
+type FileSummary = {
+  hasDir: boolean;
+  done: boolean;
+  dirName: string;
+  fileCount: number;
+};
+
+const emptySummary = (): FileSummary => ({
   hasDir: false,
   done: false,
   dirName: "",
   fileCount: 0,
 });
 
+const activeTool = ref<FileConverterId>("mmap_spiffs");
+const summaries = ref<Partial<Record<FileConverterId, FileSummary>>>({});
+
 const activeToolDef = computed(() => getFileConverterTool(activeTool.value));
+const summary = computed(
+  () => summaries.value[activeTool.value] ?? emptySummary()
+);
 
 function onSwitchTool(id: FileConverterId) {
   activeTool.value = id;
-  summary.value = { hasDir: false, done: false, dirName: "", fileCount: 0 };
 }
 
-function onSummary(payload: {
-  hasDir: boolean;
-  done: boolean;
-  dirName?: string;
-  fileCount?: number;
-}) {
-  summary.value = {
-    hasDir: payload.hasDir,
-    done: payload.done,
-    dirName: payload.dirName ?? "",
-    fileCount: payload.fileCount ?? 0,
+function onSummaryFor(id: FileConverterId) {
+  return (payload: {
+    hasDir: boolean;
+    done: boolean;
+    dirName?: string;
+    fileCount?: number;
+  }) => {
+    summaries.value = {
+      ...summaries.value,
+      [id]: {
+        hasDir: payload.hasDir,
+        done: payload.done,
+        dirName: payload.dirName ?? "",
+        fileCount: payload.fileCount ?? 0,
+      },
+    };
   };
 }
 </script>

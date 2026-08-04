@@ -34,11 +34,18 @@
       </div>
     </aside>
 
-    <component
-      :is="activeToolDef?.component"
-      :key="activeTool"
-      @summary="onSummary"
-    />
+    <!--
+      页内切换工具时用 KeepAlive 缓存 Workbench 实例，避免卸载后丢失本地状态。
+      :key 保证每个工具独立缓存槽；summary 按 toolId 分存，且用闭包绑定 id，
+      避免已缓存（后台仍可能 emit）的工具误写当前侧栏摘要。
+    -->
+    <KeepAlive :max="IMAGE_CONVERTER_TOOLS.length">
+      <component
+        :is="activeToolDef?.component"
+        :key="activeTool"
+        @summary="onSummaryFor(activeTool)"
+      />
+    </KeepAlive>
   </div>
 </template>
 
@@ -51,18 +58,24 @@ import {
   type ImageConverterId,
 } from "./registry";
 
+type BatchSummary = { count: number; done: number };
+
 const activeTool = ref<ImageConverterId>("sjpg");
-const summary = ref({ count: 0, done: 0 });
+const summaries = ref<Partial<Record<ImageConverterId, BatchSummary>>>({});
 
 const activeToolDef = computed(() => getImageConverterTool(activeTool.value));
+const summary = computed(
+  () => summaries.value[activeTool.value] ?? { count: 0, done: 0 }
+);
 
 function onSwitchTool(id: ImageConverterId) {
   activeTool.value = id;
-  summary.value = { count: 0, done: 0 };
 }
 
-function onSummary(payload: { count: number; done: number }) {
-  summary.value = payload;
+function onSummaryFor(id: ImageConverterId) {
+  return (payload: BatchSummary) => {
+    summaries.value = { ...summaries.value, [id]: payload };
+  };
 }
 </script>
 
