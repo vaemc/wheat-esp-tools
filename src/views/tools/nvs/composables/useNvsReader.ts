@@ -129,10 +129,12 @@ export function useNvsReader() {
   /** 从设备读取分区表并填充 NVS 偏移/大小 */
   async function detectNvsPartitionFromDevice(port: string): Promise<void> {
     const ptOffset = resolvePartitionTableOffset(tableOffset.value);
+    // 随后还要再读 NVS：中间不要 hard-reset，否则 USB 串口会短暂消失导致第二次打开失败
     const partitions = await readPartitionTableFromDevice(
       port,
       baudRate.value,
-      ptOffset
+      ptOffset,
+      { after: "no-reset" }
     );
     const nvs = findNvsPartition(partitions);
 
@@ -187,7 +189,9 @@ export function useNvsReader() {
         baudRate.value,
         offset.value,
         size.value,
-        savePath
+        savePath,
+        // 分区表读取已用 no-reset 留在下载模式；最后一次再硬复位跑用户程序
+        { before: "no-reset", after: "hard-reset" }
       );
       await parseFile(savePath, true);
     } finally {

@@ -178,7 +178,7 @@ ReadStart / ReadProgress { addr, read_bytes, total_bytes } / ReadDone
 
 | 错误码前缀 | 含义 | 重试建议 |
 | --- | --- | --- |
-| `open_port_failed:`* | 串口打开失败（由上层包装 `Error::Serial`） | 否 |
+| `open_port_failed:`* | 串口打开失败（由上层包装 `Error::Serial`） | 上层 `connect_flasher` 会对打开失败做短暂退避重试 |
 | `connect_failed:` | 复位 + 同步失败（`no_sync_reply` / `wrong_boot_mode:...`） | 换按键进 boot |
 | `command_timeout:` / `serial_timeout:` | 命令超时 | 读操作可降速重试 |
 | `rom_error:CMD:0xNN:name` | ROM / stub 返回错误状态 | 视命令而定 |

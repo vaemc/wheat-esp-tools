@@ -1,8 +1,14 @@
 //! 参数解析与 wheat-esptool 连接封装。
 
+use std::{thread::sleep, time::Duration};
+
 use wheat_esptool::{ConnectConfig, Error as EspError, Flasher, ResetAfter, ResetBefore};
 
 use super::progress::OpsSink;
+
+/// Windows 上 hard-reset / 关闭句柄后，USB-Serial-JTAG 等设备可能短暂消失再枚举。
+const OPEN_PORT_ATTEMPTS: u32 = 5;
+const OPEN_PORT_RETRY_BASE_MS: u64 = 250;
 
 pub fn parse_u32(raw: &str) -> Result<u32, String> {
     let s = raw.trim();
@@ -77,6 +83,9 @@ pub fn patch_flash_mode(data: &mut [u8], mode: u8) {
 }
 
 /// 连接设备；错误统一转为前端可解析的字符串码。
+///
+/// 对 `open_port_failed` 做短暂退避重试：连续读 Flash / hard-reset 后立刻再开串口时，
+/// Windows 常报「指定不存在的设备」，稍等设备重新枚举即可恢复。
 pub fn connect_flasher(
     port_name: &str,
     baud: u32,
@@ -91,10 +100,27 @@ pub fn connect_flasher(
         after,
         use_stub: true, // 固定启用 stub：压缩烧录 / 流式读取 / 整片擦除都依赖它
     };
-    Flasher::connect(&cfg, sink).map_err(|e| match e {
-        EspError::Serial(se) => format!("open_port_failed:{port_name}:{se}"),
-        other => other.to_string(),
-    })
+
+    let mut last_err = String::from("open_port_failed");
+    for attempt in 0..OPEN_PORT_ATTEMPTS {
+        match Flasher::connect(&cfg, sink) {
+            Ok(flasher) => return Ok(flasher),
+            Err(e) => {
+                last_err = match e {
+                    EspError::Serial(se) => format!("open_port_failed:{port_name}:{se}"),
+                    other => other.to_string(),
+                };
+                let retryable = last_err.starts_with("open_port_failed:");
+                if !retryable || attempt + 1 >= OPEN_PORT_ATTEMPTS {
+                    return Err(last_err);
+                }
+                sleep(Duration::from_millis(
+                    OPEN_PORT_RETRY_BASE_MS * u64::from(attempt + 1),
+                ));
+            }
+        }
+    }
+    Err(last_err)
 }
 
 pub fn map_esp_error(err: EspError) -> String {

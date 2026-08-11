@@ -65,7 +65,8 @@ export function useOtaTool() {
     port: string,
     offset: number,
     size: number,
-    fileName: string
+    fileName: string,
+    options: { before?: string; after?: string } = {}
   ): Promise<Uint8Array> {
     const path = await tempPath(fileName);
     await runEsptoolReadFlash(
@@ -73,7 +74,8 @@ export function useOtaTool() {
       baudRate.value,
       formatHexForEsptool(offset),
       formatHexForEsptool(size),
-      path
+      path,
+      options
     );
     return new Uint8Array(await readFile(path));
   }
@@ -81,13 +83,18 @@ export function useOtaTool() {
   async function refreshOtadata(
     port: string,
     otadata: FlashPartition,
-    apps: FlashPartition[]
+    apps: FlashPartition[],
+    options: { before?: string; after?: string } = {
+      before: "default-reset",
+      after: "hard-reset",
+    }
   ): Promise<void> {
     const raw = await readFlashBytes(
       port,
       otadata.offset,
       otadata.size,
-      `otadata-${nowMs()}.bin`
+      `otadata-${nowMs()}.bin`,
+      options
     );
     otadataRaw.value = raw;
     otadataInfo.value = parseOtadata(raw, apps.length);
@@ -103,7 +110,8 @@ export function useOtaTool() {
       const parsed = await readPartitionTableFromDevice(
         port,
         baudRate.value,
-        resolvePartitionTableOffset(tableOffset.value)
+        resolvePartitionTableOffset(tableOffset.value),
+        { after: "no-reset" }
       );
       if (parsed.length === 0) {
         throw new Error("EMPTY_PARTITION");
@@ -127,7 +135,10 @@ export function useOtaTool() {
 
       otadataPart.value = otadata;
       otaApps.value = apps;
-      await refreshOtadata(port, otadata, apps);
+      await refreshOtadata(port, otadata, apps, {
+        before: "no-reset",
+        after: "hard-reset",
+      });
 
       if (
         !selectedKey.value ||
@@ -160,9 +171,13 @@ export function useOtaTool() {
         port,
         baudRate.value,
         formatHexForEsptool(otadata.offset),
-        formatHexForEsptool(otadata.size)
+        formatHexForEsptool(otadata.size),
+        { after: "no-reset" }
       );
-      await refreshOtadata(port, otadata, otaApps.value);
+      await refreshOtadata(port, otadata, otaApps.value, {
+        before: "no-reset",
+        after: "hard-reset",
+      });
     } finally {
       loading.value = false;
     }
@@ -195,9 +210,12 @@ export function useOtaTool() {
         port,
         baudRate.value,
         [{ offset: formatHexForEsptool(otadata.offset), path }],
-        { after: "hard-reset" }
+        { after: "no-reset" }
       );
-      await refreshOtadata(port, otadata, otaApps.value);
+      await refreshOtadata(port, otadata, otaApps.value, {
+        before: "no-reset",
+        after: "hard-reset",
+      });
     } finally {
       loading.value = false;
     }

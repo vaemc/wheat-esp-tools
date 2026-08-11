@@ -1,4 +1,5 @@
 import { readFile } from "@tauri-apps/plugin-fs";
+import type { WriteFlashOptions } from "@/utils/espflash";
 import { runEsptoolReadFlash } from "@/utils/esptoolRead";
 import {
   formatHexForEsptool,
@@ -12,7 +13,8 @@ import { joinTempWorkDir } from "@/utils/tempWorkDir";
 export async function readPartitionTableFromDevice(
   port: string,
   baudRate: string,
-  tableOffset: number
+  tableOffset: number,
+  options: Pick<WriteFlashOptions, "before" | "after"> = {}
 ): Promise<FlashPartition[]> {
   const ptPath = await joinTempWorkDir(
     "partitions",
@@ -23,7 +25,8 @@ export async function readPartitionTableFromDevice(
     baudRate,
     formatHexForEsptool(tableOffset),
     formatHexForEsptool(PARTITION_TABLE_SIZE),
-    ptPath
+    ptPath,
+    options
   );
   const buffer = await readFile(ptPath);
   return parsePartitionTableBinary(new Uint8Array(buffer));
