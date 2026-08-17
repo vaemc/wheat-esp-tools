@@ -172,6 +172,14 @@ function onSummaryFor(id: ImageConverterId) {
   --icon-tint: rgba(179, 127, 235, 0.14);
 }
 
+.tool-icon[data-icon="mp4eaf"] {
+  --icon-tint: rgba(211, 173, 247, 0.14);
+}
+
+.tool-icon[data-icon="gifcompress"] {
+  --icon-tint: rgba(146, 84, 222, 0.14);
+}
+
 .tool-text {
   display: flex;
   flex-direction: column;
