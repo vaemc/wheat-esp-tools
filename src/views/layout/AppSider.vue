@@ -244,6 +244,7 @@ function onSelect(name: string) {
 .nav-icon[data-icon="partition"] { --icon-tint: rgba(105, 177, 255, 0.14); }
 .nav-icon[data-icon="ota"] { --icon-tint: rgba(64, 169, 255, 0.14); }
 .nav-icon[data-icon="nvs"] { --icon-tint: rgba(255, 197, 61, 0.14); }
+.nav-icon[data-icon="crash"] { --icon-tint: rgba(255, 77, 79, 0.16); }
 .nav-icon[data-icon="ble"] { --icon-tint: rgba(64, 150, 255, 0.14); }
 .nav-icon[data-icon="pinout"] { --icon-tint: rgba(149, 222, 100, 0.14); }
 .nav-icon[data-icon="image"] { --icon-tint: rgba(255, 133, 192, 0.14); }

@@ -68,6 +68,18 @@ export const layoutChildren: RouteRecordRaw[] = [
     },
   },
   {
+    path: "tools/crash",
+    name: "crash",
+    component: () => import("@/views/tools/coredump/index.vue"),
+    meta: {
+      icon: "crash",
+      titleKey: "menu.crash",
+      menu: true,
+      menuGroup: "flash",
+      menuOrder: 6,
+    },
+  },
+  {
     path: "tools/ble",
     name: "ble",
     component: () => import("@/views/tools/ble/index.vue"),
@@ -76,7 +88,7 @@ export const layoutChildren: RouteRecordRaw[] = [
       titleKey: "menu.ble",
       menu: true,
       menuGroup: "hardware",
-      menuOrder: 6,
+      menuOrder: 7,
     },
   },
   {
@@ -88,7 +100,7 @@ export const layoutChildren: RouteRecordRaw[] = [
       titleKey: "menu.pinout",
       menu: true,
       menuGroup: "hardware",
-      menuOrder: 7,
+      menuOrder: 8,
     },
   },
   {
@@ -100,7 +112,7 @@ export const layoutChildren: RouteRecordRaw[] = [
       titleKey: "menu.image",
       menu: true,
       menuGroup: "utils",
-      menuOrder: 8,
+      menuOrder: 9,
     },
   },
   {
@@ -112,7 +124,7 @@ export const layoutChildren: RouteRecordRaw[] = [
       titleKey: "menu.audio",
       menu: true,
       menuGroup: "utils",
-      menuOrder: 9,
+      menuOrder: 10,
     },
   },
   {
@@ -124,7 +136,7 @@ export const layoutChildren: RouteRecordRaw[] = [
       titleKey: "menu.font",
       menu: true,
       menuGroup: "utils",
-      menuOrder: 10,
+      menuOrder: 11,
     },
   },
   {
@@ -136,7 +148,7 @@ export const layoutChildren: RouteRecordRaw[] = [
       titleKey: "menu.file",
       menu: true,
       menuGroup: "utils",
-      menuOrder: 11,
+      menuOrder: 12,
     },
   },
   {

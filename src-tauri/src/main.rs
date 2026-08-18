@@ -27,6 +27,7 @@ impl Drop for BleScanFlagGuard {
 
 mod ble_gatt;
 mod classic_bluetooth;
+mod coredump;
 mod espflash_ops;
 mod font;
 mod image;
@@ -854,6 +855,7 @@ fn main() {
             convert_gif_to_eaf,
             convert_lvgl_font,
             extract_lvgl_font_chars,
+            coredump::coredump_addr2line,
             to_ident_pinyin,
             probe_mmap_assets_dir,
             pack_mmap_assets,

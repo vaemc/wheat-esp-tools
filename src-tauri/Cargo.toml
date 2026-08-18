@@ -38,6 +38,7 @@ base64 = "0.22.1"
 fontdue = "0.9"
 ttf-parser = "0.25"
 pinyin = "0.10"
+addr2line = "0.27"
 
 [target.'cfg(windows)'.dependencies]
 windows = { version = "0.62", features = [

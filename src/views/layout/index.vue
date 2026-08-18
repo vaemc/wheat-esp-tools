@@ -14,7 +14,7 @@
                   keep-alive 互斥，所以这里去掉。
           -->
           <router-view v-slot="{ Component }">
-            <keep-alive :max="6">
+            <keep-alive :max="10">
               <component :is="Component" />
             </keep-alive>
           </router-view>

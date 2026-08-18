@@ -4,6 +4,7 @@ const PARTITION_ENTRY_SIZE = 32;
 const PARTITION_MAGIC = 0x50aa;
 const DATA_TYPE = 0x01;
 const NVS_SUBTYPE = 0x02;
+const COREDUMP_SUBTYPE = 0x03;
 
 export interface FlashPartition {
   name: string;
@@ -65,6 +66,20 @@ export function findNvsPartition(
   }
   return (
     partitions.find((p) => p.type === DATA_TYPE && p.subtype === NVS_SUBTYPE) ??
+    null
+  );
+}
+
+/** 查找 coredump 分区：优先名称 coredump，否则 data/coredump 子类型 */
+export function findCoredumpPartition(
+  partitions: FlashPartition[]
+): FlashPartition | null {
+  const byName = partitions.find((p) => p.name.toLowerCase() === "coredump");
+  if (byName) {
+    return byName;
+  }
+  return (
+    partitions.find((p) => p.type === DATA_TYPE && p.subtype === COREDUMP_SUBTYPE) ??
     null
   );
 }
