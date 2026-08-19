@@ -17,6 +17,7 @@ import {
   EAF_DEFAULT_COLOR_DEPTH,
   EAF_DEFAULT_ENCODING,
   EAF_DEFAULT_JPEG_QUALITY,
+  EAF_DEFAULT_SIMILAR_THRESHOLD,
   EAF_DEFAULT_SPLIT_HEIGHT,
 } from "./types";
 
@@ -259,16 +260,90 @@ function packEafContainer(framePayloads: Uint8Array[]): Uint8Array {
   ]);
 }
 
-export async function encodeGifToEaf(
-  gifBytes: Uint8Array,
-  options: EafEncodeOptions = {}
+export interface EncodeFramesProgress {
+  stage: "resize" | "encode" | "pack";
+  current: number;
+  total: number;
+  percent: number;
+  message: string;
+}
+
+function selectFramesByStep(frames: GifFrame[], frameStep: number): GifFrame[] {
+  if (frameStep <= 0 || frames.length <= 1) {
+    return frames;
+  }
+  const out: GifFrame[] = [];
+  let i = 0;
+  while (i < frames.length) {
+    let kept = 0;
+    while (kept < frameStep && i < frames.length) {
+      out.push(frames[i]);
+      i += 1;
+      kept += 1;
+    }
+    i += 1;
+  }
+  return out.length > 0 ? out : frames.slice(0, 1);
+}
+
+function framesSimilar(
+  a: ImageData,
+  b: ImageData,
+  threshold: number
+): boolean {
+  if (a.width !== b.width || a.height !== b.height || a.data.length === 0) {
+    return false;
+  }
+  if (threshold === 0) {
+    const ad = a.data;
+    const bd = b.data;
+    for (let i = 0; i < ad.length; i++) {
+      if (ad[i] !== bd[i]) {
+        return false;
+      }
+    }
+    return true;
+  }
+  const step = 16;
+  let sum = 0;
+  let count = 0;
+  const ad = a.data;
+  const bd = b.data;
+  for (let i = 0; i + 3 < ad.length; i += step) {
+    const dr = Math.abs(ad[i] - bd[i]);
+    const dg = Math.abs(ad[i + 1] - bd[i + 1]);
+    const db = Math.abs(ad[i + 2] - bd[i + 2]);
+    sum += (dr + dg + db) / 3;
+    count += 1;
+  }
+  if (count === 0) {
+    return true;
+  }
+  return sum / count <= threshold;
+}
+
+function yieldToUi() {
+  return new Promise<void>((resolve) => {
+    window.setTimeout(resolve, 0);
+  });
+}
+
+export async function encodeFramesToEaf(
+  rawFrames: GifFrame[],
+  options: EafEncodeOptions = {},
+  onProgress?: (event: EncodeFramesProgress) => void
 ): Promise<EafEncodeResult> {
-  let encodingMode: EafEncodingMode = options.encodingMode ?? EAF_DEFAULT_ENCODING;
-  let colorDepth: EafColorDepth = options.colorDepth ?? EAF_DEFAULT_COLOR_DEPTH;
+  let encodingMode: EafEncodingMode =
+    options.encodingMode ?? EAF_DEFAULT_ENCODING;
+  let colorDepth: EafColorDepth =
+    options.colorDepth ?? EAF_DEFAULT_COLOR_DEPTH;
   const jpegQuality = Math.max(
     11,
     Math.min(100, options.jpegQuality ?? EAF_DEFAULT_JPEG_QUALITY)
   );
+  const frameStep = options.frameStep ?? 0;
+  const similarThreshold =
+    options.similarThreshold ?? EAF_DEFAULT_SIMILAR_THRESHOLD;
 
   if (encodingMode === "jpeg") {
     colorDepth = 24;
@@ -278,13 +353,13 @@ export async function encodeGifToEaf(
     colorDepth = 8;
   }
 
-  const rawFrames = await extractGifFrames(gifBytes);
   if (rawFrames.length === 0) {
-    throw new Error("GIF has no frames");
+    throw new Error("没有可编码的帧");
   }
 
-  const targetW = Math.max(1, options.width ?? rawFrames[0].imageData.width);
-  const targetH = Math.max(1, options.height ?? rawFrames[0].imageData.height);
+  const stepped = selectFramesByStep(rawFrames, frameStep);
+  const targetW = Math.max(1, options.width ?? stepped[0].imageData.width);
+  const targetH = Math.max(1, options.height ?? stepped[0].imageData.height);
   const isJpeg = encodingMode === "jpeg" || colorDepth === 24;
   const requestedSplit = options.splitHeight ?? EAF_DEFAULT_SPLIT_HEIGHT;
   const splitHeight =
@@ -294,30 +369,82 @@ export async function encodeGifToEaf(
         : targetH
       : Math.max(1, requestedSplit);
 
-  const frames: GifFrame[] = rawFrames.map((f) => ({
-    imageData: resizeImageData(f.imageData, targetW, targetH),
-    delayMs: f.delayMs,
-  }));
+  const frames: GifFrame[] = [];
+  for (let i = 0; i < stepped.length; i++) {
+    frames.push({
+      imageData: resizeImageData(stepped[i].imageData, targetW, targetH),
+      delayMs: stepped[i].delayMs,
+    });
+    onProgress?.({
+      stage: "resize",
+      current: i + 1,
+      total: stepped.length,
+      percent: 5 + ((i + 1) / stepped.length) * 15,
+      message: `缩放帧 ${i + 1}/${stepped.length}`,
+    });
+    if (i % 8 === 7) {
+      await yieldToUi();
+    }
+  }
 
-  const contentCache = new Map<string, Uint8Array>();
   const payloads: Uint8Array[] = [];
+  const exactCache = new Map<string, Uint8Array>();
+  let lastUnique: ImageData | null = null;
+  let lastPayload: Uint8Array | null = null;
 
-  for (const frame of frames) {
-    const hash = imageDataHash(frame.imageData);
-    let payload = contentCache.get(hash);
+  for (let i = 0; i < frames.length; i++) {
+    const imageData = frames[i].imageData;
+    const hash = imageDataHash(imageData);
+    let payload = exactCache.get(hash);
+
+    if (!payload && similarThreshold > 0 && lastUnique && lastPayload) {
+      if (framesSimilar(imageData, lastUnique, similarThreshold)) {
+        payload = lastPayload;
+        exactCache.set(hash, payload);
+      }
+    }
+
     if (!payload) {
-      payload = await encodeSingleFrame(frame.imageData, {
+      payload = await encodeSingleFrame(imageData, {
         splitHeight,
         colorDepth,
         encodingMode,
         jpegQuality,
       });
-      contentCache.set(hash, payload);
+      exactCache.set(hash, payload);
+      lastUnique = imageData;
+      lastPayload = payload;
     }
+
     payloads.push(payload);
+    onProgress?.({
+      stage: "encode",
+      current: i + 1,
+      total: frames.length,
+      percent: 20 + ((i + 1) / frames.length) * 74,
+      message: `编码帧 ${i + 1}/${frames.length}`,
+    });
+    if (i % 4 === 3) {
+      await yieldToUi();
+    }
   }
 
+  onProgress?.({
+    stage: "pack",
+    current: payloads.length,
+    total: payloads.length,
+    percent: 97,
+    message: "正在打包 EAF…",
+  });
   const bytes = packEafContainer(payloads);
+  onProgress?.({
+    stage: "pack",
+    current: payloads.length,
+    total: payloads.length,
+    percent: 100,
+    message: "完成",
+  });
+
   return {
     bytes,
     width: targetW,
@@ -328,4 +455,15 @@ export async function encodeGifToEaf(
     encodingMode,
     sizeBytes: bytes.length,
   };
+}
+
+export async function encodeGifToEaf(
+  gifBytes: Uint8Array,
+  options: EafEncodeOptions = {}
+): Promise<EafEncodeResult> {
+  const rawFrames = await extractGifFrames(gifBytes);
+  if (rawFrames.length === 0) {
+    throw new Error("GIF has no frames");
+  }
+  return encodeFramesToEaf(rawFrames, options);
 }

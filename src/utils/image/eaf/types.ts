@@ -13,6 +13,7 @@ export interface EafEncodeOptions {
   jpegQuality?: number;
   frameStep?: number;
   similarThreshold?: number;
+  sampleFps?: number;
 }
 
 export interface GifFrame {
@@ -54,3 +55,5 @@ export const EAF_DEFAULT_COLOR_DEPTH: EafColorDepth = 24;
 export const EAF_DEFAULT_ENCODING: EafEncodingMode = "jpeg";
 export const EAF_DEFAULT_FRAME_STEP = 0;
 export const EAF_DEFAULT_SIMILAR_THRESHOLD = 1;
+export const EAF_DEFAULT_SAMPLE_FPS = 10;
+export const EAF_MAX_FRAMES = 600;
