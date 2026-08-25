@@ -27,7 +27,7 @@ pub use chips::{ChipDefinition, CHIPS};
 pub use connection::{Connection, SecurityInfo};
 pub use error::{Error, Result};
 pub use flasher::{
-    flash_size_label, ConnectConfig, DeviceInfo, Flasher, Segment,
+    flash_size_label, ConnectConfig, DeviceInfo, Flasher, Segment, USB_SERIAL_JTAG_MAX_BAUD,
 };
 pub use progress::{NoProgress, ProgressEvent, ProgressSink};
 pub use reset::{ResetAfter, ResetBefore};

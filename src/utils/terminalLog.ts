@@ -117,6 +117,8 @@ export function espflashLogLevel(messageKey: string): TerminalLogLevel {
     case "eraseRegionRunning":
     case "readBaudCapped":
     case "readRetryBaud":
+    case "writeBaudCapped":
+    case "writeRetryBaud":
     case "cancelled":
       return "warn";
 

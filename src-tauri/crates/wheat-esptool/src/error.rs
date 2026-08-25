@@ -56,6 +56,11 @@ impl Error {
                 | Error::Io(_)
         )
     }
+
+    /// 写 Flash 失败后可降速整段重试的错误（超时 / IO；不含校验失败与取消）。
+    pub fn is_retryable_write(&self) -> bool {
+        matches!(self, Error::Timeout { .. } | Error::Io(_))
+    }
 }
 
 /// ROM / stub 错误码 → 可读名称（见 esptool serial-protocol 文档）。

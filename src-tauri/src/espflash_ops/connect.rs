@@ -2,7 +2,7 @@
 
 use std::{thread::sleep, time::Duration};
 
-use wheat_esptool::{ConnectConfig, Error as EspError, Flasher, ResetAfter, ResetBefore};
+use wheat_esptool::{ConnectConfig, Error as EspError, Flasher, ResetAfter, ResetBefore, USB_SERIAL_JTAG_MAX_BAUD};
 
 use super::progress::OpsSink;
 
@@ -139,10 +139,33 @@ pub fn read_baud_candidates(requested: u32) -> Vec<u32> {
     out
 }
 
+/// 写 Flash 用的波特率阶梯。
+///
+/// 外置 UART 桥可先试较高波特；USB-Serial-JTAG 在连接层还会再封顶到
+/// [`USB_SERIAL_JTAG_MAX_BAUD`]。超时后按阶梯降速整段重写。
+pub fn write_baud_candidates(requested: u32) -> Vec<u32> {
+    let start = requested.max(115_200);
+    let mut out = vec![start];
+    for b in [USB_SERIAL_JTAG_MAX_BAUD, 230_400, 115_200] {
+        if b < start && !out.contains(&b) {
+            out.push(b);
+        }
+    }
+    out
+}
+
 pub fn is_retryable_read_error(err: &str) -> bool {
     err.starts_with("read_corrupt:")
         || err.contains("timeout")
         || err.contains("Timeout")
         || err.contains("TimedOut")
         || err.starts_with("io_error:")
+}
+
+pub fn is_retryable_write_error(err: &str) -> bool {
+    err.starts_with("command_timeout:")
+        || err.starts_with("serial_timeout:")
+        || err.contains("TimedOut")
+        || err.starts_with("io_error:")
+        || err.starts_with("rom_error:") && (err.contains("inflate_error") || err.contains("deflate_error"))
 }

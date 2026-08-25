@@ -15,9 +15,13 @@ pub const SYNC_TIMEOUT: Duration = Duration::from_millis(100);
 pub const MEM_END_TIMEOUT: Duration = Duration::from_millis(500);
 pub const ERASE_CHIP_TIMEOUT: Duration = Duration::from_secs(120);
 pub const FLASH_DEFL_END_TIMEOUT: Duration = Duration::from_secs(10);
+/// FLASH_DEFL_DATA / FLASH_DATA 单块超时下限。
+/// USB-Serial-JTAG 偶发丢 ACK 时，10s 地板过短易误判超时；高压缩块解压写 Flash 也需要余量。
+pub const FLASH_WRITE_MIN_TIMEOUT: Duration = Duration::from_secs(30);
 
 const ERASE_REGION_TIMEOUT_PER_MB: f64 = 30.0; // 秒
-const WRITE_TIMEOUT_PER_MB: f64 = 40.0; // 秒
+/// 按解压后写入量估算；USB-JTAG / 慢 Flash 上 40s/MB 偏紧。
+const WRITE_TIMEOUT_PER_MB: f64 = 60.0; // 秒
 const MD5_TIMEOUT_PER_MB: f64 = 8.0; // 秒
 
 /// 命令码（与 esptool 保持一致）。
@@ -90,17 +94,19 @@ impl Cmd {
 
     /// 按数据量缩放的超时（擦除 / 写入 / MD5 随区域增大而变长）。
     pub fn timeout_for_size(self, size: u32) -> Duration {
-        fn scaled(per_mb: f64, size: u32) -> Duration {
+        fn scaled(per_mb: f64, size: u32, floor: Duration) -> Duration {
             let mb = size as f64 / 1_000_000.0;
-            let secs = (per_mb * mb).max(FLASH_DEFL_END_TIMEOUT.as_secs_f64());
+            let secs = (per_mb * mb).max(floor.as_secs_f64());
             Duration::from_secs_f64(secs)
         }
         match self {
             Cmd::FlashBegin | Cmd::FlashDeflBegin | Cmd::EraseRegion => {
-                scaled(ERASE_REGION_TIMEOUT_PER_MB, size)
+                scaled(ERASE_REGION_TIMEOUT_PER_MB, size, FLASH_DEFL_END_TIMEOUT)
             }
-            Cmd::FlashData | Cmd::FlashDeflData => scaled(WRITE_TIMEOUT_PER_MB, size),
-            Cmd::FlashMd5 => scaled(MD5_TIMEOUT_PER_MB, size),
+            Cmd::FlashData | Cmd::FlashDeflData => {
+                scaled(WRITE_TIMEOUT_PER_MB, size, FLASH_WRITE_MIN_TIMEOUT)
+            }
+            Cmd::FlashMd5 => scaled(MD5_TIMEOUT_PER_MB, size, FLASH_DEFL_END_TIMEOUT),
             _ => self.timeout(),
         }
     }

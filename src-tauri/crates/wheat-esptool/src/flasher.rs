@@ -28,6 +28,11 @@ const STUB_HANDSHAKE: &[u8] = b"OHAI";
 pub const READ_PACKET_SIZE: u32 = 0x1000;
 /// READ_FLASH 允许的最大未确认包数（越大越快，对串口质量要求越高）。
 pub const READ_MAX_IN_FLIGHT: u32 = 64;
+/// USB-Serial-JTAG（ESP32-S3 原生 USB 等）可靠烧录的波特率上限。
+/// 更高波特在大固件 `FLASH_DEFL_DATA` 阶段易丢 ACK，表现为 `command_timeout`。
+pub const USB_SERIAL_JTAG_MAX_BAUD: u32 = 460_800;
+/// USB-Serial-JTAG 下 stub 写块更小，降低单次 inflate + 写 Flash 压力。
+const USB_JTAG_FLASH_WRITE_SIZE_STUB: usize = 0x2000;
 
 /// 一个待烧录的段。
 #[derive(Debug, Clone)]
@@ -262,9 +267,13 @@ impl Flasher {
             }
         }
 
-        if cfg.baud > 115_200 {
-            flasher.change_baud(cfg.baud)?;
-            progress.event(ProgressEvent::BaudChanged { baud: cfg.baud });
+        let mut target_baud = cfg.baud;
+        if flasher.conn.is_usb_serial_jtag() && target_baud > USB_SERIAL_JTAG_MAX_BAUD {
+            target_baud = USB_SERIAL_JTAG_MAX_BAUD;
+        }
+        if target_baud > 115_200 {
+            flasher.change_baud(target_baud)?;
+            progress.event(ProgressEvent::BaudChanged { baud: target_baud });
         }
 
         Ok(flasher)
@@ -498,6 +507,16 @@ impl Flasher {
         Ok(result)
     }
 
+    /// 是否为 USB-Serial-JTAG（ESP32-S3 原生 USB 等，PID 0x1001）。
+    pub fn is_usb_serial_jtag(&self) -> bool {
+        self.conn.is_usb_serial_jtag()
+    }
+
+    /// 当前串口波特率。
+    pub fn baud(&self) -> u32 {
+        self.conn.baud()
+    }
+
     /// 协议层切换波特率并同步本地串口。
     fn change_baud(&mut self, baud: u32) -> Result<()> {
         let prior = if self.conn.stub_active() {
@@ -517,7 +536,13 @@ impl Flasher {
         self.conn
             .command(Cmd::ChangeBaudrate, &command::le32(&[new_baud, prior]), 0)?;
         self.conn.set_baud(baud)?;
-        sleep(Duration::from_millis(50));
+        // USB-Serial-JTAG 切速后需要更长 settle，否则后续 DEFL 块易丢首包 ACK
+        let settle_ms = if self.conn.is_usb_serial_jtag() {
+            200
+        } else {
+            50
+        };
+        sleep(Duration::from_millis(settle_ms));
         self.conn.clear_input()?;
         Ok(())
     }
@@ -564,13 +589,18 @@ impl Flasher {
             (segment.data.len().div_ceil(FLASH_SECTOR_SIZE) * FLASH_SECTOR_SIZE) as u32;
 
         let block_size = if use_compression {
-            self.chip.flash_write_size_stub()
+            if self.conn.is_usb_serial_jtag() {
+                USB_JTAG_FLASH_WRITE_SIZE_STUB
+            } else {
+                self.chip.flash_write_size_stub()
+            }
         } else {
             self.chip.flash_write_size_rom()
         };
 
         let payload: Vec<u8> = if use_compression {
-            let mut encoder = ZlibEncoder::new(Vec::new(), Compression::best());
+            // default 比 best 更快解压，减轻 stub 在 FLASH_DEFL_DATA 上的耗时
+            let mut encoder = ZlibEncoder::new(Vec::new(), Compression::default());
             encoder.write_all(&segment.data)?;
             encoder.finish()?
         } else {
@@ -638,11 +668,13 @@ impl Flasher {
 
             if use_compression {
                 let (data, checksum) = command::data_payload(block, 0, 0xFF, seq as u32);
+                // 超时按「本块解压字节」与「压缩块本身」取大，避免 zlib 缓冲导致解压量被低估
+                let timeout_size = (chunk_uncompressed as u32).max(block.len() as u32);
                 self.conn.command_with_timeout(
                     Cmd::FlashDeflData,
                     &data,
                     checksum,
-                    Cmd::FlashDeflData.timeout_for_size(chunk_uncompressed as u32),
+                    Cmd::FlashDeflData.timeout_for_size(timeout_size),
                 )?;
             } else {
                 let (data, checksum) = command::data_payload(block, block_size, 0xFF, seq as u32);

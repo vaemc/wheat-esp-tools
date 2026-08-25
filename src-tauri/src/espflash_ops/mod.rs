@@ -13,8 +13,9 @@ mod types;
 pub use types::*;
 
 use connect::{
-    connect_flasher, is_retryable_read_error, map_esp_error, parse_after, parse_before,
-    parse_flash_mode, parse_u32, patch_flash_mode, read_baud_candidates,
+    connect_flasher, is_retryable_read_error, is_retryable_write_error, map_esp_error, parse_after,
+    parse_before, parse_flash_mode, parse_u32, patch_flash_mode, read_baud_candidates,
+    write_baud_candidates,
 };
 use progress::{fmt_bytes, OpsSink, ProgressEmitter};
 use std::fs;
@@ -213,36 +214,91 @@ pub async fn espflash_write_flash(
 
             let (cancel, _cancel_guard) = register_cancel(&args.job_id);
 
-            let mut sink = OpsSink::new(&emitter);
-            sink.set_write_profile(write_base, write_span, total_bytes, 15.0, 30.0);
+            // 大固件 + USB-Serial-JTAG 时 FLASH_DEFL_DATA 易超时：波特率阶梯降速整段重试
+            let baud_list = write_baud_candidates(args.baud);
+            let mut last_err = String::from("write_failed");
+            let mut tried_effective: Vec<u32> = Vec::new();
 
-            let mut flasher = connect_flasher(&args.port, args.baud, before, after, &mut sink)?;
-            flasher.set_cancel_token(cancel.clone());
-            log_chip_info(&emitter, &flasher);
-
-            let write_result = (|| -> Result<(), String> {
+            for (attempt, baud) in baud_list.iter().copied().enumerate() {
                 if cancel.is_cancelled() {
                     return Err("cancelled".into());
                 }
-                if args.erase_all {
-                    // OpsSink 会推 eraseAllRunning(15%) / eraseAllDone(30%)
-                    flasher.erase_flash(&mut sink).map_err(map_esp_error)?;
-                }
-                flasher
-                    .write_flash(&segments, args.verify, &mut sink)
-                    .map_err(map_esp_error)
-            })();
 
-            if let Err(e) = write_result {
-                // 停止/失败后尽力复位，避免设备停留在 bootloader
-                let _ = flasher.abort();
-                return Err(e);
+                let mut sink = OpsSink::new(&emitter);
+                sink.set_write_profile(write_base, write_span, total_bytes, 15.0, 30.0);
+
+                let mut flasher =
+                    match connect_flasher(&args.port, baud, before, after, &mut sink) {
+                        Ok(f) => f,
+                        Err(e) => {
+                            last_err = e;
+                            if is_retryable_write_error(&last_err) {
+                                continue;
+                            }
+                            return Err(last_err);
+                        }
+                    };
+                flasher.set_cancel_token(cancel.clone());
+
+                let effective_baud = flasher.baud();
+                // USB-JTAG 会把高波特封顶；跳过实际速率已试过的候选，避免空转
+                if tried_effective.contains(&effective_baud) {
+                    let _ = flasher.abort();
+                    continue;
+                }
+                tried_effective.push(effective_baud);
+
+                if attempt == 0 || tried_effective.len() == 1 {
+                    log_chip_info(&emitter, &flasher);
+                    if args.baud > effective_baud {
+                        emitter.log_key(
+                            "writeBaudCapped",
+                            p(&[
+                                ("requested", args.baud.to_string()),
+                                ("baud", effective_baud.to_string()),
+                            ]),
+                        );
+                    }
+                } else {
+                    emitter.log_key(
+                        "writeRetryBaud",
+                        p(&[
+                            ("baud", effective_baud.to_string()),
+                            ("error", last_err.clone()),
+                        ]),
+                    );
+                }
+
+                let write_result = (|| -> Result<(), String> {
+                    if cancel.is_cancelled() {
+                        return Err("cancelled".into());
+                    }
+                    if args.erase_all {
+                        // OpsSink 会推 eraseAllRunning(15%) / eraseAllDone(30%)
+                        flasher.erase_flash(&mut sink).map_err(map_esp_error)?;
+                    }
+                    flasher
+                        .write_flash(&segments, args.verify, &mut sink)
+                        .map_err(map_esp_error)
+                })();
+
+                match write_result {
+                    Ok(()) => {
+                        flasher.finish().map_err(map_esp_error)?;
+                        emitter.phase("done", 100.0, "writeDone");
+                        return Ok(());
+                    }
+                    Err(e) => {
+                        let _ = flasher.abort();
+                        last_err = e;
+                        if last_err == "cancelled" || !is_retryable_write_error(&last_err) {
+                            return Err(last_err);
+                        }
+                    }
+                }
             }
 
-            // 按 after 参数复位（默认硬复位运行用户程序）
-            flasher.finish().map_err(map_esp_error)?;
-            emitter.phase("done", 100.0, "writeDone");
-            Ok(())
+            Err(last_err)
         })
     })
     .await
