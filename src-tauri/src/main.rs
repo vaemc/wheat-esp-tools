@@ -299,46 +299,29 @@ fn parse_nvs_partition(path: &str) -> Result<Vec<NvsKeyValue>, String> {
     Ok(partition.entries.iter().filter_map(entry_to_row).collect())
 }
 
-/// 在原 NVS 二进制基础上应用编辑，重新生成等大小的分区文件。
+/// 在原 NVS 二进制基础上应用编辑，重新生成**等大小**的分区文件。
 ///
-/// - source_path: 之前从设备读取或本地打开的原 NVS bin（应用未改动条目时保留所有原数据）
-/// - edits: 用户在表格里的修改 / 删除 / 新增
-/// - size: 目标分区大小（必须为 4096 倍数；通常等于读取时检测到的分区大小）
+/// 目标大小一律取源 bin 自身长度（须为 0x1000 对齐），避免前端再传一份易漂移的 size。
+///
+/// - source_path: 从设备读取或本地打开的原 NVS bin
+/// - edits: 表格中的修改 / 删除 / 新增
 /// - save_path: 写入目标 .bin 路径
 #[tauri::command]
 fn rebuild_nvs_partition(
     source_path: &str,
     edits: Vec<NvsEdit>,
-    size: u64,
     save_path: &str,
 ) -> Result<NvsRebuildSummary, String> {
+    let bytes = fs::read(source_path).map_err(|e| format!("读取源 NVS 失败: {e}"))?;
+    let size = bytes.len() as u64;
     if size == 0 || size % 0x1000 != 0 {
-        return Err("分区大小必须是 4096 (0x1000) 的整数倍".into());
+        return Err("源 NVS 大小必须是 4096 (0x1000) 的整数倍".into());
     }
 
-    let bytes = fs::read(source_path).map_err(|e| format!("读取源 NVS 失败: {e}"))?;
     let mut partition =
         NvsPartition::try_from_bytes(bytes).map_err(|e| format!("解析源 NVS 分区失败: {e}"))?;
 
     apply_edits(&mut partition, &edits)?;
-    write_partition_blob(partition, size, save_path)
-}
-
-/// 从 ESP-IDF 标准 NVS CSV 直接生成新的 NVS 二进制。
-///
-/// CSV 列：key,type,encoding,value （第一行为 namespace 行）
-#[tauri::command]
-fn generate_nvs_from_csv(
-    csv_path: &str,
-    size: u64,
-    save_path: &str,
-) -> Result<NvsRebuildSummary, String> {
-    if size == 0 || size % 0x1000 != 0 {
-        return Err("分区大小必须是 4096 (0x1000) 的整数倍".into());
-    }
-    let csv = fs::read_to_string(csv_path).map_err(|e| format!("读取 CSV 失败: {e}"))?;
-    let partition =
-        NvsPartition::try_from_str(csv).map_err(|e| format!("解析 NVS CSV 失败: {e}"))?;
     write_partition_blob(partition, size, save_path)
 }
 
@@ -839,7 +822,6 @@ fn main() {
             get_file_info,
             parse_nvs_partition,
             rebuild_nvs_partition,
-            generate_nvs_from_csv,
             start_ble_advertisement_scan,
             start_classic_bluetooth_scan,
             ble_gatt::ble_connect,

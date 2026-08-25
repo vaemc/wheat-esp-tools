@@ -28,30 +28,18 @@ export async function parseNvsPartition(path: string): Promise<NvsKeyValue[]> {
   return invoke<NvsKeyValue[]>("parse_nvs_partition", { path });
 }
 
-/** 在已有 NVS 二进制基础上应用编辑，重新生成等大小分区文件 */
+/**
+ * 在已有 NVS 二进制上应用编辑，重新生成等大小分区文件。
+ * 目标大小由 Rust 端按源文件长度决定，调用方无需再传 size。
+ */
 export async function rebuildNvsPartition(args: {
   sourcePath: string;
   edits: NvsEdit[];
-  size: number;
   savePath: string;
 }): Promise<NvsRebuildSummary> {
   return invoke<NvsRebuildSummary>("rebuild_nvs_partition", {
     sourcePath: args.sourcePath,
     edits: args.edits,
-    size: args.size,
-    savePath: args.savePath,
-  });
-}
-
-/** 从 ESP-IDF 标准 NVS CSV 直接生成新的 NVS 二进制 */
-export async function generateNvsFromCsv(args: {
-  csvPath: string;
-  size: number;
-  savePath: string;
-}): Promise<NvsRebuildSummary> {
-  return invoke<NvsRebuildSummary>("generate_nvs_from_csv", {
-    csvPath: args.csvPath,
-    size: args.size,
     savePath: args.savePath,
   });
 }

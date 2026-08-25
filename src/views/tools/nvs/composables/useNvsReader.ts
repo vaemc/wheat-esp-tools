@@ -7,12 +7,10 @@ import {
   findNvsPartition,
   formatHexDisplay,
   formatHexForEsptool,
-  parseSizeParam,
 } from "@/utils/partitionBin";
 import { readPartitionTableFromDevice } from "@/utils/partitionDeviceRead";
 import { resolvePartitionTableOffset } from "@/utils/partitionTable";
 import {
-  generateNvsFromCsv,
   parseNvsPartition,
   rebuildNvsPartition,
   type NvsEdit,
@@ -37,6 +35,13 @@ export interface NvsEditableRow extends NvsKeyValue {
   isDeleted: boolean;
 }
 
+/** 设备探测到的 NVS 分区定位信息（写回唯一依据） */
+export interface NvsDeviceTarget {
+  offset: number;
+  size: number;
+  name: string;
+}
+
 const ROW_KEY_SEP = "\u0000";
 
 function rowKey(row: { namespace: string; key: string }): string {
@@ -51,15 +56,18 @@ export function useNvsReader() {
   const originalRows = ref<NvsKeyValue[]>([]);
   /** 当前 NVS 二进制在磁盘上的路径，用于写回时作为重建的基准 */
   const nvsBinPath = ref("");
-  /** 标记 nvsBinPath 是否来自设备读取（仅设备来源允许直接烧录回去） */
-  const sourceIsDevice = ref(false);
+  /**
+   * 仅当本次会话数据来自「从设备读取」且分区表探测成功时有值。
+   * 写回必须走这里的 offset/size，禁止手填，避免写错分区。
+   */
+  const deviceTarget = ref<NvsDeviceTarget | null>(null);
 
   const keyword = ref("");
   const { tableOffset } = storeToRefs(usePartitionTableStore());
-  const offset = ref("0x9000");
-  const size = ref("0x6000");
   const baudRate = ref("460800");
   const detectedInfo = ref("");
+
+  const sourceIsDevice = computed(() => deviceTarget.value !== null && !!nvsBinPath.value);
 
   /** 已修改 / 已删除 / 新增行的总数 */
   const pendingEditCount = computed(() => {
@@ -126,8 +134,17 @@ export function useNvsReader() {
     return edits;
   }
 
-  /** 从设备读取分区表并填充 NVS 偏移/大小 */
-  async function detectNvsPartitionFromDevice(port: string): Promise<void> {
+  /** 清空会话数据；保留 tableOffset / baudRate 等工具栏输入 */
+  function resetSession() {
+    rows.value = [];
+    originalRows.value = [];
+    nvsBinPath.value = "";
+    deviceTarget.value = null;
+    detectedInfo.value = "";
+  }
+
+  /** 从设备读取分区表，返回 NVS 分区定位（不改会话，由调用方决定何时提交） */
+  async function locateNvsOnDevice(port: string): Promise<NvsDeviceTarget> {
     const ptOffset = resolvePartitionTableOffset(tableOffset.value);
     // 随后还要再读 NVS：中间不要 hard-reset，否则 USB 串口会短暂消失导致第二次打开失败
     const partitions = await readPartitionTableFromDevice(
@@ -137,20 +154,15 @@ export function useNvsReader() {
       { after: "no-reset" }
     );
     const nvs = findNvsPartition(partitions);
-
     if (!nvs) {
-      detectedInfo.value = "";
       throw new Error("NO_NVS");
     }
-
-    offset.value = formatHexForEsptool(nvs.offset);
-    size.value = formatHexForEsptool(nvs.size);
-    detectedInfo.value = `${nvs.name} @ ${formatHexDisplay(nvs.offset)}, ${formatHexDisplay(nvs.size)}`;
+    return { offset: nvs.offset, size: nvs.size, name: nvs.name };
   }
 
-  function applyParsed(parsed: NvsKeyValue[], path: string, fromDevice: boolean) {
+  function applyParsed(parsed: NvsKeyValue[], path: string, target: NvsDeviceTarget | null) {
     nvsBinPath.value = path;
-    sourceIsDevice.value = fromDevice;
+    deviceTarget.value = target;
     originalRows.value = parsed.map((r) => ({ ...r }));
     rows.value = parsed.map((r, i) => ({
       ...r,
@@ -158,14 +170,19 @@ export function useNvsReader() {
       isNew: false,
       isDeleted: false,
     }));
+    if (target) {
+      detectedInfo.value = `${target.name} @ ${formatHexDisplay(target.offset)}, ${formatHexDisplay(target.size)}`;
+    } else {
+      detectedInfo.value = "";
+    }
   }
 
-  async function parseFile(path: string, fromDevice: boolean) {
+  async function parseFile(path: string, target: NvsDeviceTarget | null) {
     const parsed = await parseNvsPartition(path);
-    applyParsed(parsed, path, fromDevice);
+    applyParsed(parsed, path, target);
   }
 
-  /** 检测 NVS 分区后读取并解析 */
+  /** 探测 NVS 分区后读取并解析；偏移/大小完全来自分区表 */
   async function readFromDevice() {
     if (loading.value) {
       return;
@@ -176,24 +193,26 @@ export function useNvsReader() {
     }
 
     loading.value = true;
-    rows.value = [];
-    originalRows.value = [];
+    resetSession();
 
     try {
-      await detectNvsPartitionFromDevice(port);
-
+      const target = await locateNvsOnDevice(port);
       const savePath = await nvsTempPath(`nvs-${nowMs()}.bin`);
 
       await runEsptoolReadFlash(
         port,
         baudRate.value,
-        offset.value,
-        size.value,
+        formatHexForEsptool(target.offset),
+        formatHexForEsptool(target.size),
         savePath,
         // 分区表读取已用 no-reset 留在下载模式；最后一次再硬复位跑用户程序
         { before: "no-reset", after: "hard-reset" }
       );
-      await parseFile(savePath, true);
+      await parseFile(savePath, target);
+    } catch (err) {
+      // 半截失败时不允许残留可写回状态（例如已探测到分区但 flash 读失败）
+      resetSession();
+      throw err;
     } finally {
       loading.value = false;
     }
@@ -213,7 +232,11 @@ export function useNvsReader() {
 
     loading.value = true;
     try {
-      await parseFile(selected, false);
+      // 本地文件没有设备偏移，禁止写回
+      await parseFile(selected, null);
+    } catch (err) {
+      resetSession();
+      throw err;
     } finally {
       loading.value = false;
     }
@@ -269,6 +292,7 @@ export function useNvsReader() {
    * - 已删除的行真正剔除
    * - 其余行清零 isNew / isDeleted，重设 originalIndex
    * - originalRows 同步更新，pendingEditCount 归零
+   * 保留既有 deviceTarget，避免写回后丢失烧录偏移。
    */
   function commitCurrentAsBaseline(newBinPath: string) {
     const survivors = rows.value.filter((r) => !r.isDeleted);
@@ -286,17 +310,12 @@ export function useNvsReader() {
       isDeleted: false,
     }));
     nvsBinPath.value = newBinPath;
-    sourceIsDevice.value = true;
   }
 
-  /** 在原 NVS 基础上应用编辑生成新 .bin，返回新文件路径与统计 */
+  /** 在原 NVS 基础上应用编辑生成新 .bin；大小由源文件决定 */
   async function rebuildToFile(): Promise<NvsRebuildSummary> {
     if (!nvsBinPath.value) {
       throw new Error("NO_SOURCE");
-    }
-    const sizeBytes = parseSizeParam(size.value);
-    if (!sizeBytes || sizeBytes % 0x1000 !== 0) {
-      throw new Error("BAD_SIZE");
     }
 
     const edits = buildEdits();
@@ -309,15 +328,15 @@ export function useNvsReader() {
     return rebuildNvsPartition({
       sourcePath: nvsBinPath.value,
       edits,
-      size: sizeBytes,
       savePath,
     });
   }
 
-  /** 重建 NVS 二进制并烧录回设备的 NVS 分区偏移 */
+  /** 重建 NVS 二进制并烧录回设备探测到的 NVS 偏移 */
   async function writeBackToDevice(): Promise<{
     summary: NvsRebuildSummary;
     offset: string;
+    size: string;
     /** 写回成功后刷新基准是否失败（非关键步骤；仅作日志/提示用） */
     refreshError?: unknown;
   }> {
@@ -328,23 +347,32 @@ export function useNvsReader() {
     if (!port) {
       throw new Error("NO_PORT");
     }
-    if (!sourceIsDevice.value) {
+    const target = deviceTarget.value;
+    if (!target || !nvsBinPath.value) {
       throw new Error("NOT_FROM_DEVICE");
     }
+
     loading.value = true;
     try {
       const summary = await rebuildToFile();
+
+      // 防御：重建产物长度必须与探测到的分区大小一致，否则禁止烧录
+      if (summary.written_size !== target.size) {
+        throw new Error("SIZE_MISMATCH");
+      }
+
+      const offsetHex = formatHexForEsptool(target.offset);
       await runEsptoolWriteFlash(
         port,
         baudRate.value,
-        [{ offset: offset.value, path: summary.save_path }],
+        [{ offset: offsetHex, path: summary.save_path }],
         { eraseAll: false }
       );
 
       // 写回成功后刷新基准（非关键；失败不推翻写回结果）
       let refreshError: unknown;
       try {
-        await parseFile(summary.save_path, true);
+        await parseFile(summary.save_path, target);
       } catch (err) {
         refreshError = err;
         commitCurrentAsBaseline(summary.save_path);
@@ -354,38 +382,12 @@ export function useNvsReader() {
         );
       }
 
-      return { summary, offset: offset.value, refreshError };
-    } finally {
-      loading.value = false;
-    }
-  }
-
-  /** 从用户选择的 ESP-IDF NVS CSV 一键生成 .bin（不直接烧录） */
-  async function generateFromCsv(): Promise<NvsRebuildSummary | null> {
-    if (loading.value) {
-      return null;
-    }
-    const selected = await open({
-      multiple: false,
-      filters: [{ name: "ESP-IDF NVS CSV", extensions: ["csv"] }],
-    });
-    if (typeof selected !== "string") {
-      return null;
-    }
-    const sizeBytes = parseSizeParam(size.value);
-    if (!sizeBytes || sizeBytes % 0x1000 !== 0) {
-      throw new Error("BAD_SIZE");
-    }
-    loading.value = true;
-    try {
-      const savePath = await nvsTempPath(`nvs-from-csv-${nowMs()}.bin`);
-      const summary = await generateNvsFromCsv({
-        csvPath: selected,
-        size: sizeBytes,
-        savePath,
-      });
-      await parseFile(summary.save_path, false);
-      return summary;
+      return {
+        summary,
+        offset: offsetHex,
+        size: formatHexForEsptool(target.size),
+        refreshError,
+      };
     } finally {
       loading.value = false;
     }
@@ -397,10 +399,9 @@ export function useNvsReader() {
     originalRows,
     keyword,
     tableOffset,
-    offset,
-    size,
     baudRate,
     detectedInfo,
+    deviceTarget,
     nvsBinPath,
     sourceIsDevice,
     pendingEditCount,
@@ -413,6 +414,5 @@ export function useNvsReader() {
     revertAll,
     rebuildToFile,
     writeBackToDevice,
-    generateFromCsv,
   };
 }

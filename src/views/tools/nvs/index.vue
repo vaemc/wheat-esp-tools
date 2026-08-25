@@ -14,26 +14,6 @@
             />
           </label>
           <label class="field">
-            <span class="field-label">{{ $t("nvs.offset") }}</span>
-            <a-input
-              v-model:value="offset"
-              placeholder="0x9000"
-              class="offset-input mono"
-              :disabled="loading"
-              allow-clear
-            />
-          </label>
-          <label class="field">
-            <span class="field-label">{{ $t("nvs.size") }}</span>
-            <a-input
-              v-model:value="size"
-              placeholder="0x6000"
-              class="offset-input mono"
-              :disabled="loading"
-              allow-clear
-            />
-          </label>
-          <label class="field">
             <span class="field-label">{{ $t("nvs.baudRate") }}</span>
             <a-select
               v-model:value="baudRate"
@@ -52,9 +32,6 @@
         </a-button>
         <a-button :loading="loading" @click="onOpenFile">
           {{ $t("nvs.openFile") }}
-        </a-button>
-        <a-button :loading="loading" @click="onGenerateFromCsv">
-          {{ $t("nvs.generateFromCsv") }}
         </a-button>
       </div>
     </section>
@@ -199,6 +176,7 @@ import { Modal, message } from "ant-design-vue";
 import PlaceholderHint from "@/components/PlaceholderHint.vue";
 import { READ_BAUD_RATE_OPTIONS, toBaudSelectOptions } from "@/composables/useFlashOptions";
 import { reportEspflashError } from "@/utils/espflash";
+import { formatHexDisplay } from "@/utils/partitionBin";
 import { useNvsReader, type NvsEditableRow } from "./composables/useNvsReader";
 
 interface ChangeEvent {
@@ -217,10 +195,9 @@ const {
   originalRows,
   keyword,
   tableOffset,
-  offset,
-  size,
   baudRate,
   detectedInfo,
+  deviceTarget,
   sourceIsDevice,
   pendingEditCount,
   rowKey,
@@ -232,7 +209,6 @@ const {
   revertAll,
   rebuildToFile,
   writeBackToDevice,
-  generateFromCsv,
 } = useNvsReader();
 
 const baudOptions = toBaudSelectOptions(READ_BAUD_RATE_OPTIONS);
@@ -373,21 +349,6 @@ async function onOpenFile() {
   }
 }
 
-async function onGenerateFromCsv() {
-  try {
-    const summary = await generateFromCsv();
-    if (summary) {
-      message.success(t("nvs.generatedSuccess", { path: summary.save_path }));
-    }
-  } catch (e) {
-    if (e instanceof Error && e.message === "BAD_SIZE") {
-      message.error(t("nvs.badSize"));
-    } else {
-      message.error(t("nvs.generateFailed"));
-    }
-  }
-}
-
 function onValueChange(record: NvsEditableRow, next: string) {
   setRowValue(rowKey(record), next);
 }
@@ -422,10 +383,6 @@ async function onSaveAsBin() {
         message.warning(t("nvs.noSource"));
         return;
       }
-      if (e.message === "BAD_SIZE") {
-        message.error(t("nvs.badSize"));
-        return;
-      }
     }
     message.error(t("nvs.rebuildFailed"));
   }
@@ -440,6 +397,11 @@ async function onWriteBack() {
     message.info(t("nvs.noEdits"));
     return;
   }
+  const target = deviceTarget.value;
+  if (!target) {
+    message.warning(t("nvs.writeBackDisabledHint"));
+    return;
+  }
   Modal.confirm({
     title: t("nvs.confirmWriteTitle"),
     content: () =>
@@ -451,11 +413,11 @@ async function onWriteBack() {
           [
             h("li", null, [
               h("b", null, t("nvs.offset") + ": "),
-              h("span", { class: "mono" }, offset.value),
+              h("span", { class: "mono" }, formatHexDisplay(target.offset)),
             ]),
             h("li", null, [
               h("b", null, t("nvs.size") + ": "),
-              h("span", { class: "mono" }, size.value),
+              h("span", { class: "mono" }, formatHexDisplay(target.size)),
             ]),
             h("li", null, [
               h("b", null, t("nvs.pendingChangesShort") + ": "),
@@ -499,6 +461,10 @@ async function onWriteBack() {
         }
         if (code === "NO_EDITS") {
           message.info(t("nvs.noEdits"));
+          return;
+        }
+        if (code === "SIZE_MISMATCH") {
+          message.error(t("nvs.sizeMismatch"));
           return;
         }
         console.error("[NVS] write-back failed:", e);
