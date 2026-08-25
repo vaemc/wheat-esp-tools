@@ -4,14 +4,6 @@ interface ElfSymbol {
   name: string;
   value: number;
   size: number;
-  type: number;
-}
-
-interface ProgramHeader {
-  offset: number;
-  vaddr: number;
-  filesz: number;
-  flags: number;
 }
 
 export type ElfParsePhase = "symbols" | "sha";
@@ -24,12 +16,6 @@ export interface ElfParseProgress {
 const SHT_SYMTAB = 2;
 const SHT_DYNSYM = 11;
 const STT_FUNC = 2;
-const STT_OBJECT = 1;
-const PT_LOAD = 1;
-const PF_X = 1;
-const PF_R = 4;
-const APP_DESC_MAGIC = 0xabcd5432;
-const APP_DESC_SHA_OFF = 4 + 4 + 8 + 32 + 32 + 16 + 16 + 32;
 
 function readU16(view: DataView, off: number, le: boolean): number {
   return view.getUint16(off, le);
@@ -62,129 +48,40 @@ async function maybeYield(clock: { last: number }): Promise<void> {
   await yieldToUi();
 }
 
-function shaFromAppDesc(buffer: Uint8Array, fileOff: number): string {
-  if (fileOff < 0 || fileOff + APP_DESC_SHA_OFF + 32 > buffer.length) {
-    return "";
-  }
-  const view = new DataView(buffer.buffer, buffer.byteOffset, buffer.byteLength);
-  if (view.getUint32(fileOff, true) !== APP_DESC_MAGIC) {
-    return "";
-  }
-  const sha = buffer.subarray(fileOff + APP_DESC_SHA_OFF, fileOff + APP_DESC_SHA_OFF + 32);
-  return Array.from(sha)
+/**
+ * 对整份 ELF 文件做 SHA256。
+ * 与 esptool elf2image 写入运行镜像 app_desc、以及 coredump/串口打印的指纹算法一致。
+ * （磁盘 .elf 内 app_desc.app_elf_sha256 通常仍是编译占位 0，不能用来比对。）
+ */
+export async function hashElfFileSha256(buffer: Uint8Array): Promise<string> {
+  // 显式拷到独立 ArrayBuffer，避免 SharedArrayBuffer / 类型收窄问题，且哈希范围恒为可见字节
+  const ab = new ArrayBuffer(buffer.byteLength);
+  new Uint8Array(ab).set(buffer);
+  const digest = await crypto.subtle.digest("SHA-256", ab);
+  return Array.from(new Uint8Array(digest))
     .map((b) => b.toString(16).padStart(2, "0"))
     .join("");
 }
 
-function vaddrToFileOff(phdrs: ProgramHeader[], vaddr: number): number | null {
-  for (const ph of phdrs) {
-    if (vaddr >= ph.vaddr && vaddr < ph.vaddr + ph.filesz) {
-      return ph.offset + (vaddr - ph.vaddr);
-    }
+/** @deprecated 请用 hashElfFileSha256；保留别名以免外部旧调用断裂 */
+export const extractAppElfSha256 = hashElfFileSha256;
+
+/** dump 里的短 hex 与 ELF 文件哈希是否同一固件（前缀匹配，兼容 CONFIG_APP_RETRIEVE_LEN_ELF_SHA） */
+export function elfShaMatches(dumpSha: string, fileSha: string): boolean {
+  const a = dumpSha.replace(/[^0-9a-f]/gi, "").toLowerCase();
+  const b = fileSha.replace(/[^0-9a-f]/gi, "").toLowerCase();
+  if (!a || !b) {
+    return false;
   }
-  return null;
+  const n = Math.min(a.length, b.length);
+  // 至少 8 个 hex 字符（4 字节），避免过短误判
+  if (n < 8) {
+    return false;
+  }
+  return a.slice(0, n) === b.slice(0, n);
 }
 
-function readProgramHeaders(
-  view: DataView,
-  buffer: Uint8Array,
-  le: boolean
-): ProgramHeader[] {
-  const ePhoff = readU32(view, 28, le);
-  const ePhentsize = readU16(view, 42, le);
-  const ePhnum = readU16(view, 44, le);
-  if (!ePhoff || !ePhnum || ePhentsize < 32) {
-    return [];
-  }
-  const result: ProgramHeader[] = [];
-  for (let i = 0; i < ePhnum; i++) {
-    const off = ePhoff + i * ePhentsize;
-    if (off + 32 > buffer.length) {
-      break;
-    }
-    if (readU32(view, off, le) !== PT_LOAD) {
-      continue;
-    }
-    result.push({
-      offset: readU32(view, off + 4, le),
-      vaddr: readU32(view, off + 8, le),
-      filesz: readU32(view, off + 16, le),
-      flags: readU32(view, off + 24, le),
-    });
-  }
-  return result;
-}
-
-function extractShaFromSections(
-  buffer: Uint8Array,
-  view: DataView,
-  le: boolean,
-  sections: { name: string; offset: number; size: number }[]
-): string {
-  const preferred = sections.filter(
-    (sec) =>
-      sec.name.includes("appdesc") ||
-      sec.name === ".rodata_desc" ||
-      sec.name.endsWith(".appdesc")
-  );
-  for (const sec of preferred) {
-    const sha = shaFromAppDesc(buffer, sec.offset);
-    if (sha) {
-      return sha;
-    }
-    const end = Math.min(buffer.length, sec.offset + sec.size);
-    for (let i = sec.offset; i + APP_DESC_SHA_OFF + 32 <= end; i += 4) {
-      if (view.getUint32(i, le) === APP_DESC_MAGIC) {
-        const found = shaFromAppDesc(buffer, i);
-        if (found) {
-          return found;
-        }
-      }
-    }
-  }
-  return "";
-}
-
-async function extractShaFromLoads(
-  buffer: Uint8Array,
-  view: DataView,
-  le: boolean,
-  phdrs: ProgramHeader[],
-  onProgress: ((p: ElfParseProgress) => void) | undefined,
-  clock: { last: number }
-): Promise<string> {
-  const candidates = phdrs.filter((ph) => (ph.flags & PF_X) === 0 && (ph.flags & PF_R) !== 0);
-  const scan = candidates.length ? candidates : phdrs;
-  const total = Math.max(
-    1,
-    scan.reduce((sum, ph) => sum + Math.max(0, ph.filesz), 0)
-  );
-  let scanned = 0;
-
-  for (const ph of scan) {
-    const start = ph.offset;
-    const end = Math.min(buffer.length, ph.offset + ph.filesz);
-    for (let i = start; i + APP_DESC_SHA_OFF + 32 <= end; i += 4) {
-      if (view.getUint32(i, le) === APP_DESC_MAGIC) {
-        const found = shaFromAppDesc(buffer, i);
-        if (found) {
-          onProgress?.({ phase: "sha", percent: 100 });
-          return found;
-        }
-      }
-      if ((i - start) % 65536 === 0) {
-        const percent = Math.min(99, Math.round(((scanned + (i - start)) / total) * 100));
-        onProgress?.({ phase: "sha", percent });
-        await maybeYield(clock);
-      }
-    }
-    scanned += ph.filesz;
-  }
-  onProgress?.({ phase: "sha", percent: 100 });
-  return "";
-}
-
-/** 解析固件 ELF 的函数符号，并提取 app SHA256（供 PC 符号化） */
+/** 解析固件 ELF 的函数符号，并计算文件 SHA256（供与 coredump 指纹比对） */
 export async function parseFirmwareElf(
   buffer: Uint8Array,
   onProgress?: (p: ElfParseProgress) => void
@@ -207,10 +104,10 @@ export async function parseFirmwareElf(
   const eShentsize = readU16(view, 46, le);
   const eShnum = readU16(view, 48, le);
   const eShstrndx = readU16(view, 50, le);
-  const phdrs = readProgramHeaders(view, buffer, le);
   if (!eShoff || !eShnum || eShentsize < 40) {
     onProgress?.({ phase: "sha", percent: 0 });
-    const sha256 = await extractShaFromLoads(buffer, view, le, phdrs, onProgress, clock);
+    const sha256 = await hashElfFileSha256(buffer);
+    onProgress?.({ phase: "sha", percent: 100 });
     return { symbols: [], sha256 };
   }
 
@@ -245,7 +142,6 @@ export async function parseFirmwareElf(
   }, 0);
 
   const result: ElfSymbol[] = [];
-  let appDescVaddr = 0;
   let done = 0;
   for (const sec of symbolSecs) {
     const strtab = sections[sec.link];
@@ -268,7 +164,7 @@ export async function parseFirmwareElf(
       const stSize = readU32(view, off + 8, le);
       const stInfo = buffer[off + 12];
       const type = stInfo & 0xf;
-      if (type !== STT_FUNC && type !== STT_OBJECT) {
+      if (type !== STT_FUNC) {
         if (done % 2048 === 0 && totalSyms) {
           onProgress?.({
             phase: "symbols",
@@ -285,10 +181,7 @@ export async function parseFirmwareElf(
       if (!name || name.startsWith("$")) {
         continue;
       }
-      if (type === STT_OBJECT && !appDescVaddr && name === "esp_app_desc") {
-        appDescVaddr = stValue >>> 0;
-      }
-      result.push({ name, value: stValue >>> 0, size: stSize >>> 0, type });
+      result.push({ name, value: stValue >>> 0, size: stSize >>> 0 });
       if (done % 2048 === 0 && totalSyms) {
         onProgress?.({
           phase: "symbols",
@@ -300,28 +193,13 @@ export async function parseFirmwareElf(
   }
 
   onProgress?.({ phase: "symbols", percent: 100 });
-  onProgress?.({ phase: "sha", percent: 8 });
+  onProgress?.({ phase: "sha", percent: 20 });
   await yieldToUi();
 
-  let sha256 = "";
-  if (appDescVaddr) {
-    const fileOff = vaddrToFileOff(phdrs, appDescVaddr);
-    if (fileOff != null) {
-      sha256 = shaFromAppDesc(buffer, fileOff);
-    }
-  }
-  if (!sha256) {
-    sha256 = extractShaFromSections(buffer, view, le, sections);
-  }
-  if (!sha256) {
-    sha256 = await extractShaFromLoads(buffer, view, le, phdrs, onProgress, clock);
-  } else {
-    onProgress?.({ phase: "sha", percent: 100 });
-  }
+  const sha256 = await hashElfFileSha256(buffer);
+  onProgress?.({ phase: "sha", percent: 100 });
 
-  const funcs = result
-    .filter((s) => s.type === STT_FUNC)
-    .sort((a, b) => a.value - b.value);
+  const funcs = result.sort((a, b) => a.value - b.value);
 
   return {
     symbols: funcs.map((s) => ({
@@ -360,13 +238,13 @@ export function lookupSymbol(symbols: SymbolHit[], pc: number): SymbolHit | unde
   if (!symbols.length) {
     return undefined;
   }
-  pc >>>= 0;
   let lo = 0;
   let hi = symbols.length - 1;
   let best = -1;
   while (lo <= hi) {
     const mid = (lo + hi) >> 1;
-    if (symbols[mid].address <= pc) {
+    const addr = symbols[mid].address;
+    if (addr <= pc) {
       best = mid;
       lo = mid + 1;
     } else {
@@ -387,29 +265,4 @@ export function lookupSymbol(symbols: SymbolHit[], pc: number): SymbolHit | unde
     address: hit.address,
     offset: (pc - hit.address) >>> 0,
   };
-}
-
-/** 从固件 ELF 提取 app 描述里的 SHA256（若存在） */
-export function extractAppElfSha256(buffer: Uint8Array): string {
-  if (buffer.length < 52 || buffer[0] !== 0x7f || buffer[1] !== 0x45) {
-    return "";
-  }
-  const view = new DataView(buffer.buffer, buffer.byteOffset, buffer.byteLength);
-  const le = buffer[5] !== 2;
-  const phdrs = readProgramHeaders(view, buffer, le);
-  const candidates = phdrs.filter((ph) => (ph.flags & PF_X) === 0 && (ph.flags & PF_R) !== 0);
-  const scan = candidates.length ? candidates : phdrs;
-  for (const ph of scan) {
-    const start = ph.offset;
-    const end = Math.min(buffer.length, ph.offset + ph.filesz);
-    for (let i = start; i + APP_DESC_SHA_OFF + 32 <= end; i += 4) {
-      if (view.getUint32(i, le) === APP_DESC_MAGIC) {
-        const found = shaFromAppDesc(buffer, i);
-        if (found) {
-          return found;
-        }
-      }
-    }
-  }
-  return "";
 }

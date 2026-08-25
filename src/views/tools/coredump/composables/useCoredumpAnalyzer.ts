@@ -19,6 +19,7 @@ import { useElfHistoryStore } from "@/stores/elfHistory";
 import { storeToRefs } from "pinia";
 import {
   diagnose,
+  elfShaMatches,
   formatAddr2lineCmd,
   formatIdfPanicLog,
   formatPc,
@@ -70,12 +71,12 @@ export function useCoredumpAnalyzer() {
   });
 
   const shaMismatch = computed(() => {
-    const dumpSha = (report.value?.appElfSha256 || "").replace(/[^0-9a-f]/gi, "").toLowerCase();
-    const fileSha = elfSha256.value.replace(/[^0-9a-f]/gi, "").toLowerCase();
+    const dumpSha = report.value?.appElfSha256 || "";
+    const fileSha = elfSha256.value;
     if (!dumpSha || !fileSha) {
       return false;
     }
-    return !fileSha.startsWith(dumpSha.slice(0, 16)) && !dumpSha.startsWith(fileSha.slice(0, 16));
+    return !elfShaMatches(dumpSha, fileSha);
   });
 
   const symbolicated = computed(() => {
@@ -115,12 +116,12 @@ export function useCoredumpAnalyzer() {
   });
 
   const shaMatched = computed(() => {
-    const dumpSha = (report.value?.appElfSha256 || "").replace(/[^0-9a-f]/gi, "").toLowerCase();
-    const fileSha = elfSha256.value.replace(/[^0-9a-f]/gi, "").toLowerCase();
+    const dumpSha = report.value?.appElfSha256 || "";
+    const fileSha = elfSha256.value;
     if (!dumpSha || !fileSha) {
       return false;
     }
-    return !shaMismatch.value;
+    return elfShaMatches(dumpSha, fileSha);
   });
 
   const hasLineInfo = computed(() =>
@@ -390,6 +391,7 @@ export function useCoredumpAnalyzer() {
     elfPath,
     report,
     symbols,
+    elfSha256,
     diagnosis,
     shaMismatch,
     shaMatched,

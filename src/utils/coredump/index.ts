@@ -1,7 +1,7 @@
 import { formatPc } from "./parseDump";
 
 export { parseCoredumpImage, formatPc } from "./parseDump";
-export { parseFirmwareElf, lookupSymbol, extractAppElfSha256 } from "./elfSymbols";
+export { parseFirmwareElf, lookupSymbol, extractAppElfSha256, hashElfFileSha256, elfShaMatches } from "./elfSymbols";
 export type { ElfParseProgress, ElfParsePhase } from "./elfSymbols";
 export { diagnose } from "./diagnose";
 export { describeExccause, processStackPc } from "./xtensa";

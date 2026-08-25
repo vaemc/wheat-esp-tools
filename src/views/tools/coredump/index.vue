@@ -279,8 +279,12 @@
                 <dd class="wrap">{{ report.panicDetails || "—" }}</dd>
               </div>
               <div>
-                <dt>ELF SHA256</dt>
+                <dt>{{ $t("crash.dumpElfSha") }}</dt>
                 <dd class="mono sha">{{ report.appElfSha256 || "—" }}</dd>
+              </div>
+              <div v-if="elfSha256">
+                <dt>{{ $t("crash.loadedElfSha") }}</dt>
+                <dd class="mono sha" :title="elfSha256">{{ elfSha256.slice(0, 16) }}…</dd>
               </div>
               <div v-if="elfPath">
                 <dt>{{ $t("crash.elfFile") }}</dt>
@@ -417,6 +421,7 @@ const {
   panicLogText,
   addr2lineCmd,
   symbols,
+  elfSha256,
   readFromDevice,
   eraseCoredumpPartition,
   openDumpFile,
