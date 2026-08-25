@@ -47,7 +47,7 @@ export function formatSourceCopy(frame: { file?: string; line?: number | null })
 }
 
 export function formatAddr2lineCmd(elfPath: string, pcs: number[]): string {
-  const elf = elfPath || "xiaozhi.elf";
+  const elf = elfPath || "firmware.elf";
   const addrs = pcs.map((pc) => formatPc(pc)).join(" ");
   return `xtensa-esp32s3-elf-addr2line -pfiaC -e "${elf}" ${addrs}`;
 }
