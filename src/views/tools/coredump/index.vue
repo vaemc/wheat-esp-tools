@@ -55,16 +55,29 @@
               :value="elfPath || undefined"
               :placeholder="$t('crash.elfHistoryPlaceholder')"
               :options="elfHistoryOptions"
-              :disabled="loading || elfLoading || !elfHistoryItems.length"
+              :disabled="loading || elfLoading || (!elfHistoryItems.length && !elfPath)"
+              option-label-prop="value"
               show-search
               :filter-option="filterElfHistory"
               :popup-match-select-width="false"
+              :title="elfPath || undefined"
               @change="onPickHistoryElf"
             >
               <template #option="{ label, value }">
                 <div class="elf-opt">
-                  <span class="elf-opt-name">{{ label }}</span>
-                  <span class="elf-opt-path">{{ value }}</span>
+                  <div class="elf-opt-text">
+                    <span class="elf-opt-name">{{ label }}</span>
+                    <span class="elf-opt-path">{{ value }}</span>
+                  </div>
+                  <button
+                    type="button"
+                    class="elf-opt-remove"
+                    :title="$t('crash.removeHistory')"
+                    @mousedown.prevent
+                    @click.stop="onRemoveHistoryElf(String(value))"
+                  >
+                    <CloseOutlined />
+                  </button>
                 </div>
               </template>
             </a-select>
@@ -377,6 +390,7 @@
 <script setup lang="ts">
 import { computed, h } from "vue";
 import { useI18n } from "vue-i18n";
+import { CloseOutlined } from "@ant-design/icons-vue";
 import { message, Modal } from "ant-design-vue";
 import { storeToRefs } from "pinia";
 import PlaceholderHint from "@/components/PlaceholderHint.vue";
@@ -783,6 +797,13 @@ async function onPickHistoryElf(path: string | undefined) {
   }
 }
 
+function onRemoveHistoryElf(path: string) {
+  if (!path) {
+    return;
+  }
+  elfHistoryStore.removePath(path);
+}
+
 async function onExport() {
   try {
     const path = await exportReport(buildExportText());
@@ -873,17 +894,25 @@ async function onExport() {
 }
 
 .elf-history-select {
-  flex: 1 1 160px;
-  min-width: 140px;
-  max-width: 280px;
+  flex: 1 1 220px;
+  min-width: 180px;
+  max-width: 480px;
 }
 
 .elf-opt {
   display: flex;
-  flex-direction: column;
-  gap: 2px;
+  align-items: flex-start;
+  gap: 8px;
   padding: 2px 0;
   line-height: 1.3;
+}
+
+.elf-opt-text {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
 }
 
 .elf-opt-name {
@@ -894,6 +923,29 @@ async function onExport() {
   font-size: 11px;
   color: rgba(255, 255, 255, 0.4);
   word-break: break-all;
+}
+
+.elf-opt-remove {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 1px;
+  padding: 0;
+  width: 18px;
+  height: 18px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.35);
+  cursor: pointer;
+  font-size: 10px;
+  line-height: 1;
+}
+
+.elf-opt-remove:hover {
+  color: #ff7875;
+  background: rgba(255, 77, 79, 0.12);
 }
 
 .elf-progress {
