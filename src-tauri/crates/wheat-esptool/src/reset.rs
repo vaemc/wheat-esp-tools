@@ -61,6 +61,14 @@ fn set_rts(port: &mut Port, level: bool) -> Result<()> {
     Ok(())
 }
 
+fn set_dtr_best_effort(port: &mut Port, level: bool) {
+    let _ = set_dtr(port, level);
+}
+
+fn set_rts_best_effort(port: &mut Port, level: bool) {
+    let _ = set_rts(port, level);
+}
+
 #[cfg(unix)]
 fn set_dtr_rts(port: &mut Port, dtr: bool, rts: bool) -> Result<()> {
     use std::os::fd::AsRawFd;
@@ -189,21 +197,26 @@ impl ResetStrategy for UsbJtagSerialReset {
 /// 硬复位（操作完成后运行用户程序）。
 ///
 /// USB-Serial-JTAG 需要特别的时序，普通桥只需一个 RTS 脉冲。
+///
+/// 收尾复位采用尽力而为：USB 外设在拉 RTS 后可能立即掉线重枚举，后续
+/// DTR/RTS ioctl 常失败（Windows 文案「设备不识别此命令」）；官方 esptool
+/// 同样会吞掉 / 重试这类错误，不应把「读/写已成功」判成整单失败。
 pub fn hard_reset(port: &mut Port, usb_pid: u16) -> Result<()> {
     sleep(Duration::from_millis(100));
 
     if usb_pid == USB_SERIAL_JTAG_PID {
-        set_dtr(port, false)?;
+        set_dtr_best_effort(port, false);
         sleep(Duration::from_millis(100));
-        set_rts(port, true)?;
-        set_dtr(port, false)?;
-        set_rts(port, true)?;
-        sleep(Duration::from_millis(100));
-        set_rts(port, false)?;
+        set_rts_best_effort(port, true);
+        set_dtr_best_effort(port, false);
+        set_rts_best_effort(port, true);
+        sleep(Duration::from_millis(200));
+        set_rts_best_effort(port, false);
+        sleep(Duration::from_millis(200));
     } else {
-        set_rts(port, true)?;
+        set_rts_best_effort(port, true);
         sleep(Duration::from_millis(100));
-        set_rts(port, false)?;
+        set_rts_best_effort(port, false);
     }
     Ok(())
 }

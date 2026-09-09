@@ -160,6 +160,8 @@ pub fn is_retryable_read_error(err: &str) -> bool {
         || err.contains("Timeout")
         || err.contains("TimedOut")
         || err.starts_with("io_error:")
+        // Windows USB 串口偶发 PurgeComm / SetCommTimeouts / EscapeCommFunction 失败
+        || err.starts_with("serial_error:")
 }
 
 pub fn is_retryable_write_error(err: &str) -> bool {
@@ -167,5 +169,6 @@ pub fn is_retryable_write_error(err: &str) -> bool {
         || err.starts_with("serial_timeout:")
         || err.contains("TimedOut")
         || err.starts_with("io_error:")
+        || err.starts_with("serial_error:")
         || err.starts_with("rom_error:") && (err.contains("inflate_error") || err.contains("deflate_error"))
 }

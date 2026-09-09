@@ -299,8 +299,12 @@ impl Connection {
         Ok(())
     }
 
-    /// 设置串口读超时。
+    /// 设置串口读超时。同一超时值重复设置会跳过，避免部分 Windows USB 串口
+    /// 驱动对频繁 `SetCommTimeouts` 返回「设备不识别此命令」。
     pub fn set_timeout(&mut self, timeout: Duration) -> Result<()> {
+        if self.port.timeout() == timeout {
+            return Ok(());
+        }
         self.port.set_timeout(timeout)?;
         Ok(())
     }
@@ -313,8 +317,19 @@ impl Connection {
     }
 
     /// 清空串口输入缓冲与解码器缓冲。
+    ///
+    /// Windows 上 `PurgeComm` 在部分 USB CDC / 转串口驱动上会失败；官方 esptool
+    /// 侧也常见忽略这类错误。失败时仍清空本地质 SLIP 缓冲，避免卡死整单操作。
     pub fn clear_input(&mut self) -> Result<()> {
-        self.port.clear(serialport::ClearBuffer::Input)?;
+        if let Err(e) = self.port.clear(serialport::ClearBuffer::Input) {
+            let msg = e.to_string();
+            let benign = msg.contains("不识别此命令")
+                || msg.contains("does not recognize the command")
+                || msg.contains("Incorrect function");
+            if !benign {
+                return Err(e.into());
+            }
+        }
         self.decoder.clear();
         Ok(())
     }
@@ -325,7 +340,9 @@ impl Connection {
         let request = command::build_request(cmd, data, checksum);
         let frame = encode_frame(&request);
         self.port.write_all(&frame)?;
-        self.port.flush()?;
+        // USB 串口上 FlushFileBuffers 常返回 ERROR_INVALID_FUNCTION；pyserial/esptool
+        // 也不把 flush 失败当成致命错误。
+        let _ = self.port.flush();
         Ok(())
     }
 
@@ -412,7 +429,7 @@ impl Connection {
     pub fn write_raw_frame(&mut self, payload: &[u8]) -> Result<()> {
         let frame = encode_frame(payload);
         self.port.write_all(&frame)?;
-        self.port.flush()?;
+        let _ = self.port.flush();
         Ok(())
     }
 
@@ -442,11 +459,19 @@ impl Connection {
     }
 
     /// 操作完成后的复位。
+    ///
+    /// 收尾复位失败不向上抛：业务数据已读写成功时，不应因 RTS/DTR 或 USB
+    /// 重枚举把整单判失败（与官方 esptool 行为一致）。
     pub fn reset_after(&mut self, after: ResetAfter) -> Result<()> {
-        match after {
+        let result = match after {
             ResetAfter::HardReset => hard_reset(&mut self.port, self.usb_pid),
             ResetAfter::NoReset => self.soft_reset_to_bootloader(),
             ResetAfter::NoResetNoStub => Ok(()),
+        };
+        match result {
+            Ok(()) => Ok(()),
+            Err(Error::Serial(_)) | Err(Error::Io(_)) => Ok(()),
+            Err(e) => Err(e),
         }
     }
 

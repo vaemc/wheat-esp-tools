@@ -907,9 +907,13 @@ impl Flasher {
     // ------------------------------------------------------------------
 
     /// 按连接配置的 `after` 复位设备（操作成功后调用一次）。
+    ///
+    /// 复位阶段的串口控制线错误会被吞掉（见 [`Connection::reset_after`]），
+    /// 避免「主操作已成功却因 hard-reset 失败」整单报错。
     pub fn finish(&mut self) -> Result<()> {
         self.flash_end()?;
-        self.conn.reset_after(self.after)
+        let _ = self.conn.reset_after(self.after);
+        Ok(())
     }
 
     /// 取消 / 失败后的清理：放弃未完成的写序列，直接按 `after` 复位，
