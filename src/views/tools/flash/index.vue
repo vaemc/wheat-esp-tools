@@ -24,6 +24,7 @@
       @drop="uploadHandle"
       :isDirectory="false"
       :isMultiple="true"
+      :filters="uploadFilters"
     />
     <a-table
       style="margin: 5px 0"
@@ -140,6 +141,11 @@ import { useImportToFlash } from "@/views/tools/firmware/composables/useImportTo
 import { useFlashQuickActions } from "./composables/useFlashQuickActions";
 import { exportFirmwareFilesToDir } from "./composables/useExportFirmware";
 import { CONFIG_FILENAMES } from "@/utils/path";
+
+const uploadFilters = [
+  { name: "Firmware / Config", extensions: ["bin", "json"] },
+  { name: "All", extensions: ["*"] },
+];
 
 const store = useToolsStore();
 const historyStore = useHistoryStore();
