@@ -360,3 +360,32 @@ export function isEafBytes(bytes: Uint8Array): boolean {
   // legacy without magic
   return bytes.length >= 12;
 }
+
+export interface EafProbeMeta {
+  width: number;
+  height: number;
+  frameCount: number;
+  bitDepth: number;
+  splitHeight: number;
+}
+
+/** 轻量探测：解析容器与首帧头，不解压像素 */
+export function probeEafMeta(bytes: Uint8Array): EafProbeMeta {
+  if (!isEafBytes(bytes)) {
+    throw new Error("Not an EAF file");
+  }
+  const { frames } = parseContainer(bytes);
+  for (const payload of frames) {
+    const parsed = parseFrame(payload);
+    if (parsed) {
+      return {
+        width: parsed.meta.width,
+        height: parsed.meta.height,
+        frameCount: frames.length,
+        bitDepth: parsed.meta.bitDepth,
+        splitHeight: parsed.meta.splitHeight,
+      };
+    }
+  }
+  throw new Error("No decodable frames in EAF");
+}

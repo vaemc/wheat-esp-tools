@@ -140,6 +140,13 @@
       <path d="M17 16.5h4" />
     </template>
     <!-- Lucide: minimize-2 — GIF 压缩 -->
+    <template v-else-if="name === 'eafgif'">
+      <path d="M21 12.17V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h6" />
+      <path d="m6 21 5-5" />
+      <circle cx="9" cy="9" r="2" />
+      <path d="M16 14v6" />
+      <path d="m19 17-3 3-3-3" />
+    </template>
     <template v-else-if="name === 'gifcompress'">
       <polyline points="4 14 10 14 10 20" />
       <polyline points="20 10 14 10 14 4" />
@@ -199,6 +206,7 @@ const ICON_COLORS: Record<string, string> = {
   sjpg: "#ff85c0",
   eaf: "#b37feb",
   mp4eaf: "#d3adf7",
+  eafgif: "#722ed1",
   gifcompress: "#9254de",
   settings: "#8c8c8c",
 };

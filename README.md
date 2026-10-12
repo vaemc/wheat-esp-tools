@@ -60,7 +60,7 @@ Wheat ESP Tools 将常见的 ESP 开发操作集中到同一桌面应用中，�
 | NVS 分区 | 设备或本地读取、键值编辑、写回设备、CSV 生成镜像 |
 | 蓝牙 | BLE 广播扫描与过滤；Windows 经典蓝牙（BR/EDR）发现 |
 | 芯片引脚 | ESP32 系列交互式引脚图，按功能筛选与手册跳转 |
-| 图片处理 | JPG→SJPG、GIF→EAF、GIF 压缩，面向 LVGL / 嵌入式显示 |
+| 图片处理 | JPG→SJPG、GIF→EAF、EAF→GIF、GIF 压缩，面向 LVGL / 嵌入式显示 |
 | 音频处理 | WAV→OGG（Opus）；可识别 Opus / Vorbis / FLAC |
 | 文件处理 | 资源目录打包为 mmap `.bin`；预览映射表与 `index.json` |
 
@@ -476,7 +476,7 @@ ESP32 系列交互式引脚功能图。数据来自 Espressif 官方数据手册
 编码方式差异简述：RLE 解码快、体积适中；RLE+Huffman 更小、解码稍慢；JPEG 可在画质与体积间调节。
 分片 / 抽帧 / 近似合并三种编码都生效；JPEG 质量仅 JPEG 有效。编码方式差异简述：RLE 解码快、体积适中；RLE+Huffman 更小、解码稍慢；JPEG 可在画质与体积间调节。预览支持播放/暂停/循环与时长显示，也可打开已有 `.eaf`；支持停止转换与清空列表。
 
-### GIF 压缩
+### EAF 转 GIF\n\n将 .eaf 解码回动画 GIF。EAF 不含逐帧延时，需指定输出帧率；可调尺寸、抽帧、调色板与帧差分（复用 GIF 压缩编码管线）。\n\n| 项目 | 说明 |\n|------|------|\n| 输入 / 输出 | .eaf（可批量）→ .gif |\n| 输出帧率 | 默认 10 fps（EAF 无内嵌 delay） |\n| 其它 | 尺寸、抽帧、颜色数、抖动、帧差分 / 有损强度与 GIF 压缩一致 |\n\n流程：添加 EAF → 调整参数 → 批量转换 → 预览并保存。\n\n### GIF 压缩
 ![GIF 压缩](images/cn-gif-compress.png)
 
 批量压缩 GIF。策略概览：**抽帧 → 缩放 → 共享调色板减色 → 帧差分（只写变化区域 / 合并相同帧）**，底栏预览后保存 `.gif`。
@@ -596,7 +596,7 @@ ESP32 系列交互式引脚功能图。数据来自 Espressif 官方数据手册
 | BLE 广播扫描与多条件过滤 | 已完成 |
 | 经典蓝牙扫描（Windows） | 已完成 |
 | ESP32 系列芯片引脚图 | 已完成 |
-| JPG→SJPG / GIF→EAF / GIF 压缩 | 已完成 |
+| JPG→SJPG / GIF→EAF / EAF→GIF / GIF 压缩 | 已完成 |
 | WAV→OGG（Opus） | 已完成 |
 | mmap 资源打包 | 已完成 |
 | 蓝牙连接与 GATT 操作 | 未实现 |

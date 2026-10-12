@@ -5,7 +5,7 @@
 import type { Component } from "vue";
 import { defineAsyncComponent } from "vue";
 
-export type ImageConverterId = "sjpg" | "eaf" | "mp4eaf" | "gifcompress";
+export type ImageConverterId = "sjpg" | "eaf" | "eafgif" | "mp4eaf" | "gifcompress";
 
 export interface ImageConverterTool {
   id: ImageConverterId;
@@ -27,6 +27,14 @@ export const IMAGE_CONVERTER_TOOLS: ImageConverterTool[] = [
     icon: "eaf",
     labelKey: "image.toolEaf",
     component: defineAsyncComponent(() => import("./tools/eaf/Workbench.vue")),
+  },
+  {
+    id: "eafgif",
+    icon: "eafgif",
+    labelKey: "image.toolEafGif",
+    component: defineAsyncComponent(
+      () => import("./tools/eafgif/Workbench.vue")
+    ),
   },
   {
     id: "mp4eaf",

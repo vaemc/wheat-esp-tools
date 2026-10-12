@@ -1,7 +1,7 @@
 //! GIF 压缩：丰富探测 + 抽帧 / 缩放 / 减色 / 帧间隔重写。
 
 use std::fs::File;
-use std::io::{BufReader, Cursor};
+use std::io::{BufReader, Cursor, Read};
 use std::path::Path;
 
 use ::image::codecs::gif::GifDecoder;
@@ -776,209 +776,587 @@ fn encode_gif_bytes(
     Ok((out.into_inner(), written))
 }
 
-pub fn compress_gif(
-    path: &str,
+/// 将 RGBA 帧序列编码为 GIF（抽帧 / 缩放 / 减色 / 帧差分）。
+
+pub fn encode_rgba_frames_to_gif(
+
+    frames: Vec<(RgbaImage, u32)>,
+
     options: GifCompressOptions,
+
     job_id: &str,
+
+    path: &str,
+
     on_progress: Option<ProgressCallback>,
+
 ) -> Result<GifCompressResult, String> {
-    let p = Path::new(path);
-    if !p.is_file() {
-        return Err(format!("文件不存在: {path}"));
+
+    if frames.is_empty() {
+
+        return Err("没有可编码的帧".into());
+
     }
+
+
 
     let frame_step = options.frame_step.unwrap_or(0) as usize;
+
     let colors = options.colors.unwrap_or(64).clamp(2, 256) as usize;
+
     let dither = options.dither.unwrap_or(false);
+
     let delay_mode = DelayMode::from_option(options.delay_mode.as_deref());
+
     let fixed_delay_ms = options.fixed_delay_ms.unwrap_or(100).max(10);
+
     let lossy = options.lossy.unwrap_or(40).min(200);
+
     let lossy_dist_sq = lossy_to_dist_sq(lossy);
+
     let posterize_bits = lossy_to_posterize_bits(lossy);
 
-    emit_progress(
-        &on_progress,
-        job_id,
-        path,
-        "load",
-        0,
-        1,
-        2.0,
-        "正在读取 GIF…",
-    );
 
-    let (src_w, src_h, frames) = load_frames_with_delay(p)?;
+
+    let src_w = frames[0].0.width();
+
+    let src_h = frames[0].0.height();
+
     let target_w = options.width.unwrap_or(src_w).max(1);
+
     let target_h = options.height.unwrap_or(src_h).max(1);
 
+
+
     // frame_step=0：不抽；否则保留 N 帧后跳过 1 帧，跳过帧的 delay 合并到上一保留帧
+
     let selected: Vec<(RgbaImage, u32)> = if frame_step == 0 {
+
         frames
+
     } else {
+
         let mut out = Vec::new();
+
         let mut iter = frames.into_iter();
+
         loop {
+
             let mut kept = 0usize;
+
             while kept < frame_step {
+
                 match iter.next() {
+
                     Some(frame) => {
+
                         out.push(frame);
+
                         kept += 1;
+
                     }
+
                     None => break,
+
                 }
+
             }
+
             if kept == 0 {
+
                 break;
+
             }
+
             if let Some((_, skip_delay)) = iter.next() {
+
                 if let Some((_, delay)) = out.last_mut() {
+
                     *delay = delay.saturating_add(skip_delay).max(10);
+
                 }
+
             } else {
+
                 break;
+
             }
+
         }
+
         out
+
     };
+
     if selected.is_empty() {
+
         return Err("抽帧后没有剩余帧".into());
+
     }
 
+
+
     let total_frames = selected.len() as u32;
+
     emit_progress(
+
         &on_progress,
+
         job_id,
+
         path,
+
         "load",
+
         1,
+
         1,
+
         8.0,
+
         &format!("已加载 {total_frames} 帧，开始处理…"),
+
     );
+
+
 
     // 缩放 8% ~ 22%
+
     let resize_done = AtomicU32::new(0);
+
     let progress_resize = on_progress.clone();
+
     let job_resize = job_id.to_string();
+
     let path_resize = path.to_string();
+
     let prepared: Vec<(RgbaImage, u32)> = selected
+
         .into_par_iter()
+
         .map(|(img, delay)| {
+
             let mut resized = if img.width() != target_w || img.height() != target_h {
+
                 imageops::resize(&img, target_w, target_h, FilterType::Triangle)
+
             } else {
+
                 img
+
             };
+
             posterize_image(&mut resized, posterize_bits);
+
             let current = resize_done.fetch_add(1, Ordering::Relaxed) + 1;
+
             let percent = 8.0 + (current as f32 / total_frames.max(1) as f32) * 14.0;
+
             emit_progress(
+
                 &progress_resize,
+
                 &job_resize,
+
                 &path_resize,
+
                 "resize",
+
                 current,
+
                 total_frames,
+
                 percent,
+
                 &format!("缩放帧 {current}/{total_frames}"),
+
             );
+
             (resized, delay)
+
         })
+
         .collect();
+
+
 
     let frame_diff = options.frame_diff.unwrap_or(true);
+
     let reserve_transparent = frame_diff || prepared.len() > 1;
 
+
+
     emit_progress(
+
         &on_progress,
+
         job_id,
+
         path,
+
         "palette",
+
         0,
+
         1,
+
         24.0,
+
         "训练调色板…",
+
     );
+
     let (nq, palette, transparent_slot) =
+
         train_shared_palette(prepared.iter().map(|(img, _)| img), colors, reserve_transparent);
+
     emit_progress(
+
         &on_progress,
+
         job_id,
+
         path,
+
         "palette",
+
         1,
+
         1,
+
         28.0,
+
         "调色板就绪，开始减色…",
+
     );
+
+
 
     // 减色映射 28% ~ 88%（与 EAF「编码帧」文案对齐）
+
     let encode_done = AtomicU32::new(0);
+
     let progress_encode = on_progress.clone();
+
     let job_encode = job_id.to_string();
+
     let path_encode = path.to_string();
+
     let encoded_frames: Vec<(Vec<u8>, u32)> = prepared
+
         .into_par_iter()
+
         .map(|(img, delay)| {
+
             let indices =
+
                 map_frame_to_indices(&img, &nq, &palette, transparent_slot, dither);
+
             let current = encode_done.fetch_add(1, Ordering::Relaxed) + 1;
+
             let percent = 28.0 + (current as f32 / total_frames.max(1) as f32) * 60.0;
+
             emit_progress(
+
                 &progress_encode,
+
                 &job_encode,
+
                 &path_encode,
+
                 "encode",
+
                 current,
+
                 total_frames,
+
                 percent,
+
                 &format!("编码帧 {current}/{total_frames}"),
+
             );
+
             let out_delay = if delay_mode == DelayMode::Fixed {
+
                 fixed_delay_ms
+
             } else {
+
                 delay
+
             };
+
             (indices, out_delay)
+
         })
+
         .collect();
 
+
+
     let (bytes, written_frames) = encode_gif_bytes(
+
         target_w as u16,
+
         target_h as u16,
+
         &palette,
+
         &encoded_frames,
+
         transparent_slot,
+
         frame_diff,
+
         lossy_dist_sq,
+
         job_id,
+
         path,
+
         &on_progress,
+
     )?;
+
     let byte_length = bytes.len() as u64;
+
     let frame_count = written_frames;
+
     let gif_base64 = B64.encode(&bytes);
 
+
+
     emit_progress(
+
         &on_progress,
+
         job_id,
+
         path,
+
         "done",
+
         frame_count,
+
         frame_count,
+
         100.0,
+
         "完成",
+
     );
 
+
+
     Ok(GifCompressResult {
+
         width: target_w,
+
         height: target_h,
+
         frame_count,
+
         byte_length,
+
         gif_base64,
+
     })
+
 }
+
+
+
+const RGBA_DUMP_MAGIC: &[u8; 8] = b"WHEATRGB";
+
+
+
+fn load_rgba_dump(path: &Path) -> Result<(u32, u32, Vec<(RgbaImage, u32)>), String> {
+
+    let mut file = File::open(path).map_err(|e| format!("打开 RGBA dump 失败: {e}"))?;
+
+    let mut header = [0u8; 24];
+
+    file
+
+        .read_exact(&mut header)
+
+        .map_err(|e| format!("读取 RGBA dump 头失败: {e}"))?;
+
+    if &header[0..8] != RGBA_DUMP_MAGIC {
+
+        return Err("不是有效的 RGBA dump".into());
+
+    }
+
+    let width = u32::from_le_bytes(header[8..12].try_into().unwrap());
+
+    let height = u32::from_le_bytes(header[12..16].try_into().unwrap());
+
+    let frame_count = u32::from_le_bytes(header[16..20].try_into().unwrap());
+
+    let delay_ms = u32::from_le_bytes(header[20..24].try_into().unwrap()).max(10);
+
+    if width == 0 || height == 0 || frame_count == 0 {
+
+        return Err("RGBA dump 尺寸或帧数无效".into());
+
+    }
+
+    let frame_bytes = (width as usize)
+
+        .checked_mul(height as usize)
+
+        .and_then(|n| n.checked_mul(4))
+
+        .ok_or_else(|| "RGBA dump 帧尺寸溢出".to_string())?;
+
+    let mut frames = Vec::with_capacity(frame_count as usize);
+
+    for i in 0..frame_count {
+
+        let mut buf = vec![0u8; frame_bytes];
+
+        file
+
+            .read_exact(&mut buf)
+
+            .map_err(|e| format!("读取 RGBA dump 第 {} 帧失败: {e}", i + 1))?;
+
+        let img = RgbaImage::from_raw(width, height, buf)
+
+            .ok_or_else(|| format!("构造 RGBA 图像失败: frame {}", i + 1))?;
+
+        frames.push((img, delay_ms));
+
+    }
+
+    Ok((width, height, frames))
+
+}
+
+
+
+/// 将前端写入的 RGBA dump（EAF 解码帧）编码为 GIF。
+
+pub fn encode_rgba_dump_to_gif(
+
+    path: &str,
+
+    options: GifCompressOptions,
+
+    job_id: &str,
+
+    on_progress: Option<ProgressCallback>,
+
+) -> Result<GifCompressResult, String> {
+
+    let p = Path::new(path);
+
+    if !p.is_file() {
+
+        return Err(format!("文件不存在: {path}"));
+
+    }
+
+    emit_progress(
+
+        &on_progress,
+
+        job_id,
+
+        path,
+
+        "load",
+
+        0,
+
+        1,
+
+        2.0,
+
+        "正在读取帧数据…",
+
+    );
+
+    let (_w, _h, frames) = load_rgba_dump(p)?;
+
+    emit_progress(
+
+        &on_progress,
+
+        job_id,
+
+        path,
+
+        "load",
+
+        1,
+
+        1,
+
+        6.0,
+
+        &format!("已加载 {} 帧", frames.len()),
+
+    );
+
+    encode_rgba_frames_to_gif(frames, options, job_id, path, on_progress)
+
+}
+
+
+
+pub fn compress_gif(
+
+    path: &str,
+
+    options: GifCompressOptions,
+
+    job_id: &str,
+
+    on_progress: Option<ProgressCallback>,
+
+) -> Result<GifCompressResult, String> {
+
+    let p = Path::new(path);
+
+    if !p.is_file() {
+
+        return Err(format!("文件不存在: {path}"));
+
+    }
+
+
+
+    emit_progress(
+
+        &on_progress,
+
+        job_id,
+
+        path,
+
+        "load",
+
+        0,
+
+        1,
+
+        2.0,
+
+        "正在读取 GIF…",
+
+    );
+
+
+
+    let (_src_w, _src_h, frames) = load_frames_with_delay(p)?;
+
+    encode_rgba_frames_to_gif(frames, options, job_id, path, on_progress)
+
+}
+
+
 
 #[cfg(test)]
 mod tests {
