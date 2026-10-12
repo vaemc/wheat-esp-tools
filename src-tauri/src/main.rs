@@ -539,9 +539,8 @@ fn open_file_in_explorer(path: &str) -> Result<(), String> {
     #[cfg(target_os = "windows")]
     {
         Command::new("explorer")
-            .arg("/select,")
-            .arg(path)
-            .status()
+            .arg(format!("/select,{path}"))
+            .spawn()
             .map_err(|e| format!("打开资源管理器失败: {e}"))?;
         Ok(())
     }

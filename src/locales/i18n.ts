@@ -514,6 +514,7 @@ const messages = {
         inputAddress: "烧录地址未填写",
         inputPath: "固件路径未填写",
         inputMergeName: "请填写合并文件名",
+        pathNotFound: "文件路径不存在或无法访问",
       },
     },
     partition: {
@@ -1493,6 +1494,7 @@ const messages = {
         inputAddress: "Flash address is not filled in",
         inputPath: "Firmware path is not filled in",
         inputMergeName: "Please enter a merge file name",
+        pathNotFound: "File path does not exist or is inaccessible",
       },
     },
     partition: {

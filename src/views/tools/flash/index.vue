@@ -198,6 +198,16 @@ function clearAddressHighlight(path: string) {
   highlightedAddressPaths.value = next;
 }
 
+async function revealFirmwarePath(path: string) {
+  try {
+    await getFileInfo(path);
+  } catch {
+    message.warning(i18n.global.t("flash.dialog.pathNotFound"));
+    return;
+  }
+  await openFileInExplorer(path);
+}
+
 const columns = ref([
   {
     title: i18n.global.t("flash.select"),
@@ -210,6 +220,10 @@ const columns = ref([
     dataIndex: "path",
     key: "path",
     ellipsis: true,
+    customCell: (record: Firmware) => ({
+      style: { userSelect: "none" },
+      onDblclick: () => revealFirmwarePath(record.path),
+    }),
   },
   {
     title: i18n.global.t("flash.address"),
