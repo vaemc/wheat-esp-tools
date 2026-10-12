@@ -129,17 +129,21 @@ import { open } from "@tauri-apps/plugin-dialog";
 import { useI18n } from "vue-i18n";
 import { useTauriDragDrop } from "@/composables/useTauriDragDrop";
 
+type FileFilter = { name: string; extensions: string[] };
+
 const props = withDefaults(
   defineProps<{
     title: string;
     subtitle?: string;
     isDirectory?: boolean;
     isMultiple?: boolean;
+    filters?: FileFilter[];
   }>(),
   {
     subtitle: "",
     isDirectory: false,
     isMultiple: false,
+    filters: () => [],
   },
 );
 
@@ -163,6 +167,7 @@ const pick = async () => {
     const selected = await open({
       directory: props.isDirectory,
       multiple: props.isMultiple,
+      ...(props.filters.length > 0 ? { filters: props.filters } : {}),
     });
     if (selected != null) {
       emit("open", selected as string | string[]);

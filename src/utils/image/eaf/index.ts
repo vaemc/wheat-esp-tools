@@ -21,7 +21,13 @@ export {
   encodeGifToEaf,
   type EncodeFramesProgress,
 } from "./encode";
-export { decodeEaf, isEafBytes, type DecodeEafOptions } from "./decode";
+export {
+  decodeEaf,
+  isEafBytes,
+  probeEafMeta,
+  type DecodeEafOptions,
+  type EafProbeMeta,
+} from "./decode";
 export { extractGifFrames } from "./gifFrames";
 export {
   extractMp4Frames,
