@@ -24,6 +24,7 @@
       @drop="uploadHandle"
       :isDirectory="false"
       :isMultiple="true"
+      :filters="uploadFilters"
     />
     <a-table
       style="margin: 5px 0"
@@ -141,6 +142,11 @@ import { useFlashQuickActions } from "./composables/useFlashQuickActions";
 import { exportFirmwareFilesToDir } from "./composables/useExportFirmware";
 import { CONFIG_FILENAMES } from "@/utils/path";
 
+const uploadFilters = [
+  { name: "Firmware / Config", extensions: ["bin", "json"] },
+  { name: "All", extensions: ["*"] },
+];
+
 const store = useToolsStore();
 const historyStore = useHistoryStore();
 const espflashStore = useEspflashStore();
@@ -192,6 +198,16 @@ function clearAddressHighlight(path: string) {
   highlightedAddressPaths.value = next;
 }
 
+async function revealFirmwarePath(path: string) {
+  try {
+    await getFileInfo(path);
+  } catch {
+    message.warning(i18n.global.t("flash.dialog.pathNotFound"));
+    return;
+  }
+  await openFileInExplorer(path);
+}
+
 const columns = ref([
   {
     title: i18n.global.t("flash.select"),
@@ -204,6 +220,10 @@ const columns = ref([
     dataIndex: "path",
     key: "path",
     ellipsis: true,
+    customCell: (record: Firmware) => ({
+      style: { userSelect: "none" },
+      onDblclick: () => revealFirmwarePath(record.path),
+    }),
   },
   {
     title: i18n.global.t("flash.address"),

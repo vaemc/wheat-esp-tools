@@ -469,7 +469,7 @@ Convert GIF to `.eaf` (compatible with `esp_lv_eaf_player`). Conversion runs nat
 
 Split height, frame step, and similar-frame merge apply to all encodings; JPEG quality is JPEG-only. Encoding trade-offs: RLE is fast to decode with moderate size; RLE+Huffman is smaller but slightly slower; JPEG tunes quality vs size. Preview supports play/pause/loop and duration; open an existing `.eaf` anytime. Stop conversion and clear-all are supported.
 
-### GIF Compress
+### EAF to GIF\n\nDecode .eaf back to animated GIF. EAF has no per-frame delay, so set an output FPS. Size, frame step, palette, and frame-diff options reuse the GIF compress encoder.\n\n| Item | Notes |\n|------|-------|\n| Input / output | .eaf (batch) → .gif |\n| Output FPS | Default 10 (EAF stores no delay) |\n| Other | Same size / frame-step / colors / dither / frame-diff / lossy controls as GIF Compress |\n\nFlow: add EAF → tune options → convert → preview and save.\n\n### GIF Compress
 ![GIF Compress](images/en-gif-compress.png)
 
 Batch-compress GIFs. Pipeline: **frame skip → resize → shared palette → frame differencing (dirty rect / merge identical delays)**; preview in the bottom panel, then save `.gif`.

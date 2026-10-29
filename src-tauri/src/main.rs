@@ -539,9 +539,8 @@ fn open_file_in_explorer(path: &str) -> Result<(), String> {
     #[cfg(target_os = "windows")]
     {
         Command::new("explorer")
-            .arg("/select,")
-            .arg(path)
-            .status()
+            .arg(format!("/select,{path}"))
+            .spawn()
             .map_err(|e| format!("打开资源管理器失败: {e}"))?;
         Ok(())
     }
@@ -666,6 +665,28 @@ async fn compress_gif(
     })
     .await
     .map_err(|e| format!("压缩 GIF 失败: {e}"))?
+}
+
+#[tauri::command]
+async fn encode_rgba_dump_to_gif(
+    window: WebviewWindow,
+    path: String,
+    options: image::gifcompress::GifCompressOptions,
+    job_id: String,
+) -> Result<image::gifcompress::GifCompressResult, String> {
+    let win = window.clone();
+    let jid = job_id.clone();
+    let path_for_job = path.clone();
+
+    tokio::task::spawn_blocking(move || {
+        let progress_cb: image::gifcompress::ProgressCallback =
+            std::sync::Arc::new(move |event| {
+                let _ = win.emit("gif_compress_progress", &event);
+            });
+        image::gifcompress::encode_rgba_dump_to_gif(&path_for_job, options, &jid, Some(progress_cb))
+    })
+    .await
+    .map_err(|e| format!("编码 GIF 失败: {e}"))?
 }
 
 #[tauri::command]
@@ -834,6 +855,7 @@ fn main() {
             probe_gif,
             probe_gif_rich,
             compress_gif,
+            encode_rgba_dump_to_gif,
             convert_gif_to_eaf,
             convert_lvgl_font,
             extract_lvgl_font_chars,
